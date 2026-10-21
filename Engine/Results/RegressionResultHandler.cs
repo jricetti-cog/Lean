@@ -20,7 +20,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Newtonsoft.Json;
 using QuantConnect.Configuration;
 using QuantConnect.Data;
 using QuantConnect.Data.UniverseSelection;
@@ -383,7 +382,7 @@ namespace QuantConnect.Lean.Engine.Results
         /// </summary>
         public override void SaveResults(string name, Result result)
         {
-            File.WriteAllText(GetResultsPath(name), JsonConvert.SerializeObject(result));
+            File.WriteAllText(GetResultsPath(name), JsonSerialization.Serialize(result));
         }
 
         /// <summary>

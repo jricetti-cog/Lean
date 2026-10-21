@@ -14,8 +14,7 @@
  *
 */
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
+using System.Text.Json;
 using QuantConnect.Data.Market;
 using QuantConnect.Data.UniverseSelection;
 using QuantConnect.Indicators;
@@ -132,17 +131,7 @@ namespace QuantConnect.Lean.Engine.Results
         /// <summary>
         /// Serializer settings to use
         /// </summary>
-        protected JsonSerializerSettings SerializerSettings { get; set; } = new()
-        {
-            ContractResolver = new DefaultContractResolver
-            {
-                NamingStrategy = new CamelCaseNamingStrategy
-                {
-                    ProcessDictionaryKeys = false,
-                    OverrideSpecifiedNames = true
-                }
-            }
-        };
+        protected JsonSerializerOptions SerializerSettings { get; set; } = JsonSerialization.CamelCase;
 
         /// <summary>
         /// The current aggregated equity bar for sampling.
@@ -409,7 +398,7 @@ namespace QuantConnect.Lean.Engine.Results
             var filename = $"{AlgorithmId}-order-events.json";
             var path = GetResultsPath(filename);
 
-            var data = JsonConvert.SerializeObject(orderEvents, Formatting.None, SerializerSettings);
+            var data = JsonSerialization.Serialize(orderEvents, SerializerSettings);
 
             File.WriteAllText(path, data);
         }
@@ -437,7 +426,7 @@ namespace QuantConnect.Lean.Engine.Results
                     directory.Create();
                 }
                 var orderedInsights = allInsights.OrderBy(insight => insight.GeneratedTimeUtc);
-                File.WriteAllText(alphaResultsPath, JsonConvert.SerializeObject(orderedInsights, Formatting.Indented, SerializerSettings));
+                File.WriteAllText(alphaResultsPath, JsonSerialization.Serialize(orderedInsights, JsonSerialization.Indented(SerializerSettings)));
             }
         }
 
@@ -523,18 +512,7 @@ namespace QuantConnect.Lean.Engine.Results
             PerformanceTrackingTool = parameters.PerformanceTrackingTool;
             DataMonitor = parameters.DataMonitor;
 
-            SerializerSettings = new()
-            {
-                Converters = new[] { new OrderEventJsonConverter(AlgorithmId) },
-                ContractResolver = new DefaultContractResolver
-                {
-                    NamingStrategy = new CamelCaseNamingStrategy
-                    {
-                        ProcessDictionaryKeys = false,
-                        OverrideSpecifiedNames = true
-                    }
-                }
-            };
+            SerializerSettings = JsonSerialization.Create(camelCase: true, converters: new OrderEventJsonConverter(AlgorithmId));
         }
 
         /// <summary>
@@ -666,7 +644,7 @@ namespace QuantConnect.Lean.Engine.Results
         /// <param name="result">The results to save</param>
         public virtual void SaveResults(string name, Result result)
         {
-            File.WriteAllText(GetResultsPath(name), JsonConvert.SerializeObject(result, Formatting.Indented, SerializerSettings));
+            File.WriteAllText(GetResultsPath(name), JsonSerialization.Serialize(result, JsonSerialization.Indented(SerializerSettings)));
         }
 
         /// <summary>
