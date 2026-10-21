@@ -14,7 +14,6 @@
 */
 
 using System;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using QuantConnect.Orders;
 using QuantConnect.Orders.Fees;

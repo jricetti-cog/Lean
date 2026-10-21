@@ -13,11 +13,10 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using QuantConnect.Statistics;
 using System;
+using System.Text.Json.Nodes;
 
 namespace QuantConnect.Tests.Common.Statistics
 {
@@ -54,7 +53,7 @@ namespace QuantConnect.Tests.Common.Statistics
         {
             var trade = MakeTrade();
             var jsonStr = JsonSerialization.Serialize(trade);
-            var json = JObject.Parse(jsonStr);
+            var json = JsonSerialization.ParseObject(jsonStr);
             Assert.IsFalse(json.ContainsKey("Symbol"));
         }
 

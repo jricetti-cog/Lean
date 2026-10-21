@@ -21,7 +21,6 @@ using System.Linq;
 using Python.Runtime;
 using QuantConnect.Packets;
 using QuantConnect.Report;
-using Newtonsoft.Json;
 
 namespace QuantConnect.Tests.Report
 {

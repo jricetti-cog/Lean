@@ -17,11 +17,9 @@ using System.Text.Json.Serialization;
 using System;
 using System.Drawing;
 using System.Linq;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using QuantConnect.Util;
 using System.Collections.Generic;
-using Newtonsoft.Json.Serialization;
 
 namespace QuantConnect.Tests.Common.Util
 {

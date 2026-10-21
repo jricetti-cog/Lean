@@ -13,12 +13,12 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using QuantConnect.Algorithm.CSharp;
 using QuantConnect.Configuration;
 using QuantConnect.Interfaces;
 using System;
+using System.Text.Json.Nodes;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -79,8 +79,8 @@ namespace QuantConnect.Tests
             // since these are static test cases, they are executed before test setup
             AssemblyInitialize.AdjustCurrentDirectory();
 
-            var languages = Config.GetValue("regression-test-languages", JArray.FromObject(new[] { "CSharp", "Python" }))
-                .Select(str => Parse.Enum<Language>(str.Value<string>()))
+            var languages = Config.GetValue("regression-test-languages", new JsonArray("CSharp", "Python"))
+                .Select(str => Parse.Enum<Language>(str.GetValue<string>()))
                 .ToHashSet();
 
             // find all regression algorithms in Algorithm.CSharp

@@ -14,8 +14,8 @@
 */
 
 using System.Collections.Generic;
-using Newtonsoft.Json;
 using NUnit.Framework;
+using System.Text.Json.Serialization;
 using QuantConnect.Util;
 
 namespace QuantConnect.Tests.Common.Util

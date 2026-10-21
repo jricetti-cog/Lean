@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using QuantConnect.Api;
 

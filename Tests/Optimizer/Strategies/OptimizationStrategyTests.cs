@@ -14,7 +14,6 @@
  *
 */
 
-using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using QuantConnect.Optimizer;
 using QuantConnect.Optimizer.Objectives;
@@ -22,6 +21,7 @@ using QuantConnect.Optimizer.Parameters;
 using QuantConnect.Optimizer.Strategies;
 using QuantConnect.Util;
 using System;
+using System.Text.Json.Nodes;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -32,7 +32,7 @@ namespace QuantConnect.Tests.Optimizer.Strategies
         protected IOptimizationStrategy Strategy { get; set; }
         protected static Func<ParameterSet, decimal> _profit { get; } = parameterSet => parameterSet.Value.Where(pair => pair.Key != "skipFromResultSum").Sum(arg => arg.Value.ToDecimal());
         protected static Func<ParameterSet, decimal> _drawdown { get; } = parameterSet => parameterSet.Value.Where(pair => pair.Key != "skipFromResultSum").Sum(arg => arg.Value.ToDecimal()) / 100.0m;
-        protected static Func<string, string, decimal> _parse { get; } = (dump, parameter) => JObject.Parse(dump).SelectToken($"Statistics.{parameter}").Value<decimal>();
+        protected static Func<string, string, decimal> _parse { get; } = (dump, parameter) => decimal.Parse(JsonSerialization.ParseObject(dump)["Statistics"][parameter].ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture);
         protected static Func<decimal, decimal, string> _stringify { get; } = (profit, drawdown) => BacktestResult.Create(profit, drawdown).ToJson();
 
         private Queue<OptimizationResult> _pendingOptimizationResults;

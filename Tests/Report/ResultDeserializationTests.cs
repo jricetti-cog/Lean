@@ -13,7 +13,6 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
 using NUnit.Framework;
 using QuantConnect.Api;
 using QuantConnect.Orders;
