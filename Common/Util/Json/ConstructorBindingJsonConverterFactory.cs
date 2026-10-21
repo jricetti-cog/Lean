@@ -56,21 +56,31 @@ namespace QuantConnect.Util.Json
                     return null;
                 }
                 var constructors = t.GetConstructors(InstanceMembers);
-                if (constructors.Any(x => x.IsDefined(typeof(JsonConstructorAttribute))) || t.GetConstructor(Type.EmptyTypes) != null)
+                // newtonsoft bound [JsonConstructor] parameters by name only, STJ also requires the exact member type
+                var constructor = constructors.FirstOrDefault(x => x.IsDefined(typeof(JsonConstructorAttribute)));
+                if (constructor == null)
                 {
-                    return null;
+                    if (t.GetConstructor(Type.EmptyTypes) != null)
+                    {
+                        return null;
+                    }
+                    var publicConstructors = constructors.Where(x => x.IsPublic).ToList();
+                    if (publicConstructors.Count != 1)
+                    {
+                        return null;
+                    }
+                    constructor = publicConstructors[0];
                 }
-                var publicConstructors = constructors.Where(x => x.IsPublic).ToList();
-                if (publicConstructors.Count != 1 || publicConstructors[0].GetParameters().Length == 0)
+                if (constructor.GetParameters().Length == 0)
                 {
                     return null;
                 }
                 var members = t.GetMembers(InstanceMembers).Where(m => m is PropertyInfo || m is FieldInfo)
                     .Where(m => m.GetCustomAttribute<JsonIgnoreAttribute>()?.Condition != JsonIgnoreCondition.Always).ToList();
-                var bindsAll = publicConstructors[0].GetParameters().All(p => members.Any(m => GetMemberType(m) == p.ParameterType
+                var bindsAll = constructor.GetParameters().All(p => members.Any(m => GetMemberType(m) == p.ParameterType
                     && (string.Equals(m.Name, p.Name, StringComparison.OrdinalIgnoreCase)
                         || string.Equals(m.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name, p.Name, StringComparison.OrdinalIgnoreCase))));
-                return bindsAll ? null : publicConstructors[0];
+                return bindsAll ? null : constructor;
             });
         }
 

@@ -266,6 +266,7 @@ namespace QuantConnect.Algorithm.Framework.Portfolio.SignalExports
             };
 
             var settings = JsonSerialization.Create();
+            settings.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
             var jsonMessage = JsonSerialization.Serialize(payload, settings);
             return jsonMessage;
         }

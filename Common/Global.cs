@@ -214,6 +214,14 @@ namespace QuantConnect
         }
 
         /// <summary>
+        /// Writes out the properties of this instance to string
+        /// </summary>
+        public override string ToString()
+        {
+            return Messages.Holding.ToString(this);
+        }
+
+        /// <summary>
         /// Writes decimals normalized, without trailing zeros
         /// </summary>
         private class DecimalJsonConverter : JsonConverterFactory

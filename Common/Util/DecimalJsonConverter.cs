@@ -25,6 +25,9 @@ namespace QuantConnect.Util;
 /// </summary>
 public class DecimalJsonConverter : JsonConverterFactory
 {
+    // writing through the serializer would resolve this same converter again
+    private static readonly QuantConnect.Util.Json.LeanDecimalConverter DecimalWriter = new();
+
     /// <summary>
     /// Determines whether this instance can convert the specified object type
     /// </summary>
@@ -82,7 +85,7 @@ public class DecimalJsonConverter : JsonConverterFactory
 
         public override void Write(Utf8JsonWriter writer, decimal value, JsonSerializerOptions options)
         {
-            JsonSerializer.Serialize(writer, value, options);
+            DecimalWriter.Write(writer, value, options);
         }
     }
 
@@ -97,7 +100,12 @@ public class DecimalJsonConverter : JsonConverterFactory
 
         public override void Write(Utf8JsonWriter writer, decimal? value, JsonSerializerOptions options)
         {
-            JsonSerializer.Serialize(writer, value, options);
+            if (value == null)
+            {
+                writer.WriteNullValue();
+                return;
+            }
+            DecimalWriter.Write(writer, value.Value, options);
         }
     }
 }

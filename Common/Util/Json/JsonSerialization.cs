@@ -183,18 +183,15 @@ namespace QuantConnect
         }
 
         /// <summary>
-        /// Newtonsoft.Json accepted single quoted strings and property names, STJ only accepts double quotes.
-        /// Rewrites single quoted strings into double quoted ones
+        /// Newtonsoft.Json accepted single quoted strings and unquoted or single quoted property names, STJ only accepts double quotes.
+        /// Rewrites them into double quoted ones
         /// </summary>
         private static bool TryNormalizeQuotes(string json, out string normalized)
         {
             normalized = null;
-            if (json.IndexOf('\'') < 0)
-            {
-                return false;
-            }
             var builder = new StringBuilder(json.Length);
             char? quote = null;
+            var previous = '\0';
             for (var i = 0; i < json.Length; i++)
             {
                 var c = json[i];
@@ -205,9 +202,38 @@ namespace QuantConnect
                         quote = c;
                         builder.Append('"');
                     }
+                    else if ((previous == '{' || previous == ',') && (char.IsLetter(c) || c == '_' || c == '$'))
+                    {
+                        // unquoted property name
+                        var end = i;
+                        while (end < json.Length && (char.IsLetterOrDigit(json[end]) || json[end] == '_' || json[end] == '$' || json[end] == '-'))
+                        {
+                            end++;
+                        }
+                        var next = end;
+                        while (next < json.Length && char.IsWhiteSpace(json[next]))
+                        {
+                            next++;
+                        }
+                        if (next < json.Length && json[next] == ':')
+                        {
+                            builder.Append('"').Append(json, i, end - i).Append('"');
+                        }
+                        else
+                        {
+                            builder.Append(json, i, end - i);
+                        }
+                        i = end - 1;
+                        previous = json[i];
+                        continue;
+                    }
                     else
                     {
                         builder.Append(c);
+                    }
+                    if (!char.IsWhiteSpace(c))
+                    {
+                        previous = c;
                     }
                     continue;
                 }
@@ -226,6 +252,7 @@ namespace QuantConnect
                 else if (c == quote)
                 {
                     quote = null;
+                    previous = '"';
                     builder.Append('"');
                 }
                 else if (c == '"')
