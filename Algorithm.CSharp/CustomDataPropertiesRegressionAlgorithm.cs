@@ -17,7 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuantConnect.Data;
 using QuantConnect.Interfaces;
 using QuantConnect.Securities;
@@ -162,24 +162,24 @@ namespace QuantConnect.Algorithm.CSharp
         /// </summary>
         public class Bitcoin : BaseData
         {
-            [JsonProperty("timestamp")]
+            [JsonPropertyName("timestamp")]
             public int Timestamp { get; set; }
-            [JsonProperty("open")]
+            [JsonPropertyName("open")]
             public decimal Open { get; set; }
-            [JsonProperty("high")]
+            [JsonPropertyName("high")]
             public decimal High { get; set; }
-            [JsonProperty("low")]
+            [JsonPropertyName("low")]
             public decimal Low { get; set; }
             public decimal Mid { get; set; }
-            [JsonProperty("last")]
+            [JsonPropertyName("last")]
             public decimal Close { get; set; }
-            [JsonProperty("bid")]
+            [JsonPropertyName("bid")]
             public decimal Bid { get; set; }
-            [JsonProperty("ask")]
+            [JsonPropertyName("ask")]
             public decimal Ask { get; set; }
-            [JsonProperty("vwap")]
+            [JsonPropertyName("vwap")]
             public decimal WeightedPrice { get; set; }
-            [JsonProperty("volume")]
+            [JsonPropertyName("volume")]
             public decimal VolumeBTC { get; set; }
             public decimal VolumeUSD { get; set; }
 

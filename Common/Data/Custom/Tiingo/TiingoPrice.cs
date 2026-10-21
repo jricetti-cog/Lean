@@ -16,7 +16,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using NodaTime;
 using QuantConnect.Data.Market;
 using QuantConnect.Data.UniverseSelection;
@@ -51,80 +51,80 @@ namespace QuantConnect.Data.Custom.Tiingo
         /// <summary>
         /// The date this data pertains to
         /// </summary>
-        [JsonProperty("date")]
+        [JsonPropertyName("date")]
         public DateTime Date { get; set; }
 
         /// <summary>
         /// The actual (not adjusted) open price of the asset on the specific date
         /// </summary>
-        [JsonProperty("open")]
+        [JsonPropertyName("open")]
         public override decimal Open { get; set; }
 
         /// <summary>
         /// The actual (not adjusted) high price of the asset on the specific date
         /// </summary>
-        [JsonProperty("high")]
+        [JsonPropertyName("high")]
         public override decimal High { get; set; }
 
         /// <summary>
         /// The actual (not adjusted) low price of the asset on the specific date
         /// </summary>
-        [JsonProperty("low")]
+        [JsonPropertyName("low")]
         public override decimal Low { get; set; }
 
         /// <summary>
         /// The actual (not adjusted) closing price of the asset on the specific date
         /// </summary>
-        [JsonProperty("close")]
+        [JsonPropertyName("close")]
         public override decimal Close { get; set; }
 
         /// <summary>
         /// The actual (not adjusted) number of shares traded during the day
         /// </summary>
-        [JsonProperty("volume")]
+        [JsonPropertyName("volume")]
         public override decimal Volume { get; set; }
 
         /// <summary>
         /// The adjusted opening price of the asset on the specific date. Returns null if not available.
         /// </summary>
-        [JsonProperty("adjOpen")]
+        [JsonPropertyName("adjOpen")]
         public decimal AdjustedOpen { get; set; }
 
         /// <summary>
         /// The adjusted high price of the asset on the specific date. Returns null if not available.
         /// </summary>
-        [JsonProperty("adjHigh")]
+        [JsonPropertyName("adjHigh")]
         public decimal AdjustedHigh { get; set; }
 
         /// <summary>
         /// The adjusted low price of the asset on the specific date. Returns null if not available.
         /// </summary>
-        [JsonProperty("adjLow")]
+        [JsonPropertyName("adjLow")]
         public decimal AdjustedLow { get; set; }
 
         /// <summary>
         /// The adjusted close price of the asset on the specific date. Returns null if not available.
         /// </summary>
-        [JsonProperty("adjClose")]
+        [JsonPropertyName("adjClose")]
         public decimal AdjustedClose { get; set; }
 
         /// <summary>
         /// The adjusted number of shares traded during the day - adjusted for splits. Returns null if not available
         /// </summary>
-        [JsonProperty("adjVolume")]
+        [JsonPropertyName("adjVolume")]
         public long AdjustedVolume { get; set; }
 
         /// <summary>
         /// The dividend paid out on "date" (note that "date" will be the "exDate" for the dividend)
         /// </summary>
-        [JsonProperty("divCash")]
+        [JsonPropertyName("divCash")]
         public decimal Dividend { get; set; }
 
         /// <summary>
         /// A factor used when a company splits or reverse splits. On days where there is ONLY a split (no dividend payment),
         /// you can calculate the adjusted close as follows: adjClose = "Previous Close"/splitFactor
         /// </summary>
-        [JsonProperty("splitFactor")]
+        [JsonPropertyName("splitFactor")]
         public decimal SplitFactor { get; set; }
 
         /// <summary>

@@ -14,6 +14,7 @@
 */
 
 using ProtoBuf;
+using System.Text.Json.Serialization;
 
 namespace QuantConnect.Securities
 {
@@ -40,6 +41,7 @@ namespace QuantConnect.Securities
         /// </summary>
         /// <param name="amount">The amount</param>
         /// <param name="currency">The currency</param>
+        [JsonConstructor]
         public CashAmount(decimal amount, string currency)
         {
             Amount = amount;

@@ -37,7 +37,7 @@ namespace QuantConnect.Util
         /// </summary>
         public override bool CanConvert(Type objectType)
         {
-            return objectType == typeof(decimal) || objectType == typeof(double);
+            return objectType == typeof(decimal) || objectType == typeof(double) || objectType == typeof(int);
         }
 
         /// <summary>
@@ -45,7 +45,24 @@ namespace QuantConnect.Util
         /// </summary>
         public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
         {
+            if (typeToConvert == typeof(int))
+            {
+                return new Int32Converter();
+            }
             return typeToConvert == typeof(double) ? new DoubleConverter() : new DecimalConverter();
+        }
+
+        private sealed class Int32Converter : JsonConverter<int>
+        {
+            public override int Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            {
+                return JsonSerializer.Deserialize<int>(ref reader, options);
+            }
+
+            public override void Write(Utf8JsonWriter writer, int value, JsonSerializerOptions options)
+            {
+                writer.WriteStringValue(value.ToString(CultureInfo.InvariantCulture));
+            }
         }
 
         private sealed class DecimalConverter : JsonConverter<decimal>

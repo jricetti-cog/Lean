@@ -14,7 +14,7 @@
  *
 */
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuantConnect.Logging;
 using QuantConnect.Orders;
 using QuantConnect.Securities;
@@ -125,7 +125,7 @@ namespace QuantConnect.Packets
         /// <summary>
         /// Holdings dictionary of algorithm holdings information
         /// </summary>
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, Holding> Holdings { get; set; }
 
         /// <summary>
@@ -151,19 +151,19 @@ namespace QuantConnect.Packets
         /// <summary>
         /// Cash for the algorithm's live results.
         /// </summary>
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public Dictionary<string, Cash> Cash { get; set; }
 
         /// <summary>
         /// The algorithm's account currency
         /// </summary>
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string AccountCurrency { get; set; }
 
         /// <summary>
         /// The algorithm's account currency
         /// </summary>
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string AccountCurrencySymbol { get; set; }
 
         /// <summary>

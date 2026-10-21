@@ -193,10 +193,13 @@ namespace QuantConnect
             options.Converters.Add(new LeanBooleanConverter());
             options.Converters.Add(new LeanDateTimeConverter());
             options.Converters.Add(new LeanDateTimeOffsetConverter());
+            options.Converters.Add(new LeanTimeSpanConverter());
+            options.Converters.Add(new LeanRegexConverter());
             options.Converters.Add(new LeanObjectConverter(floatAsDecimal));
             options.Converters.Add(new LeanEnumConverter());
             options.Converters.Add(new Orders.OrderJsonConverter());
             options.Converters.Add(new InheritedJsonConverterFactory());
+            options.Converters.Add(new ConstructorBindingJsonConverterFactory());
         }
     }
 }

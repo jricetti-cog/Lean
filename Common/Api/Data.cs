@@ -15,6 +15,7 @@
 
 using System.Linq;
 using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
@@ -90,6 +91,7 @@ namespace QuantConnect.Api
     /// <summary>
     /// Prices entry for Data/Prices response
     /// </summary>
+    [JsonConverter(typeof(CaseSensitiveJsonConverter<PriceEntry>))]
     public class PriceEntry
     {
         private Regex _regex;

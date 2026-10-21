@@ -117,12 +117,12 @@ namespace QuantConnect.Util.Json
             var hasParameterlessConstructor = type.IsValueType || type.GetConstructor(InstanceMembers, null, Type.EmptyTypes, null) != null;
             foreach (var member in GetMembersInNewtonsoftOrder(type))
             {
-                var ignore = member.GetCustomAttribute<JsonIgnoreAttribute>();
+                var ignore = GetMemberAttribute<JsonIgnoreAttribute>(member);
                 if (ignore != null && ignore.Condition == JsonIgnoreCondition.Always)
                 {
                     continue;
                 }
-                var attributeName = member.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name;
+                var attributeName = GetMemberAttribute<JsonPropertyNameAttribute>(member)?.Name;
                 var attributed = attributeName != null || member.IsDefined(typeof(JsonIncludeAttribute));
                 var memberType = member is FieldInfo field ? field.FieldType : ((PropertyInfo)member).PropertyType;
                 if (!attributed && !IsPublic(member) || memberType.IsByRefLike || memberType.IsPointer || memberType.IsByRef)
@@ -144,7 +144,7 @@ namespace QuantConnect.Util.Json
                 {
                     property = info.CreateJsonPropertyInfo(memberType, name);
                     property.AttributeProvider = member;
-                    var converter = member.GetCustomAttribute<JsonConverterAttribute>();
+                    var converter = GetMemberAttribute<JsonConverterAttribute>(member);
                     if (converter != null)
                     {
                         property.CustomConverter = converter.CreateConverter(memberType) ?? (JsonConverter)Activator.CreateInstance(converter.ConverterType);
@@ -157,7 +157,7 @@ namespace QuantConnect.Util.Json
                 property.Name = name;
                 property.Order = order++;
 
-                if (property.Get == null && (member is FieldInfo || attributed))
+                if (property.Get == null && (member is FieldInfo || member is PropertyInfo { GetMethod: { } getter } && (attributed || getter.IsPublic)))
                 {
                     property.Get = CreateGetter(member);
                 }
@@ -175,6 +175,8 @@ namespace QuantConnect.Util.Json
                 if (property.Set == null && property.Get != null && hasParameterlessConstructor && property.CustomConverter == null && CanPopulate(memberType))
                 {
                     property.ObjectCreationHandling = JsonObjectCreationHandling.Populate;
+                    // newtonsoft skipped null values for read only members, STJ throws without a setter
+                    property.Set = (_, _) => { };
                 }
                 result.Add(property);
             }
@@ -201,6 +203,17 @@ namespace QuantConnect.Util.Json
             var publicConstructors = constructors.Where(x => x.IsPublic).ToList();
             if (publicConstructors.Count == 1 && publicConstructors[0].GetParameters().Length > 0)
             {
+                // newtonsoft passed default values for constructor parameters without a matching member, STJ throws instead
+                var parameters = publicConstructors[0].GetParameters();
+                var unbound = parameters.Where(p => !info.Properties.Any(x => string.Equals(x.Name, p.Name, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals((x.AttributeProvider as MemberInfo)?.Name, p.Name, StringComparison.OrdinalIgnoreCase))).ToList();
+                if (unbound.Count == 0 || unbound.Count != parameters.Length)
+                {
+                    return;
+                }
+                var constructor = publicConstructors[0];
+                var defaults = parameters.Select(p => p.ParameterType.IsValueType ? Activator.CreateInstance(p.ParameterType) : null).ToArray();
+                info.CreateObject = () => constructor.Invoke(defaults);
                 return;
             }
             var creator = CreateConstructorDelegate(type);
@@ -319,6 +332,27 @@ namespace QuantConnect.Util.Json
             var name = type.Assembly.GetName().Name;
             return name == null || name.StartsWith("System", StringComparison.Ordinal) || name.StartsWith("Microsoft", StringComparison.Ordinal)
                 || name == "mscorlib" || name == "netstandard";
+        }
+
+        /// <summary>
+        /// Gets the member attribute, falling back to the implemented interface property like Newtonsoft.Json did
+        /// </summary>
+        private static T GetMemberAttribute<T>(MemberInfo member) where T : Attribute
+        {
+            var attribute = member.GetCustomAttribute<T>();
+            if (attribute != null || member is not PropertyInfo property)
+            {
+                return attribute;
+            }
+            foreach (var interfaceType in property.DeclaringType.GetInterfaces())
+            {
+                attribute = interfaceType.GetProperty(property.Name)?.GetCustomAttribute<T>();
+                if (attribute != null)
+                {
+                    return attribute;
+                }
+            }
+            return null;
         }
 
         private static Func<object> CreateConstructorDelegate(Type type)

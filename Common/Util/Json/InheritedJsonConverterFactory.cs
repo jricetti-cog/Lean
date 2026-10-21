@@ -79,15 +79,24 @@ namespace QuantConnect.Util.Json
                 _converter = converter;
             }
 
-            public override bool HandleNull => _converter.HandleNull;
+            public override bool HandleNull => true;
 
             public override TDerived Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
             {
+                if (reader.TokenType == JsonTokenType.Null && !_converter.HandleNull)
+                {
+                    return default;
+                }
                 return (TDerived)_converter.Read(ref reader, typeToConvert, options);
             }
 
             public override void Write(Utf8JsonWriter writer, TDerived value, JsonSerializerOptions options)
             {
+                if (value == null && !_converter.HandleNull)
+                {
+                    writer.WriteNullValue();
+                    return;
+                }
                 _converter.Write(writer, value, options);
             }
         }

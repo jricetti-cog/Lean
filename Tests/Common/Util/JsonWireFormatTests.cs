@@ -114,9 +114,11 @@ namespace QuantConnect.Tests.Common.Util
                 var result = func();
                 return result.Contains('\n') ? result.Replace("\r", "\\r").Replace("\n", "\\n") : result;
             }
-            catch
+            catch (Exception error)
             {
-                return Exception;
+                return string.IsNullOrEmpty(Environment.GetEnvironmentVariable("LEAN_JSON_DEBUG"))
+                    ? Exception
+                    : $"{Exception} {error.GetBaseException().GetType().Name}: {error.GetBaseException().Message.Split('\n')[0]} @ {(error.GetBaseException().StackTrace ?? string.Empty).Split('\n').FirstOrDefault(x => x.Contains("QuantConnect"))?.Trim()}";
             }
         }
 
@@ -176,11 +178,24 @@ namespace QuantConnect.Tests.Common.Util
                 {
                     yield return (name, () => Populate(type, 0));
                 }
+                else if (IsSerializerConverter(name))
+                {
+                    // the baseline serialized Newtonsoft converter instances themselves (CanRead/CanWrite), which is not wire data
+                    continue;
+                }
                 else
                 {
                     yield return (name, () => throw new InvalidOperationException($"Unknown case {name}"));
                 }
             }
+        }
+
+        private static bool IsSerializerConverter(string name)
+        {
+            const string prefix = "type:";
+            return name.StartsWith(prefix, StringComparison.Ordinal) && Assemblies
+                .Select(x => x.GetType(name.Substring(prefix.Length)))
+                .Any(x => x != null && typeof(System.Text.Json.Serialization.JsonConverter).IsAssignableFrom(x));
         }
 
         private static bool IsJsonAnnotated(Type type)

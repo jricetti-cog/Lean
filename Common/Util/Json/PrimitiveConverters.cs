@@ -15,6 +15,7 @@
 
 using System;
 using System.Globalization;
+using System.Text.RegularExpressions;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -239,6 +240,55 @@ namespace QuantConnect.Util.Json
     }
 
     /// <summary>
+    /// Serializes <see cref="Regex"/> as an object with its pattern and options, like Newtonsoft.Json's RegexConverter
+    /// </summary>
+    public sealed class LeanRegexConverter : JsonConverter<Regex>
+    {
+        /// <summary>Reads a regex</summary>
+        public override Regex Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType == JsonTokenType.String)
+            {
+                return new Regex(reader.GetString());
+            }
+            if (reader.TokenType != JsonTokenType.StartObject)
+            {
+                throw new JsonException($"Unexpected token {reader.TokenType} when reading Regex.");
+            }
+            string pattern = null;
+            var regexOptions = RegexOptions.None;
+            while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
+            {
+                var name = reader.GetString();
+                reader.Read();
+                if (string.Equals(name, "Pattern", StringComparison.OrdinalIgnoreCase))
+                {
+                    pattern = reader.GetString();
+                }
+                else if (string.Equals(name, "Options", StringComparison.OrdinalIgnoreCase))
+                {
+                    regexOptions = JsonSerializer.Deserialize<RegexOptions>(ref reader, options);
+                }
+                else
+                {
+                    reader.Skip();
+                }
+            }
+            return pattern == null ? null : new Regex(pattern, regexOptions);
+        }
+
+        /// <summary>Writes a regex</summary>
+        public override void Write(Utf8JsonWriter writer, Regex value, JsonSerializerOptions options)
+        {
+            var policy = options.PropertyNamingPolicy;
+            writer.WriteStartObject();
+            writer.WriteString(policy?.ConvertName("Pattern") ?? "Pattern", value.ToString());
+            writer.WriteNumber(policy?.ConvertName("Options") ?? "Options", (int)value.Options);
+            writer.WriteEndObject();
+        }
+    }
+
+    /// <summary>
     /// Writes dates in the ISO format Newtonsoft.Json used and reads them leniently
     /// </summary>
     public sealed class LeanDateTimeConverter : JsonConverter<DateTime>
@@ -255,7 +305,7 @@ namespace QuantConnect.Util.Json
             {
                 throw new JsonException($"Unexpected token {reader.TokenType} when parsing date.");
             }
-            return reader.TryGetDateTime(out var value) ? value : Parse(reader.GetString());
+            return Parse(reader.GetString());
         }
 
         /// <summary>Writes a date</summary>
@@ -269,7 +319,7 @@ namespace QuantConnect.Util.Json
         /// <summary>Reads a dictionary key</summary>
         public override DateTime ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            return reader.TryGetDateTime(out var value) ? value : Parse(reader.GetString());
+            return Parse(reader.GetString());
         }
 
         /// <summary>Writes a dictionary key</summary>
@@ -309,6 +359,32 @@ namespace QuantConnect.Util.Json
             Span<char> buffer = stackalloc char[40];
             value.TryFormat(buffer, out var written, Format, CultureInfo.InvariantCulture);
             writer.WriteStringValue(buffer.Slice(0, written));
+        }
+    }
+
+    /// <summary>
+    /// Reads time spans the way Newtonsoft.Json did, using <see cref="TimeSpan.Parse(string, IFormatProvider)"/>
+    /// </summary>
+    public sealed class LeanTimeSpanConverter : JsonConverter<TimeSpan>
+    {
+        /// <summary>
+        /// Reads the time span
+        /// </summary>
+        public override TimeSpan Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType != JsonTokenType.String)
+            {
+                throw new JsonException($"Unexpected token {reader.TokenType} when parsing a time span.");
+            }
+            return TimeSpan.Parse(reader.GetString(), CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>
+        /// Writes the time span using the constant format
+        /// </summary>
+        public override void Write(Utf8JsonWriter writer, TimeSpan value, JsonSerializerOptions options)
+        {
+            writer.WriteStringValue(value.ToString("c", CultureInfo.InvariantCulture));
         }
     }
 
