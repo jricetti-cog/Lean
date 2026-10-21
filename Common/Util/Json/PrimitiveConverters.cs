@@ -168,16 +168,12 @@ namespace QuantConnect.Util.Json
                 case JsonTokenType.PropertyName:
                     return reader.GetString();
                 case JsonTokenType.Number:
-                    var raw = NumberFormatting.GetRawText(ref reader);
-                    if (raw.AsSpan().IndexOfAny('.', 'e', 'E') >= 0)
-                    {
-                        return reader.GetDouble().ToString(CultureInfo.InvariantCulture);
-                    }
-                    return raw;
+                    // like newtonsoft's JsonReader.ReadAsString, the value is kept as written
+                    return NumberFormatting.GetRawText(ref reader);
                 case JsonTokenType.True:
-                    return bool.TrueString;
+                    return "true";
                 case JsonTokenType.False:
-                    return bool.FalseString;
+                    return "false";
                 default:
                     throw new JsonException($"Unexpected token {reader.TokenType} when parsing string.");
             }

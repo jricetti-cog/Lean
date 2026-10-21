@@ -14,7 +14,7 @@
 */
 
 using System.Drawing;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using NUnit.Framework;
 using QuantConnect.Util;
 

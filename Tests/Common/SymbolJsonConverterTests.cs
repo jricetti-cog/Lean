@@ -18,6 +18,7 @@ using System;
 using System.Text.Json;
 using System.Linq;
 using NUnit.Framework;
+using QuantConnect.Util.Json;
 using QuantConnect.Data;
 using QuantConnect.Data.Market;
 using System.Collections.Generic;
@@ -28,6 +29,7 @@ namespace QuantConnect.Tests.Common
     public class SymbolJsonConverterTests
     {
         private JsonSerializerOptions Settings = JsonSerialization.Create();
+        private static readonly JsonSerializerOptions BaseDataSettings = JsonSerialization.Create(converters: new TypeNameHandlingJsonConverter(typeof(BaseData)));
 
         [Test]
         public void SurvivesRoundtripSerialization()
@@ -100,7 +102,7 @@ namespace QuantConnect.Tests.Common
 
             var expected = new Symbol(SecurityIdentifier.GenerateForex("EURGBP", Market.FXCM), "EURGBP");
             var settings = Settings;
-            var actual = JsonSerialization.Deserialize<List<BaseData>>(json, settings);
+            var actual = (List<BaseData>)TypeNameHandlingJsonConverter.Deserialize(json, typeof(BaseData), BaseDataSettings);
             Assert.AreEqual(expected, actual[0].Symbol);
         }
 
@@ -127,7 +129,7 @@ namespace QuantConnect.Tests.Common
 
                     "]}";
 
-            var actual = JsonSerialization.Deserialize<List<BaseData>>(json, Settings);
+            var actual = (List<BaseData>)TypeNameHandlingJsonConverter.Deserialize(json, typeof(BaseData), BaseDataSettings);
             Assert.IsFalse(actual.All(x => x.Symbol == new Symbol(SecurityIdentifier.GenerateForex("EURUSD", Market.FXCM), "EURUSD")));
         }
 

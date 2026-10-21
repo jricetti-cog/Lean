@@ -275,6 +275,7 @@ namespace QuantConnect
             options.Converters.Add(new LeanDateTimeConverter());
             options.Converters.Add(new LeanDateTimeOffsetConverter());
             options.Converters.Add(new LeanTimeSpanConverter());
+            options.Converters.Add(new CommandJsonConverterFactory());
             options.Converters.Add(new LeanRegexConverter());
             options.Converters.Add(new LeanObjectConverter(floatAsDecimal));
             options.Converters.Add(new LeanEnumConverter());

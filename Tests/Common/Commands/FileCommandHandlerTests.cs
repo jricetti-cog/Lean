@@ -17,6 +17,7 @@ using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using QuantConnect.Commands;
+using QuantConnect.Util.Json;
 using QuantConnect.Interfaces;
 using System.Collections.Generic;
 using System.Globalization;
@@ -27,6 +28,7 @@ namespace QuantConnect.Tests.Common.Commands
     public class FileCommandHandlerTests
     {
         // NOTE: command file name should follow the file pattern "command*.json"
+        private static readonly System.Text.Json.JsonSerializerOptions TypeNameSettings = JsonSerialization.Create(converters: new TypeNameHandlingJsonConverter(typeof(ICommand)));
         private const string SingleCommandFilePath = "command.json";
         private const string MultiCommandFilePath = "commands.json";
 
@@ -41,7 +43,7 @@ namespace QuantConnect.Tests.Common.Commands
                 Ticker = "aapl",
                 SecurityType = SecurityType.Equity,
                 Market = Market.USA
-            }, JsonSerialization.Create()));
+            }, TypeNameSettings));
             Assert.IsInstanceOf(typeof(LiquidateCommand), queue.GetCommandsPublic().Single());
         }
 
@@ -58,7 +60,7 @@ namespace QuantConnect.Tests.Common.Commands
                     OrderId = 2342
                 },
                 new SpecialCommand()
-            }, JsonSerialization.Create()));
+            }, TypeNameSettings));
             var list = queue.GetCommandsPublic().ToList();
             Assert.IsInstanceOf(typeof(CancelOrderCommand), list[0]);
             Assert.IsInstanceOf(typeof(SpecialCommand), list[1]);
@@ -83,7 +85,7 @@ namespace QuantConnect.Tests.Common.Commands
             foreach (var command in commands)
             {
                 var fileName = $"{baseName}-{++fileSerialNumber}.json";
-                File.WriteAllText(fileName, JsonSerialization.Serialize(command, JsonSerialization.Create()));
+                File.WriteAllText(fileName, JsonSerialization.Serialize(command, TypeNameSettings));
             }
             var list = queue.GetCommandsPublic().ToList();
             Assert.AreEqual(commands.Count, list.Count);

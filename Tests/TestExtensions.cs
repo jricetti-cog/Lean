@@ -14,7 +14,7 @@
 */
 
 using System.Threading;
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 using NUnit.Framework;
 
 namespace QuantConnect.Tests
@@ -43,16 +43,16 @@ namespace QuantConnect.Tests
         }
 
         /// <summary>
-        /// Asserts that the two JObject instances are equal. This uses <see cref="JToken.DeepEquals"/> wrapped w/ better failure messages
+        /// Asserts that the two JsonObject instances are equal. This uses <see cref="JsonNode.DeepEquals"/> wrapped w/ better failure messages
         /// </summary>
         /// <param name="expected">The expected value</param>
         /// <param name="actual">The actual value</param>
         /// <param name="property">The property to assert</param>
-        public static void IsEqualTo(this JObject expected, JObject actual, string property)
+        public static void IsEqualTo(this JsonObject expected, JsonObject actual, string property)
         {
-            var e = expected.SelectToken(property);
-            var a = actual.SelectToken(property);
-            Assert.IsTrue(JToken.DeepEquals(e, a), $"{property}: Expected {e}. Actual {a}");
+            var e = expected[property];
+            var a = actual[property];
+            Assert.IsTrue(JsonNode.DeepEquals(e, a), $"{property}: Expected {e}. Actual {a}");
         }
     }
 }

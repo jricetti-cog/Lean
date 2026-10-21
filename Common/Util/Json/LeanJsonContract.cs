@@ -239,6 +239,11 @@ namespace QuantConnect.Util.Json
             var polymorphism = new JsonPolymorphismOptions { UnknownDerivedTypeHandling = JsonUnknownDerivedTypeHandling.FallBackToBaseType };
             foreach (var derivedType in derivedTypes)
             {
+                if (derivedType.IsAbstract || derivedType.IsInterface || derivedType.ContainsGenericParameters)
+                {
+                    // STJ only accepts concrete derived types, newtonsoft resolved the runtime type which can never be abstract
+                    continue;
+                }
                 polymorphism.DerivedTypes.Add(new JsonDerivedType(derivedType));
             }
             info.PolymorphismOptions = polymorphism;

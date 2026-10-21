@@ -18,13 +18,14 @@ using System;
 using System.Text.Json;
 using NUnit.Framework;
 using QuantConnect.Data.Market;
+using QuantConnect.Util.Json;
 
 namespace QuantConnect.Tests.Common.Data.Auxiliary
 {
     [TestFixture]
     public class AuxiliaryDataSerializationTests
     {
-        private readonly JsonSerializerOptions _settings = JsonSerialization.Create();
+        private readonly JsonSerializerOptions _settings = JsonSerialization.Create(converters: new TypeNameHandlingJsonConverter(typeof(QuantConnect.Data.BaseData)));
 
         [Test]
         public void DeserializesSplitWarning()

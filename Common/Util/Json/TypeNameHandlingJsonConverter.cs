@@ -65,7 +65,7 @@ namespace QuantConnect.Util.Json
         {
             if (_baseType != null)
             {
-                return _baseType.IsAssignableFrom(typeToConvert);
+                return _baseType.IsAssignableFrom(typeToConvert) || IsBaseTypeCollection(typeToConvert);
             }
             return (typeToConvert.IsClass || typeToConvert.IsInterface) && typeToConvert != typeof(string)
                 && !typeof(IEnumerable).IsAssignableFrom(typeToConvert);
@@ -76,7 +76,27 @@ namespace QuantConnect.Util.Json
         /// </summary>
         public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
         {
+            if (_baseType != null && !_baseType.IsAssignableFrom(typeToConvert))
+            {
+                return (JsonConverter)Activator.CreateInstance(typeof(CollectionConverter<>).MakeGenericType(typeToConvert));
+            }
             return (JsonConverter)Activator.CreateInstance(typeof(Converter<>).MakeGenericType(typeToConvert));
+        }
+
+        private bool IsBaseTypeCollection(Type type)
+        {
+            if (type == typeof(string) || type.IsAbstract || type.IsInterface)
+            {
+                return false;
+            }
+            var elementType = GetElementType(type);
+            return elementType != null && _baseType.IsAssignableFrom(elementType);
+        }
+
+        private static Type GetElementType(Type type)
+        {
+            return type?.GetInterfaces().Concat(new[] { type })
+                .FirstOrDefault(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IEnumerable<>))?.GetGenericArguments()[0];
         }
 
         /// <summary>
@@ -209,6 +229,31 @@ namespace QuantConnect.Util.Json
                 }
             }
             return copy.Deserialize(LeanJsonContract.GetDefaultTypeInfo(type, options));
+        }
+
+        /// <summary>
+        /// Newtonsoft's TypeNameHandling.All wrapped collections as {"$type": collection type, "$values": [...]}
+        /// </summary>
+        private class CollectionConverter<T> : JsonConverter<T>
+        {
+            public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            {
+                var node = JsonNode.Parse(ref reader);
+                if (node is JsonObject jObject && jObject.TryGetPropertyValue(ValuesProperty, out var values))
+                {
+                    node = values;
+                }
+                return node == null ? default : (T)node.Deserialize(LeanJsonContract.GetDefaultTypeInfo(typeToConvert, options));
+            }
+
+            public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
+            {
+                writer.WriteStartObject();
+                writer.WriteString(TypeProperty, GetTypeName(value.GetType()));
+                writer.WritePropertyName(ValuesProperty);
+                JsonSerializer.Serialize(writer, value, LeanJsonContract.GetDefaultTypeInfo(value.GetType(), options));
+                writer.WriteEndObject();
+            }
         }
 
         private class Converter<T> : JsonConverter<T>
