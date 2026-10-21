@@ -14,6 +14,7 @@
 */
 
 using Newtonsoft.Json;
+using System.Text.Json;
 using NUnit.Framework;
 using QuantConnect.Orders;
 using System;
@@ -25,12 +26,12 @@ namespace QuantConnect.Tests.Common.Orders
     [TestFixture]
     public class ReadOrdersResponseJsonConverterTests
     {
-        private JsonSerializerSettings _jsonSettings = new() { Converters = { new ReadOrdersResponseJsonConverter()} };
+        private JsonSerializerOptions _jsonSettings = JsonSerialization.Create(converters: new System.Text.Json.Serialization.JsonConverter[] { new ReadOrdersResponseJsonConverter() });
 
         [TestCaseSource(nameof(DeserializeOrdersTests))]
         public void DeserializesCamelAndCapitalCaseOrders(string json, OrderType expectedType, string id, SecurityType securityType)
         {
-            var apiOrderResponse = JsonConvert.DeserializeObject<ApiOrderResponse>(json, _jsonSettings);
+            var apiOrderResponse = JsonSerialization.Deserialize<ApiOrderResponse>(json, _jsonSettings);
             var order = apiOrderResponse.Order;
             var actualType = order.Type;
             Assert.AreEqual(expectedType, actualType);
@@ -110,9 +111,9 @@ namespace QuantConnect.Tests.Common.Orders
         [TestCaseSource(nameof(SerializeOrdersTests))]
         public void SerializesCamelAndCapitalCaseOrders(string json)
         {
-            var order = JsonConvert.DeserializeObject<ApiOrderResponse>(json, _jsonSettings);
+            var order = JsonSerialization.Deserialize<ApiOrderResponse>(json, _jsonSettings);
 
-            var serializedOrder = JsonConvert.SerializeObject(order, _jsonSettings);
+            var serializedOrder = JsonSerialization.Serialize(order, _jsonSettings);
             var jsonFormat = json.Replace("\r\n            ", "").Replace(": ", ":").Replace("    ", "").Replace("\r\n", "").Replace("\t", "").Replace("\n", "");
             if (order.Order.Type == OrderType.ComboMarket || order.Order.Type == OrderType.ComboLimit || order.Order.Type == OrderType.ComboLegLimit)
             {

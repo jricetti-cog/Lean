@@ -14,11 +14,9 @@
 */
 
 using System;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
+using System.Text.Json;
 using QuantConnect.Api;
 using QuantConnect.Orders;
-using QuantConnect.Packets;
 
 namespace QuantConnect.Tests.Common.Util
 {
@@ -27,32 +25,23 @@ namespace QuantConnect.Tests.Common.Util
     /// </summary>
     public static class JsonWireFormat
     {
-        private static readonly JsonSerializerSettings CamelCaseSettings = new()
-        {
-            Converters = { new LiveAlgorithmResultsJsonConverter(), new OrderJsonConverter() },
-            ContractResolver = new DefaultContractResolver
-            {
-                NamingStrategy = new CamelCaseNamingStrategy
-                {
-                    ProcessDictionaryKeys = false,
-                    OverrideSpecifiedNames = true
-                }
-            }
-        };
+        private static readonly JsonSerializerOptions CamelCaseOptions = JsonSerialization.Create(camelCase: true,
+            converters: new System.Text.Json.Serialization.JsonConverter[] { new LiveAlgorithmResultsJsonConverter(), new OrderJsonConverter() });
 
-        private static readonly JsonSerializerSettings DefaultSettings = new()
-        {
-            Converters = { new OrderJsonConverter() }
-        };
-
+        /// <summary>
+        /// Serializes the value the way LEAN does
+        /// </summary>
         public static string Serialize(object value, bool camelCase)
         {
-            return JsonConvert.SerializeObject(value, camelCase ? CamelCaseSettings : null);
+            return JsonSerialization.Serialize(value, camelCase ? CamelCaseOptions : JsonSerialization.Default);
         }
 
+        /// <summary>
+        /// Deserializes the json the way LEAN does
+        /// </summary>
         public static object Deserialize(string json, Type type)
         {
-            return JsonConvert.DeserializeObject(json, type, DefaultSettings);
+            return JsonSerialization.Deserialize(json, type);
         }
     }
 }

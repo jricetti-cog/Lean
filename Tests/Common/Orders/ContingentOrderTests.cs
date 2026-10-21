@@ -264,8 +264,8 @@ namespace QuantConnect.Tests.Common.Orders
             child.TriggeredTime = Time.AddMinutes(1);
             child.Triggered = true;
 
-            var json = JsonConvert.SerializeObject(takeProfit);
-            var deserialized = JsonConvert.DeserializeObject<Order>(json, new OrderJsonConverter());
+            var json = JsonSerialization.Serialize(takeProfit);
+            var deserialized = JsonSerialization.Deserialize<Order>(json, JsonSerialization.Create(converters: new System.Text.Json.Serialization.JsonConverter[] { new OrderJsonConverter() }));
 
             Assert.AreEqual(OrderType.Limit, deserialized.Type);
             Assert.AreEqual(takeProfit.Contingency.Id, deserialized.Contingency.Id);
@@ -285,18 +285,18 @@ namespace QuantConnect.Tests.Common.Orders
             Assert.IsNull(deserializedMember.TriggeredTime);
 
             // held orders don't serialize the trigger state
-            var stopLossJson = JsonConvert.SerializeObject(bracket[2]);
+            var stopLossJson = JsonSerialization.Serialize(bracket[2]);
             StringAssert.DoesNotContain("triggered", stopLossJson);
-            Assert.IsTrue(JsonConvert.DeserializeObject<Order>(stopLossJson, new OrderJsonConverter()).IsWaitingForTrigger());
+            Assert.IsTrue(JsonSerialization.Deserialize<Order>(stopLossJson, JsonSerialization.Create(converters: new System.Text.Json.Serialization.JsonConverter[] { new OrderJsonConverter() })).IsWaitingForTrigger());
         }
 
         [Test]
         public void NonContingentOrdersDoNotSerializeTheContingency()
         {
-            var json = JsonConvert.SerializeObject(new LimitOrder(Symbols.SPY, 10, 100, Time) { Id = 1 });
+            var json = JsonSerialization.Serialize(new LimitOrder(Symbols.SPY, 10, 100, Time) { Id = 1 });
 
             StringAssert.DoesNotContain("contingency", json);
-            var deserialized = JsonConvert.DeserializeObject<Order>(json, new OrderJsonConverter());
+            var deserialized = JsonSerialization.Deserialize<Order>(json, JsonSerialization.Create(converters: new System.Text.Json.Serialization.JsonConverter[] { new OrderJsonConverter() }));
             Assert.IsNull(deserialized.Contingency);
         }
 
@@ -315,7 +315,7 @@ namespace QuantConnect.Tests.Common.Orders
             var json = @"{'Type':1,'LimitPrice':100,'Id':8,'Symbol':{'Value':'SPY','ID':'SPY R735QTJ8XC9X','Permtick':'SPY'},'Price':0,
 'Time':'2024-01-02T15:00:00Z','Quantity':10,'Status':1,'BrokerId':[],'SecurityType':1," + contingency + "}";
 
-            var order = JsonConvert.DeserializeObject<Order>(json.Replace('\'', '"'), new OrderJsonConverter());
+            var order = JsonSerialization.Deserialize<Order>(json.Replace('\'', '"'), JsonSerialization.Create(converters: new System.Text.Json.Serialization.JsonConverter[] { new OrderJsonConverter() }));
 
             Assert.AreEqual(8, order.Id);
             Assert.AreEqual(expectedContingent, order.IsContingent());
@@ -338,7 +338,7 @@ namespace QuantConnect.Tests.Common.Orders
 'time':'2024-01-02T15:00:00Z','quantity':10,'status':1,'brokerId':[],'securityType':1,
 'contingency':{'id':4,'count':2,'orderIds':[8,9],'links':[{'id':1,'type':0,'role':1}, 5, {'id':2,'type':1,'role':1,'triggered':true}]}}";
 
-            var order = JsonConvert.DeserializeObject<Order>(json.Replace('\'', '"'), new OrderJsonConverter());
+            var order = JsonSerialization.Deserialize<Order>(json.Replace('\'', '"'), JsonSerialization.Create(converters: new System.Text.Json.Serialization.JsonConverter[] { new OrderJsonConverter() }));
 
             var link = order.Contingency.Links.Single();
             Assert.AreEqual(2, link.Id);
@@ -349,9 +349,9 @@ namespace QuantConnect.Tests.Common.Orders
         [Test]
         public void ContingencyDeserializesOnItsOwn()
         {
-            var json = JsonConvert.SerializeObject(CreateBracket()[1].Contingency);
+            var json = JsonSerialization.Serialize(CreateBracket()[1].Contingency);
 
-            var contingency = JsonConvert.DeserializeObject<OrderContingency>(json);
+            var contingency = JsonSerialization.Deserialize<OrderContingency>(json);
 
             Assert.AreEqual(1, contingency.Id);
             Assert.AreEqual(3, contingency.Count);

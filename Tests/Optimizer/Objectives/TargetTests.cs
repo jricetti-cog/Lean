@@ -14,11 +14,10 @@
  *
 */
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using QuantConnect.Optimizer.Objectives;
 using System;
+using QuantConnect.Util.Json;
 
 namespace QuantConnect.Tests.Optimizer.Objectives
 {
@@ -111,7 +110,7 @@ namespace QuantConnect.Tests.Optimizer.Objectives
         {
             var json = $"{{\"extremum\": \"max\",\"target\": \"pin ocho.Gepetto\",\"targetValue\": {value}}}";
 
-            var target = (Target)JsonConvert.DeserializeObject(json, typeof(Target));
+            var target = (Target)JsonSerialization.Deserialize(json, typeof(Target));
 
             Assert.AreEqual("['pin ocho'].['Gepetto']", target.Target);
             Assert.AreEqual(typeof(Maximization), target.Extremum.GetType());
@@ -131,8 +130,8 @@ namespace QuantConnect.Tests.Optimizer.Objectives
         {
             var origin = new Target("['Statistics'].['Drawdown']", new Maximization(), 100);
 
-            var json = JsonConvert.SerializeObject(origin);
-            var actual = JsonConvert.DeserializeObject<Target>(json);
+            var json = JsonSerialization.Serialize(origin);
+            var actual = JsonSerialization.Deserialize<Target>(json);
 
             Assert.NotNull(actual);
             Assert.AreEqual(origin.Target, actual.Target);
