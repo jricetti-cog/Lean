@@ -13,7 +13,7 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace QuantConnect.Optimizer.Strategies
 {
@@ -25,7 +25,7 @@ namespace QuantConnect.Optimizer.Strategies
         /// <summary>
         /// Defines the default number of segments for the next step
         /// </summary>
-        [JsonProperty("default-segment-amount")]
+        [JsonPropertyName("default-segment-amount")]
         public int DefaultSegmentAmount { get; set; }
     }
 }

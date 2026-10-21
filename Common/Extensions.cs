@@ -104,7 +104,7 @@ namespace QuantConnect
         /// <summary>
         /// Json converter deserializer for streams
         /// </summary>
-        private static readonly JsonSerializerOptions CamelCaseJsonOptions = JsonSerialization.Create(camelCase: true, converters: new JsonConverter[] { new LiveAlgorithmResultsJsonConverter(), new OrderJsonConverter() });
+        private static readonly JsonSerializerOptions CamelCaseJsonOptions = JsonSerialization.Create(camelCase: true, converters: new System.Text.Json.Serialization.JsonConverter[] { new LiveAlgorithmResultsJsonConverter(), new OrderJsonConverter() });
 
         /// <summary>
         /// The offset span from the market close to liquidate or exercise a security on the delisting date
