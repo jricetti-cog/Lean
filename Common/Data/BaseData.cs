@@ -20,7 +20,6 @@ using NodaTime;
 using ProtoBuf;
 using System.IO;
 using System.Linq;
-using Newtonsoft.Json;
 using QuantConnect.Util;
 using QuantConnect.Data.Market;
 using System.Collections.Generic;

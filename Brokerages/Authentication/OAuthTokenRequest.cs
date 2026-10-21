@@ -13,8 +13,6 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 
 namespace QuantConnect.Brokerages.Authentication
 {

@@ -16,7 +16,6 @@
 using NUnit.Framework;
 using QuantConnect.Research;
 using QuantConnect.Configuration;
-using Newtonsoft.Json.Linq;
 
 namespace QuantConnect.Tests.Research
 {
@@ -38,7 +37,7 @@ namespace QuantConnect.Tests.Research
             Config.Reset();
             if (deploymentTarget.HasValue)
             {
-                Config.Set("deployment-target", JToken.FromObject(deploymentTarget));
+                Config.Set("deployment-target", deploymentTarget);
                 Config.Write();
             }
             else

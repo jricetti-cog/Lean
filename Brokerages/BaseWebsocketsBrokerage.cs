@@ -13,7 +13,6 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
 using System.Text.Json;
 using QuantConnect.Data;
 using QuantConnect.Logging;

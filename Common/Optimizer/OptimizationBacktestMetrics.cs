@@ -14,12 +14,12 @@
  *
 */
 
-using Newtonsoft.Json;
 using QuantConnect.Logging;
 using QuantConnect.Optimizer.Parameters;
 using QuantConnect.Packets;
 using QuantConnect.Statistics;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Globalization;
 using System.Linq;
 
