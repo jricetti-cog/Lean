@@ -14,6 +14,7 @@
 */
 
 using System;
+using System.Text.Json;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -166,12 +167,12 @@ namespace QuantConnect.Storage
         /// <param name="encoding">The string encoding used</param>
         /// <param name="settings">The settings used by the JSON deserializer</param>
         /// <returns>An object containing the data</returns>
-        public T ReadJson<T>(string path, Encoding encoding = null, JsonSerializerSettings settings = null)
+        public T ReadJson<T>(string path, Encoding encoding = null, JsonSerializerOptions settings = null)
         {
             encoding = encoding ?? Encoding.UTF8;
 
             var json = Read(path, encoding);
-            return JsonConvert.DeserializeObject<T>(json, settings);
+            return JsonSerialization.Deserialize<T>(json, settings);
         }
 
         /// <summary>
@@ -247,11 +248,11 @@ namespace QuantConnect.Storage
         /// <param name="encoding">The string encoding used</param>
         /// <param name="settings">The settings used by the JSON serializer</param>
         /// <returns>True if the object was saved successfully</returns>
-        public bool SaveJson<T>(string path, T obj, Encoding encoding = null, JsonSerializerSettings settings = null)
+        public bool SaveJson<T>(string path, T obj, Encoding encoding = null, JsonSerializerOptions settings = null)
         {
             encoding = encoding ?? Encoding.UTF8;
 
-            var json = JsonConvert.SerializeObject(obj, settings);
+            var json = JsonSerialization.Serialize(obj, settings);
             return SaveString(path, json, encoding);
         }
 

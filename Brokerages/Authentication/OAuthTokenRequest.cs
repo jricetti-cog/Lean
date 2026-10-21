@@ -76,12 +76,7 @@ namespace QuantConnect.Brokerages.Authentication
         /// <returns>A JSON string representing the current request.</returns>
         public string ToJson()
         {
-            return JsonConvert.SerializeObject(this, new JsonSerializerSettings()
-            {
-                ContractResolver = new CamelCasePropertyNamesContractResolver(),
-                NullValueHandling = NullValueHandling.Ignore,
-                Formatting = Formatting.None
-            });
+            return JsonSerialization.Serialize(this, JsonSerialization.Create());
         }
     }
 }

@@ -17,7 +17,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 using NodaTime;
 using QuantConnect.Configuration;
 using QuantConnect.Data;
@@ -139,7 +140,7 @@ namespace QuantConnect.Securities
         /// <returns>A new instance of the <see cref="MarketHoursDatabase"/> class</returns>
         public static MarketHoursDatabase FromFile(string path)
         {
-            return JsonConvert.DeserializeObject<MarketHoursDatabase>(File.ReadAllText(path));
+            return JsonSerialization.Deserialize<MarketHoursDatabase>(File.ReadAllText(path));
         }
 
         /// <summary>

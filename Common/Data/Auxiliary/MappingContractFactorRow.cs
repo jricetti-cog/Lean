@@ -16,7 +16,6 @@
 
 using System;
 using System.Linq;
-using Newtonsoft.Json;
 using System.Collections.Generic;
 
 namespace QuantConnect.Data.Auxiliary
@@ -67,7 +66,7 @@ namespace QuantConnect.Data.Auxiliary
         /// <remarks>Json formatted</remarks>
         public string GetFileFormat(string source = null)
         {
-            return JsonConvert.SerializeObject(this);
+            return JsonSerialization.Serialize(this);
         }
 
         /// <summary>
@@ -85,7 +84,7 @@ namespace QuantConnect.Data.Auxiliary
             // parse factor file lines
             foreach (var line in lines)
             {
-                var row = JsonConvert.DeserializeObject<MappingContractFactorRow>(line);
+                var row = JsonSerialization.Deserialize<MappingContractFactorRow>(line);
                 if(!row.DataMappingMode.HasValue || Enum.IsDefined(typeof(DataMappingMode), row.DataMappingMode.Value))
                 {
                     rows.Add(row);

@@ -11,89 +11,93 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
+*/
 
 using System;
 using System.Globalization;
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace QuantConnect.Util;
 
 /// <summary>
-/// Json converter to represent decimals as strings
+/// Helper json converter to use the safe decimal cast
 /// </summary>
-public class DecimalJsonConverter : JsonConverter
+public class DecimalJsonConverter : JsonConverterFactory
 {
     /// <summary>
-    /// Gets a value indicating whether this <see cref="JsonConverter"/> can write JSON.
+    /// Determines whether this instance can convert the specified object type
     /// </summary>
-    /// <remarks>
-    /// This property always returns <c>false</c>, indicating that this converter does not support writing JSON.
-    /// </remarks>
-    public override bool CanWrite => false;
-
-    /// <summary>
-    /// Determines whether this instance can convert the specified object type.
-    /// </summary>
-    /// <param name="objectType">Type of the object.</param>
-    /// <returns><c>true</c> if this instance can convert the specified object type; otherwise, <c>false</c>.</returns>
-    public override bool CanConvert(Type objectType)
+    public override bool CanConvert(Type typeToConvert)
     {
-        return objectType == typeof(decimal) || objectType == typeof(decimal?);
+        return typeToConvert == typeof(decimal) || typeToConvert == typeof(decimal?);
     }
 
     /// <summary>
-    /// Writes the JSON representation of the object.
+    /// Creates the converter for the given type
     /// </summary>
-    /// <param name="writer">The <see cref="JsonWriter"/> to write to.</param>
-    /// <param name="value">The value.</param>
-    /// <param name="serializer">The calling serializer.</param>
-    public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+    public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
-        throw new NotImplementedException();
+        return typeToConvert == typeof(decimal) ? new Converter() : new NullableConverter();
     }
 
-    /// <summary>
-    /// Reads the JSON representation of the object.
-    /// </summary>
-    /// <param name="reader">The <see cref="JsonReader"/> to read from.</param>
-    /// <param name="objectType">Type of the object.</param>
-    /// <param name="existingValue">The existing value of object being read.</param>
-    /// <param name="serializer">The calling serializer.</param>
-    /// <returns>The object value.</returns>
-    public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+    private static decimal? ReadValue(ref Utf8JsonReader reader, Type typeToConvert)
     {
-        var val = reader.Value;
-
-        if (val == null)
+        switch (reader.TokenType)
         {
-            if (objectType == typeof(decimal?))
-            {
-                return null;
-            }
-            throw new JsonSerializationException($"Cannot convert null value to {objectType}.");
+            case JsonTokenType.Null:
+                if (typeToConvert == typeof(decimal?))
+                {
+                    return null;
+                }
+                throw new JsonException($"Cannot convert null value to {typeToConvert}.");
+            case JsonTokenType.Number:
+                if (reader.TryGetInt64(out var integer))
+                {
+                    return integer;
+                }
+                return reader.GetDouble().SafeDecimalCast();
+            case JsonTokenType.String:
+                var str = reader.GetString();
+                if (decimal.TryParse(str, NumberStyles.Any, CultureInfo.InvariantCulture, out var res))
+                {
+                    return res;
+                }
+                return Convert.ToDecimal(str, CultureInfo.InvariantCulture);
+            case JsonTokenType.True:
+                return 1m;
+            case JsonTokenType.False:
+                return 0m;
+            default:
+                throw new JsonException($"Unexpected token {reader.TokenType} when converting to {typeToConvert}.");
         }
-
-        if (val is decimal dec)
-        {
-            return dec;
-        }
-
-        if (val is double d)
-        {
-            return d.SafeDecimalCast();
-        }
-
-        if (val is string str && TryParse(str, out var res))
-        {
-            return res;
-        }
-
-        return Convert.ToDecimal(val, CultureInfo.InvariantCulture);
     }
 
-    private static bool TryParse(string str, out decimal value)
+    private class Converter : JsonConverter<decimal>
     {
-        return decimal.TryParse(str, NumberStyles.Any, CultureInfo.InvariantCulture, out value);
+        public override decimal Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            return ReadValue(ref reader, typeof(decimal)).Value;
+        }
+
+        public override void Write(Utf8JsonWriter writer, decimal value, JsonSerializerOptions options)
+        {
+            JsonSerializer.Serialize(writer, value, options);
+        }
+    }
+
+    private class NullableConverter : JsonConverter<decimal?>
+    {
+        public override bool HandleNull => true;
+
+        public override decimal? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            return ReadValue(ref reader, typeof(decimal?));
+        }
+
+        public override void Write(Utf8JsonWriter writer, decimal? value, JsonSerializerOptions options)
+        {
+            JsonSerializer.Serialize(writer, value, options);
+        }
     }
 }

@@ -171,7 +171,7 @@ namespace QuantConnect.Data.Custom.Tiingo
         /// </returns>
         public override BaseData Reader(SubscriptionDataConfig config, string line, DateTime date, bool isLiveMode)
         {
-            var list = JsonConvert.DeserializeObject<List<TiingoPrice>>(line);
+            var list = JsonSerialization.Deserialize<List<TiingoPrice>>(line);
 
             foreach (var item in list)
             {

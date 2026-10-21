@@ -14,6 +14,7 @@
 */
 
 using Newtonsoft.Json;
+using System.Text.Json;
 using QuantConnect.Data;
 using QuantConnect.Logging;
 using RestSharp;
@@ -89,7 +90,7 @@ namespace QuantConnect.Brokerages
         /// <summary>
         /// standard json parsing settings
         /// </summary>
-        protected JsonSerializerSettings JsonSettings { get; set; }
+        protected JsonSerializerOptions JsonSettings { get; set; }
 
         /// <summary>
         /// A list of currently active orders
@@ -151,7 +152,7 @@ namespace QuantConnect.Brokerages
                 return false;
             }
             IsInitialized = true;
-            JsonSettings = new JsonSerializerSettings { FloatParseHandling = FloatParseHandling.Decimal };
+            JsonSettings = JsonSerialization.Create(floatAsDecimal: true);
             CachedOrderIDs = new ConcurrentDictionary<int, Orders.Order>();
 
             WebSocket = websocket;

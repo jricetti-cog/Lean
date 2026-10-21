@@ -13,7 +13,6 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
 using QuantConnect.Algorithm.Framework.Portfolio;
 using QuantConnect.Algorithm.Framework.Portfolio.SignalExports;
 using QuantConnect.Api;
@@ -83,7 +82,7 @@ namespace QuantConnect.Algorithm.CSharp
                 return new { symbol = newTarget.Symbol.Value, quantity = newTarget.Quantity };
             };
 
-            var message = JsonConvert.SerializeObject(parameters.Targets.Select(SimplePayload));
+            var message = JsonSerialization.Serialize(parameters.Targets.Select(SimplePayload));
             using var httpMessage = new StringContent(message, Encoding.UTF8, "application/json");
             using HttpResponseMessage response = _httpClient.PostAsync(_requestUri, httpMessage).Result;
             var result = response.Content.ReadFromJsonAsync<RestResponse>().Result;

@@ -14,11 +14,12 @@
 */
 
 using System;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Nodes;
+using QuantConnect.Util.Json;
 using System.ComponentModel;
 using QuantConnect.Securities;
-using Newtonsoft.Json.Converters;
 using System.Runtime.Serialization;
 using System.Runtime.CompilerServices;
 
@@ -82,27 +83,27 @@ namespace QuantConnect
 
         /// The currency symbol of the holding, such as $
         [DefaultValue("$")]
-        [JsonProperty(PropertyName = "c", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonPropertyName("c"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public string CurrencySymbol { get; set; }
 
         /// Average Price of our Holding in the currency the symbol is traded in
         [JsonConverter(typeof(DecimalJsonConverter))]
-        [JsonProperty(PropertyName = "a", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonPropertyName("a"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public decimal AveragePrice { get; set; }
 
         /// Quantity of Symbol We Hold.
         [JsonConverter(typeof(DecimalJsonConverter))]
-        [JsonProperty(PropertyName = "q", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonPropertyName("q"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public decimal Quantity { get; set; }
 
         /// Current Market Price of the Asset in the currency the symbol is traded in
         [JsonConverter(typeof(DecimalJsonConverter))]
-        [JsonProperty(PropertyName = "p", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonPropertyName("p"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public decimal MarketPrice { get; set; }
 
         /// Current market conversion rate into the account currency
         [JsonConverter(typeof(DecimalJsonConverter))]
-        [JsonProperty(PropertyName = "r", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonPropertyName("r"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public decimal? ConversionRate
         {
             get
@@ -120,7 +121,7 @@ namespace QuantConnect
 
         /// Current market value of the holding
         [JsonConverter(typeof(DecimalJsonConverter))]
-        [JsonProperty(PropertyName = "v", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonPropertyName("v"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public decimal MarketValue
         {
             get
@@ -135,7 +136,7 @@ namespace QuantConnect
 
         /// Current unrealized P/L of the holding
         [JsonConverter(typeof(DecimalJsonConverter))]
-        [JsonProperty(PropertyName = "u", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonPropertyName("u"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public decimal UnrealizedPnL
         {
             get
@@ -150,7 +151,7 @@ namespace QuantConnect
 
         /// Current unrealized P/L % of the holding
         [JsonConverter(typeof(DecimalJsonConverter))]
-        [JsonProperty(PropertyName = "up", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonPropertyName("up"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public decimal UnrealizedPnLPercent
         {
             get
@@ -213,36 +214,60 @@ namespace QuantConnect
         }
 
         /// <summary>
-        /// Writes out the properties of this instance to string
+        /// Writes decimals normalized, without trailing zeros
         /// </summary>
-        public override string ToString()
+        private class DecimalJsonConverter : JsonConverterFactory
         {
-            return Messages.Holding.ToString(this);
+            public override bool CanConvert(Type typeToConvert) => typeToConvert == typeof(decimal) || typeToConvert == typeof(decimal?);
+
+            public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
+            {
+                return typeToConvert == typeof(decimal) ? new NormalizedDecimalConverter() : new NullableNormalizedDecimalConverter();
+            }
         }
 
-        private class DecimalJsonConverter : JsonConverter
+        private class NormalizedDecimalConverter : JsonConverter<decimal>
         {
-            public override bool CanRead => false;
-            public override bool CanConvert(Type objectType) => typeof(decimal) == objectType;
-            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+            public override decimal Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
             {
-                writer.WriteRawValue(((decimal)value).NormalizeToStr());
+                return JsonSerializer.Deserialize<decimal>(ref reader, options);
             }
-            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+
+            public override void Write(Utf8JsonWriter writer, decimal value, JsonSerializerOptions options)
             {
-                throw new NotImplementedException();
+                writer.WriteRawValue(value.NormalizeToStr(), skipInputValidation: true);
             }
         }
-        private class HoldingJsonConverter : JsonConverter
+
+        private class NullableNormalizedDecimalConverter : JsonConverter<decimal?>
         {
-            public override bool CanWrite => false;
-            public override bool CanConvert(Type objectType) => typeof(Holding) == objectType;
-            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            public override decimal? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
             {
-                var jObject = JObject.Load(reader);
+                return JsonSerializer.Deserialize<decimal?>(ref reader, options);
+            }
+
+            public override void Write(Utf8JsonWriter writer, decimal? value, JsonSerializerOptions options)
+            {
+                if (value == null)
+                {
+                    writer.WriteNullValue();
+                    return;
+                }
+                writer.WriteRawValue(value.Value.NormalizeToStr(), skipInputValidation: true);
+            }
+        }
+
+        /// <summary>
+        /// Reads holdings from both the short and long property names
+        /// </summary>
+        private class HoldingJsonConverter : JsonConverter<Holding>
+        {
+            public override Holding Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            {
+                var jObject = JsonNode.Parse(ref reader).AsObject();
                 var result = new Holding
                 {
-                    Symbol = jObject["symbol"]?.ToObject<Symbol>() ?? jObject["Symbol"]?.ToObject<Symbol>() ?? Symbol.Empty,
+                    Symbol = jObject["symbol"]?.ToObject<Symbol>(options) ?? jObject["Symbol"]?.ToObject<Symbol>(options) ?? Symbol.Empty,
                     CurrencySymbol = jObject["c"]?.Value<string>() ?? jObject["currencySymbol"]?.Value<string>() ?? jObject["CurrencySymbol"]?.Value<string>() ?? string.Empty,
                     AveragePrice = jObject["a"]?.Value<decimal>() ?? jObject["averagePrice"]?.Value<decimal>() ?? jObject["AveragePrice"]?.Value<decimal>() ?? 0,
                     Quantity = jObject["q"]?.Value<decimal>() ?? jObject["quantity"]?.Value<decimal>() ?? jObject["Quantity"]?.Value<decimal>() ?? 0,
@@ -262,9 +287,10 @@ namespace QuantConnect
                 }
                 return result;
             }
-            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+
+            public override void Write(Utf8JsonWriter writer, Holding value, JsonSerializerOptions options)
             {
-                throw new NotImplementedException();
+                writer.WriteDefault(value, options);
             }
         }
     }
@@ -272,7 +298,7 @@ namespace QuantConnect
     /// <summary>
     /// Represents the types of environments supported by brokerages for trading
     /// </summary>
-    [JsonConverter(typeof(StringEnumConverter))]
+    [JsonConverter(typeof(StringEnumJsonConverter))]
     public enum BrokerageEnvironment
     {
         /// <summary>
@@ -291,7 +317,7 @@ namespace QuantConnect
     /// <summary>
     /// Multilanguage support enum: which language is this project for the interop bridge converter.
     /// </summary>
-    [JsonConverter(typeof(StringEnumConverter))]
+    [JsonConverter(typeof(StringEnumJsonConverter))]
     public enum Language
     {
         /// <summary>
@@ -1220,7 +1246,7 @@ namespace QuantConnect
     /// <summary>
     /// Represents the types deployment targets for algorithms
     /// </summary>
-    [JsonConverter(typeof(StringEnumConverter))]
+    [JsonConverter(typeof(StringEnumJsonConverter))]
     public enum DeploymentTarget
     {
         /// <summary>
@@ -1242,7 +1268,7 @@ namespace QuantConnect
     /// <summary>
     /// Represents the deployment modes of an algorithm
     /// </summary>
-    [JsonConverter(typeof(StringEnumConverter))]
+    [JsonConverter(typeof(StringEnumJsonConverter))]
     public enum AlgorithmMode
     {
         /// <summary>

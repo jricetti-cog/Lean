@@ -15,7 +15,8 @@
 
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 using QuantConnect.Optimizer.Objectives;
 using QuantConnect.Optimizer.Parameters;
 using QuantConnect.Optimizer.Strategies;
@@ -37,7 +38,7 @@ namespace QuantConnect.Optimizer
         /// <summary>
         /// The creation time
         /// </summary>
-        [JsonConverter(typeof(DateTimeJsonConverter), DateFormat.ISOShort, DateFormat.UI)]
+        [JsonConverterWithArgs(typeof(DateTimeJsonConverter), DateFormat.ISOShort, DateFormat.UI)]
         public DateTime Created { get; set; }
 
         /// <summary>
@@ -96,7 +97,7 @@ namespace QuantConnect.Optimizer
         /// <summary>
         /// The user optimization parameters
         /// </summary>
-        [JsonProperty(TypeNameHandling = TypeNameHandling.All)]
+        [JsonConverter(typeof(TypeNameHandlingJsonConverter))]
         public OptimizationStrategySettings OptimizationStrategySettings { get; set; }
 
         /// <summary>

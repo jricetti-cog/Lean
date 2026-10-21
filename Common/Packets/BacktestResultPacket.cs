@@ -120,10 +120,7 @@ namespace QuantConnect.Packets
         {
             try
             {
-                var packet = JsonConvert.DeserializeObject<BacktestResultPacket>(json, new JsonSerializerSettings
-                {
-                    TypeNameHandling = TypeNameHandling.Auto
-                });
+                var packet = JsonSerialization.Deserialize<BacktestResultPacket>(json, JsonSerialization.Create());
                 CompileId           = packet.CompileId;
                 Channel             = packet.Channel;
                 PeriodFinish        = packet.PeriodFinish;

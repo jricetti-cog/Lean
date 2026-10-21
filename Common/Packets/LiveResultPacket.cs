@@ -64,7 +64,7 @@ namespace QuantConnect.Packets
         {
             try
             {
-                var packet = JsonConvert.DeserializeObject<LiveResultPacket>(json);
+                var packet = JsonSerialization.Deserialize<LiveResultPacket>(json);
                 Channel            = packet.Channel;
                 DeployId           = packet.DeployId;
                 Type               = packet.Type;

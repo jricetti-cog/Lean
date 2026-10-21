@@ -13,7 +13,6 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
 
 namespace QuantConnect.Api
 {
@@ -27,7 +26,7 @@ namespace QuantConnect.Api
         /// </summary>
         public override string ToString()
         {
-            return JsonConvert.SerializeObject(this);
+            return JsonSerialization.Serialize(this);
         }
     }
 }
