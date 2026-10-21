@@ -14,6 +14,7 @@
 */
 
 using System;
+using System.Globalization;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Nodes;
@@ -688,8 +689,8 @@ def get_security_cache_custom_data_type():
                     if (cacheToBaseDataPropertyMap?.TryGetValue(property.Key, out dataPropertyName) == true)
                     {
                         // avoiding failures due to decimal <> long in JsonNode.DeepEquals
-                        var e = dataSnapshot[dataPropertyName]?.ToString();
-                        var a = after[property.Key]?.ToString();
+                        var e = NormalizeNumber(dataSnapshot.SelectToken(dataPropertyName)?.ToString());
+                        var a = NormalizeNumber(after.SelectToken(property.Key)?.ToString());
                         Assert.AreEqual(e, a, $"{property.Key}: Expected {e}. Actual {a}");
                     }
                     else
@@ -702,6 +703,13 @@ def get_security_cache_custom_data_type():
                     before.IsEqualTo(after, property.Key);
                 }
             }
+        }
+
+        private static string NormalizeNumber(string value)
+        {
+            return decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var number)
+                ? number.ToString("G29", CultureInfo.InvariantCulture)
+                : value;
         }
 
         public enum SecuritySeedData

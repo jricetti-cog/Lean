@@ -43,15 +43,24 @@ namespace QuantConnect.Tests
         }
 
         /// <summary>
-        /// Asserts that the two JsonObject instances are equal. This uses <see cref="JsonNode.DeepEquals"/> wrapped w/ better failure messages
+        /// Navigates the dotted property path like Newtonsoft's SelectToken did
         /// </summary>
-        /// <param name="expected">The expected value</param>
-        /// <param name="actual">The actual value</param>
-        /// <param name="property">The property to assert</param>
+        public static JsonNode SelectToken(this JsonNode node, string path)
+        {
+            foreach (var segment in path.Split('.'))
+            {
+                node = node is JsonObject jObject && jObject.TryGetPropertyValue(segment, out var child) ? child : null;
+            }
+            return node;
+        }
+
+        /// <summary>
+        /// Asserts that the two JsonObject instances are equal
+        /// </summary>
         public static void IsEqualTo(this JsonObject expected, JsonObject actual, string property)
         {
-            var e = expected[property];
-            var a = actual[property];
+            var e = expected.SelectToken(property);
+            var a = actual.SelectToken(property);
             Assert.IsTrue(JsonNode.DeepEquals(e, a), $"{property}: Expected {e}. Actual {a}");
         }
     }

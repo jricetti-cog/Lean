@@ -243,7 +243,31 @@ namespace QuantConnect.Util.Json
                 {
                     node = values;
                 }
-                return node == null ? default : (T)node.Deserialize(LeanJsonContract.GetDefaultTypeInfo(typeToConvert, options));
+                if (node == null)
+                {
+                    return default;
+                }
+                if (node is not JsonArray array)
+                {
+                    throw new JsonException($"Unexpected json value when reading {typeToConvert.Name}, expected an array.");
+                }
+                var elementType = GetElementType(typeToConvert);
+                var list = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(elementType));
+                foreach (var item in array)
+                {
+                    list.Add(item?.Deserialize(elementType, options));
+                }
+                if (typeToConvert.IsAssignableFrom(list.GetType()))
+                {
+                    return (T)list;
+                }
+                if (typeToConvert.IsArray)
+                {
+                    var result = Array.CreateInstance(elementType, list.Count);
+                    list.CopyTo(result, 0);
+                    return (T)(object)result;
+                }
+                return (T)Activator.CreateInstance(typeToConvert, list);
             }
 
             public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
@@ -251,7 +275,13 @@ namespace QuantConnect.Util.Json
                 writer.WriteStartObject();
                 writer.WriteString(TypeProperty, GetTypeName(value.GetType()));
                 writer.WritePropertyName(ValuesProperty);
-                JsonSerializer.Serialize(writer, value, LeanJsonContract.GetDefaultTypeInfo(value.GetType(), options));
+                var elementType = GetElementType(value.GetType());
+                writer.WriteStartArray();
+                foreach (var item in (IEnumerable)value)
+                {
+                    JsonSerializer.Serialize(writer, item, elementType, options);
+                }
+                writer.WriteEndArray();
                 writer.WriteEndObject();
             }
         }
