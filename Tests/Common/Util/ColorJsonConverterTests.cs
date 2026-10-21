@@ -27,14 +27,14 @@ namespace QuantConnect.Tests.Common.Util
         public void ConvertsKnownColorToJson()
         {
             var container = new ColorContainer { Color = Color.Blue };
-            var json = JsonConvert.SerializeObject(container);
+            var json = JsonSerialization.Serialize(container);
             Assert.AreEqual("{\"Color\":\"#0000FF\"}", json);
         }
         [Test]
         public void ConvertsEmptyColorToJson()
         {
             var container = new ColorContainer { Color = Color.Empty };
-            var json = JsonConvert.SerializeObject(container);
+            var json = JsonSerialization.Serialize(container);
             Assert.AreEqual("{\"Color\":\"\"}", json);
         }
 
@@ -42,7 +42,7 @@ namespace QuantConnect.Tests.Common.Util
         public void ConvertJsonToColorTest()
         {
             const string jsonValue = "{ 'Color': '#FFFFFF' }";
-            var converted = JsonConvert.DeserializeObject<ColorContainer>(jsonValue).Color;
+            var converted = JsonSerialization.Deserialize<ColorContainer>(jsonValue).Color;
             Assert.AreEqual(Color.White.ToArgb(), converted.ToArgb());
         }
 

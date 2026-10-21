@@ -14,7 +14,7 @@
 */
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json;
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.Globalization;
@@ -31,7 +31,7 @@ namespace QuantConnect.Tests.Optimizer
     [TestFixture, Parallelizable(ParallelScope.All)]
     public class OptimizationNodePacketTest
     {
-        private static JsonSerializerSettings _jsonSettings = new JsonSerializerSettings() { Culture = CultureInfo.InvariantCulture };
+        private static JsonSerializerOptions _jsonSettings = JsonSerialization.Create();
 
         [TestCase("QuantConnect.Optimizer.EulerSearchOptimizationStrategy", typeof(StepBaseOptimizationStrategySettings))]
         [TestCase("QuantConnect.Optimizer.GridSearchOptimizationStrategy", typeof(OptimizationStrategySettings))]
@@ -57,8 +57,8 @@ namespace QuantConnect.Tests.Optimizer
                 MaximumConcurrentBacktests = 10,
                 OptimizationStrategySettings = (OptimizationStrategySettings)Activator.CreateInstance(settingType)
             };
-            var serialize = JsonConvert.SerializeObject(optimizationNodePacket, _jsonSettings);
-            var result = JsonConvert.DeserializeObject<OptimizationNodePacket>(serialize, _jsonSettings);
+            var serialize = JsonSerialization.Serialize(optimizationNodePacket, _jsonSettings);
+            var result = JsonSerialization.Deserialize<OptimizationNodePacket>(serialize, _jsonSettings);
 
             // common
             Assert.AreEqual(PacketType.OptimizationNode, result.Type);
@@ -128,7 +128,7 @@ namespace QuantConnect.Tests.Optimizer
                        $"\"optimizationStrategySettings\":{{\"$type\":\"QuantConnect.Optimizer.Strategies.OptimizationStrategySettings, QuantConnect.Optimizer\",\"default-segment-amount\":0,\"max-run-time\":\"10675199.02:48:05.4775807\"}}}}")]
         public void FromJson(string settingTypeName ,string json)
         {
-            var packet = (OptimizationNodePacket)JsonConvert.DeserializeObject(json, typeof(OptimizationNodePacket));
+            var packet = (OptimizationNodePacket)JsonSerialization.Deserialize(json, typeof(OptimizationNodePacket));
 
             Assert.AreEqual("['Statistics'].['Sharpe Ratio']", packet.Criterion.Target);
             Assert.AreEqual(typeof(Minimization), packet.Criterion.Extremum.GetType());
@@ -148,7 +148,7 @@ namespace QuantConnect.Tests.Optimizer
                        "\"constraints\": [{\"target\": \"Statistics.Sharpe Ratio\",\"operator\": \"equals\",\"target-value\": 11}]}")]
         public void FromJsonNoSettings(string json)
         {
-            var packet = (OptimizationNodePacket)JsonConvert.DeserializeObject(json, typeof(OptimizationNodePacket));
+            var packet = (OptimizationNodePacket)JsonSerialization.Deserialize(json, typeof(OptimizationNodePacket));
 
             Assert.AreEqual("['Statistics'].['Sharpe Ratio']", packet.Criterion.Target);
             Assert.AreEqual(typeof(Minimization), packet.Criterion.Extremum.GetType());

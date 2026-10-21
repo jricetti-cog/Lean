@@ -13,7 +13,6 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
 using NUnit.Framework;
 using QuantConnect.Api;
 
@@ -28,7 +27,7 @@ namespace QuantConnect.Tests.API
         {
             var json = $"{{\"projects\":[{{\"projectId\":1,\"name\":\"project\",\"parameters\":{parameters}}}],\"success\":true}}";
 
-            var project = JsonConvert.DeserializeObject<ProjectResponse>(json).Projects[0];
+            var project = JsonSerialization.Deserialize<ProjectResponse>(json).Projects[0];
 
             Assert.AreEqual(2, project.Parameters.Count);
             Assert.AreEqual("ema-fast", project.Parameters[0].Name);
@@ -40,7 +39,7 @@ namespace QuantConnect.Tests.API
         [Test]
         public void SerializationKeepsNameFormat()
         {
-            var serialized = JsonConvert.SerializeObject(new Parameter { Name = "ema-fast", Value = "10" });
+            var serialized = JsonSerialization.Serialize(new Parameter { Name = "ema-fast", Value = "10" });
 
             Assert.AreEqual("{\"name\":\"ema-fast\",\"value\":\"10\"}", serialized);
         }

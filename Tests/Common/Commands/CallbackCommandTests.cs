@@ -17,7 +17,6 @@ using System;
 using System.IO;
 using System.Web;
 using NUnit.Framework;
-using Newtonsoft.Json;
 using QuantConnect.Commands;
 using QuantConnect.Statistics;
 using QuantConnect.Configuration;
@@ -169,7 +168,7 @@ namespace QuantConnect.Tests.Common.Commands
                     {
                         var command = commands[i - 1];
                         command["id"] = i;
-                        File.WriteAllText($"command-{i}.json", JsonConvert.SerializeObject(command));
+                        File.WriteAllText($"command-{i}.json", JsonSerialization.Serialize(command));
                     }
                     base.Update();
                 }

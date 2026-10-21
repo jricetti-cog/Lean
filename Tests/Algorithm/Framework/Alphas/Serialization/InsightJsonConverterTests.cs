@@ -14,9 +14,10 @@
 */
 
 using System;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Serialization;
+using System.Text.Json;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using QuantConnect.Util.Json;
 using NUnit.Framework;
 using QuantConnect.Algorithm.Framework.Alphas;
 using QuantConnect.Algorithm.Framework.Alphas.Serialization;
@@ -26,23 +27,13 @@ namespace QuantConnect.Tests.Algorithm.Framework.Alphas.Serialization
     [TestFixture, Parallelizable(ParallelScope.All)]
     public class InsightJsonConverterTests
     {
-        private JsonSerializerSettings _serializerSettings = new()
-        {
-            ContractResolver = new DefaultContractResolver
-            {
-                NamingStrategy = new CamelCaseNamingStrategy
-                {
-                    ProcessDictionaryKeys = false,
-                    OverrideSpecifiedNames = true
-                }
-            }
-        };
+        private JsonSerializerOptions _serializerSettings = JsonSerialization.CamelCase;
 
         [Test]
         public void DeserializesInsightWithoutScore()
         {
-            var jObject = JObject.Parse(jsonNoScoreBackwardsCompatible);
-            var result = JsonConvert.DeserializeObject<Insight>(jsonNoScoreBackwardsCompatible);
+            var jObject = JsonSerialization.ParseObject(jsonNoScoreBackwardsCompatible);
+            var result = JsonSerialization.Deserialize<Insight>(jsonNoScoreBackwardsCompatible);
             Assert.AreEqual(jObject["id"].Value<string>(), result.Id.ToStringInvariant("N"));
             Assert.AreEqual(jObject["source-model"].Value<string>(), result.SourceModel);
             Assert.AreEqual(jObject["group-id"]?.Value<string>(), result.GroupId?.ToStringInvariant("N"));
@@ -67,8 +58,8 @@ namespace QuantConnect.Tests.Algorithm.Framework.Alphas.Serialization
         [Test]
         public void DeserializesInsightWithScore()
         {
-            var jObject = JObject.Parse(jsonWithScoreBackwardsCompatible);
-            var result = JsonConvert.DeserializeObject<Insight>(jsonWithScoreBackwardsCompatible);
+            var jObject = JsonSerialization.ParseObject(jsonWithScoreBackwardsCompatible);
+            var result = JsonSerialization.Deserialize<Insight>(jsonWithScoreBackwardsCompatible);
             Assert.AreEqual(jObject["id"].Value<string>(), result.Id.ToStringInvariant("N"));
             Assert.AreEqual(jObject["source-model"].Value<string>(), result.SourceModel);
             Assert.AreEqual(jObject["group-id"]?.Value<string>(), result.GroupId?.ToStringInvariant("N"));
@@ -92,9 +83,9 @@ namespace QuantConnect.Tests.Algorithm.Framework.Alphas.Serialization
         [TestCase(false)]
         public void SerializesInsightWithoutScore(bool backwardsCompatible)
         {
-            var serializedInsight = JsonConvert.DeserializeObject<SerializedInsight>(backwardsCompatible ? jsonNoScoreBackwardsCompatible : jsonNoScore2);
+            var serializedInsight = JsonSerialization.Deserialize<SerializedInsight>(backwardsCompatible ? jsonNoScoreBackwardsCompatible : jsonNoScore2);
             var insight = Insight.FromSerializedInsight(serializedInsight);
-            var result = JsonConvert.SerializeObject(insight, Formatting.None, _serializerSettings);
+            var result = JsonSerialization.Serialize(insight, _serializerSettings);
             Assert.AreEqual(jsonNoScore2, result);
         }
 
@@ -102,18 +93,18 @@ namespace QuantConnect.Tests.Algorithm.Framework.Alphas.Serialization
         [TestCase(false)]
         public void SerializesInsightWithScore(bool backwardsCompatible)
         {
-            var serializedInsight = JsonConvert.DeserializeObject<SerializedInsight>(backwardsCompatible ? jsonWithScoreBackwardsCompatible : jsonWithScore);
+            var serializedInsight = JsonSerialization.Deserialize<SerializedInsight>(backwardsCompatible ? jsonWithScoreBackwardsCompatible : jsonWithScore);
             var insight = Insight.FromSerializedInsight(serializedInsight);
-            var result = JsonConvert.SerializeObject(insight, Formatting.None, _serializerSettings);
+            var result = JsonSerialization.Serialize(insight, _serializerSettings);
             Assert.AreEqual(jsonWithScore, result);
         }
 
         [Test]
         public void SerializesOldInsightWithMissingCreatedTime()
         {
-            var serializedInsight = JsonConvert.DeserializeObject<SerializedInsight>(jsonWithMissingCreatedTimeBackwardsCompatible);
+            var serializedInsight = JsonSerialization.Deserialize<SerializedInsight>(jsonWithMissingCreatedTimeBackwardsCompatible);
             var insight = Insight.FromSerializedInsight(serializedInsight);
-            var result = JsonConvert.SerializeObject(insight, Formatting.None, _serializerSettings);
+            var result = JsonSerialization.Serialize(insight, _serializerSettings);
 
             Assert.AreEqual(serializedInsight.CreatedTime, serializedInsight.GeneratedTime);
             Assert.AreEqual(jsonWithExpectedOutputFromMissingCreatedTimeValue, result);
@@ -124,9 +115,9 @@ namespace QuantConnect.Tests.Algorithm.Framework.Alphas.Serialization
         [TestCase(false)]
         public void SerializesInsightWithTag(bool backwardsCompatible)
         {
-            var serializedInsight = JsonConvert.DeserializeObject<SerializedInsight>(backwardsCompatible ? jsonWithTagBackwardsCompatible : jsonWithTag);
+            var serializedInsight = JsonSerialization.Deserialize<SerializedInsight>(backwardsCompatible ? jsonWithTagBackwardsCompatible : jsonWithTag);
             var insight = Insight.FromSerializedInsight(serializedInsight);
-            var result = JsonConvert.SerializeObject(insight, Formatting.None, _serializerSettings);
+            var result = JsonSerialization.Serialize(insight, _serializerSettings);
             Assert.AreEqual(jsonWithTag, result);
         }
 
@@ -134,24 +125,24 @@ namespace QuantConnect.Tests.Algorithm.Framework.Alphas.Serialization
         [TestCase(false)]
         public void SerializesInsightWithoutTag(bool backwardsCompatible)
         {
-            var serializedInsight = JsonConvert.DeserializeObject<SerializedInsight>(backwardsCompatible ? jsonWithoutTagBackwardsCompatible : jsonWithoutTag);
+            var serializedInsight = JsonSerialization.Deserialize<SerializedInsight>(backwardsCompatible ? jsonWithoutTagBackwardsCompatible : jsonWithoutTag);
             var insight = Insight.FromSerializedInsight(serializedInsight);
-            var result = JsonConvert.SerializeObject(insight, Formatting.None, _serializerSettings);
+            var result = JsonSerialization.Serialize(insight, _serializerSettings);
             Assert.AreEqual(jsonWithoutTag, result);
         }
 
         [Test]
         public void DeserializesInsightWithTag()
         {
-            var jObject = JObject.Parse(jsonWithTagBackwardsCompatible);
-            var result = JsonConvert.DeserializeObject<Insight>(jsonWithTagBackwardsCompatible);
+            var jObject = JsonSerialization.ParseObject(jsonWithTagBackwardsCompatible);
+            var result = JsonSerialization.Deserialize<Insight>(jsonWithTagBackwardsCompatible);
             Assert.AreEqual(jObject["tag"].Value<string>(), result.Tag);
         }
 
         [Test]
         public void DeserializesInsightWithoutTag()
         {
-            var result = JsonConvert.DeserializeObject<Insight>(jsonWithoutTagBackwardsCompatible);
+            var result = JsonSerialization.Deserialize<Insight>(jsonWithoutTagBackwardsCompatible);
             Assert.IsNull(result.Tag);
         }
 

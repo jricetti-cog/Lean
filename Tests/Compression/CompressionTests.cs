@@ -19,7 +19,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Ionic.Zip;
-using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace QuantConnect.Tests.Compression
@@ -238,10 +237,10 @@ namespace QuantConnect.Tests.Compression
             };
 
             var encoding = Encoding.UTF8;
-            var bytes = encoding.GetBytes(JsonConvert.SerializeObject(data));
+            var bytes = encoding.GetBytes(JsonSerialization.Serialize(data));
             var compressed = QuantConnect.Compression.ZipBytes(bytes, "entry.json");
             var decompressed = QuantConnect.Compression.UnzipData(compressed, encoding);
-            var redata = JsonConvert.DeserializeObject<Dictionary<string, string>>(
+            var redata = JsonSerialization.Deserialize<Dictionary<string, string>>(
                 decompressed.Single().Value
             );
 
@@ -260,12 +259,12 @@ namespace QuantConnect.Tests.Compression
             };
 
             var encoding = Encoding.UTF8;
-            var bytes = encoding.GetBytes(JsonConvert.SerializeObject(data));
+            var bytes = encoding.GetBytes(JsonSerialization.Serialize(data));
             var compressed = QuantConnect.Compression.ZipBytes(bytes, "entry.json");
 
             using var stream = new MemoryStream(compressed);
             var decompressed = QuantConnect.Compression.UnzipDataAsync(stream, encoding).Result;
-            var redata = JsonConvert.DeserializeObject<Dictionary<string, string>>(
+            var redata = JsonSerialization.Deserialize<Dictionary<string, string>>(
                 decompressed.Single().Value
             );
 

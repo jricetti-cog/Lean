@@ -13,6 +13,7 @@
  * limitations under the License.
 */
 
+using System.Text.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -236,12 +237,12 @@ namespace QuantConnect.Tests.Common.Securities
             using (var wc = new WebClient())
             {
                 var jsonCurrencies = wc.DownloadString(urlCurrencies);
-                var rowsCurrencies = JsonConvert.DeserializeObject<List<CoinbaseCurrency>>(jsonCurrencies);
+                var rowsCurrencies = JsonSerialization.Deserialize<List<CoinbaseCurrency>>(jsonCurrencies);
                 var currencyDescriptions = rowsCurrencies.ToDictionary(x => x.Id, x => x.Name);
 
                 var jsonProducts = wc.DownloadString(urlProducts);
 
-                var rowsProducts = JsonConvert.DeserializeObject<List<CoinbaseProduct>>(jsonProducts);
+                var rowsProducts = JsonSerialization.Deserialize<List<CoinbaseProduct>>(jsonProducts);
                 foreach (var row in rowsProducts.OrderBy(x => x.Id))
                 {
                     string baseDescription, quoteDescription;
@@ -271,67 +272,67 @@ namespace QuantConnect.Tests.Common.Securities
 
         private class CoinbaseCurrency
         {
-            [JsonProperty("id")]
+            [JsonPropertyName("id")]
             public string Id { get; set; }
 
-            [JsonProperty("name")]
+            [JsonPropertyName("name")]
             public string Name { get; set; }
 
-            [JsonProperty("min_size")]
+            [JsonPropertyName("min_size")]
             public decimal MinSize { get; set; }
         }
 
         private class CoinbaseProduct
         {
-            [JsonProperty("id")]
+            [JsonPropertyName("id")]
             public string Id { get; set; }
 
-            [JsonProperty("base_currency")]
+            [JsonPropertyName("base_currency")]
             public string BaseCurrency { get; set; }
 
-            [JsonProperty("quote_currency")]
+            [JsonPropertyName("quote_currency")]
             public string QuoteCurrency { get; set; }
 
-            [JsonProperty("base_min_size")]
+            [JsonPropertyName("base_min_size")]
             public decimal BaseMinSize { get; set; }
 
-            [JsonProperty("base_max_size")]
+            [JsonPropertyName("base_max_size")]
             public decimal BaseMaxSize { get; set; }
 
-            [JsonProperty("quote_increment")]
+            [JsonPropertyName("quote_increment")]
             public decimal QuoteIncrement { get; set; }
 
-            [JsonProperty("base_increment")]
+            [JsonPropertyName("base_increment")]
             public decimal BaseIncrement { get; set; }
 
-            [JsonProperty("display_name")]
+            [JsonPropertyName("display_name")]
             public string DisplayName { get; set; }
 
-            [JsonProperty("min_market_funds")]
+            [JsonPropertyName("min_market_funds")]
             public decimal MinMarketFunds { get; set; }
 
-            [JsonProperty("max_market_funds")]
+            [JsonPropertyName("max_market_funds")]
             public decimal MaxMarketFunds { get; set; }
 
-            [JsonProperty("margin_enabled")]
+            [JsonPropertyName("margin_enabled")]
             public bool MarginEnabled { get; set; }
 
-            [JsonProperty("post_only")]
+            [JsonPropertyName("post_only")]
             public bool PostOnly { get; set; }
 
-            [JsonProperty("limit_only")]
+            [JsonPropertyName("limit_only")]
             public bool LimitOnly { get; set; }
 
-            [JsonProperty("cancel_only")]
+            [JsonPropertyName("cancel_only")]
             public bool CancelOnly { get; set; }
 
-            [JsonProperty("trading_disabled")]
+            [JsonPropertyName("trading_disabled")]
             public bool TradingDisabled { get; set; }
 
-            [JsonProperty("status")]
+            [JsonPropertyName("status")]
             public string Status { get; set; }
 
-            [JsonProperty("status_message")]
+            [JsonPropertyName("status_message")]
             public string StatusMessage { get; set; }
         }
 
@@ -353,23 +354,23 @@ namespace QuantConnect.Tests.Common.Securities
             using (var wc = new WebClient())
             {
                 var jsonExchangePairs = wc.DownloadString(urlExchangePairs);
-                var exchangePairs = JsonConvert.DeserializeObject<List<List<string>>>(jsonExchangePairs)[0];
+                var exchangePairs = JsonSerialization.Deserialize<List<List<string>>>(jsonExchangePairs)[0];
 
                 var jsonMarginPairs = wc.DownloadString(urlMarginPairs);
-                var marginPairs = JsonConvert.DeserializeObject<List<List<string>>>(jsonMarginPairs)[0];
+                var marginPairs = JsonSerialization.Deserialize<List<List<string>>>(jsonMarginPairs)[0];
 
                 var jsonCurrencyMap = wc.DownloadString(urlCurrencyMap);
-                var rowsCurrencyMap = JsonConvert.DeserializeObject<List<List<List<string>>>>(jsonCurrencyMap)[0];
+                var rowsCurrencyMap = JsonSerialization.Deserialize<List<List<List<string>>>>(jsonCurrencyMap)[0];
                 var currencyMap = rowsCurrencyMap
                     .ToDictionary(row => row[0], row => row[1].ToUpperInvariant());
 
                 var jsonCurrencyLabels = wc.DownloadString(urlCurrencyLabels);
-                var rowsCurrencyLabels = JsonConvert.DeserializeObject<List<List<List<string>>>>(jsonCurrencyLabels)[0];
+                var rowsCurrencyLabels = JsonSerialization.Deserialize<List<List<List<string>>>>(jsonCurrencyLabels)[0];
                 var currencyLabels = rowsCurrencyLabels
                     .ToDictionary(row => row[0], row => row[1]);
 
                 var jsonSymbolDetails = wc.DownloadString(urlSymbolDetails);
-                var symbolDetails = JsonConvert.DeserializeObject<List<BitfinexSymbolDetails>>(jsonSymbolDetails);
+                var symbolDetails = JsonSerialization.Deserialize<List<BitfinexSymbolDetails>>(jsonSymbolDetails);
                 var minimumPriceIncrements = symbolDetails
                     .ToDictionary(x => x.Pair.ToUpperInvariant(), x => (decimal)Math.Pow(10, -x.PricePrecision));
 
@@ -451,25 +452,25 @@ namespace QuantConnect.Tests.Common.Securities
 
         private class BitfinexSymbolDetails
         {
-            [JsonProperty("pair")]
+            [JsonPropertyName("pair")]
             public string Pair { get; set; }
 
-            [JsonProperty("price_precision")]
+            [JsonPropertyName("price_precision")]
             public int PricePrecision { get; set; }
 
-            [JsonProperty("initial_margin")]
+            [JsonPropertyName("initial_margin")]
             public decimal InitialMargin { get; set; }
 
-            [JsonProperty("minimum_margin")]
+            [JsonPropertyName("minimum_margin")]
             public decimal MinimumMargin { get; set; }
 
-            [JsonProperty("maximum_order_size")]
+            [JsonPropertyName("maximum_order_size")]
             public decimal MaximumOrderSize { get; set; }
 
-            [JsonProperty("minimum_order_size")]
+            [JsonPropertyName("minimum_order_size")]
             public decimal MinimumOrderSize { get; set; }
 
-            [JsonProperty("expiration")]
+            [JsonPropertyName("expiration")]
             public string Expiration { get; set; }
         }
 

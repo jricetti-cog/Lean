@@ -15,8 +15,8 @@
 */
 
 using System;
+using System.Text.Json;
 using System.Linq;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using QuantConnect.Data;
 using QuantConnect.Data.Market;
@@ -27,18 +27,15 @@ namespace QuantConnect.Tests.Common
     [TestFixture]
     public class SymbolJsonConverterTests
     {
-        private JsonSerializerSettings Settings = new JsonSerializerSettings
-        {
-            TypeNameHandling = TypeNameHandling.All
-        };
+        private JsonSerializerOptions Settings = JsonSerialization.Create();
 
         [Test]
         public void SurvivesRoundtripSerialization()
         {
             var sid = SecurityIdentifier.GenerateEquity("SPY", Market.USA);
             var expected = new Symbol(sid, "value");
-            var json = JsonConvert.SerializeObject(expected, Settings);
-            var actual = JsonConvert.DeserializeObject<Symbol>(json, Settings);
+            var json = JsonSerialization.Serialize(expected, Settings);
+            var actual = JsonSerialization.Deserialize<Symbol>(json, Settings);
             Assert.AreEqual(expected, actual);
         }
 
@@ -47,8 +44,8 @@ namespace QuantConnect.Tests.Common
         {
             var expected = Symbol.CreateOption("XLRE", Market.USA, OptionStyle.American, OptionRight.Call, 21m, new DateTime(2016, 08, 19));
 
-            var json = JsonConvert.SerializeObject(expected, Settings);
-            var actual = JsonConvert.DeserializeObject<Symbol>(json, Settings);
+            var json = JsonSerialization.Serialize(expected, Settings);
+            var actual = JsonSerialization.Deserialize<Symbol>(json, Settings);
             Assert.AreEqual(expected, actual);
 
             Assert.AreEqual(expected.ID, actual.ID);
@@ -67,8 +64,8 @@ namespace QuantConnect.Tests.Common
         {
             var expected = Symbol.Create("SPY", SecurityType.Option, Market.USA);
 
-            var json = JsonConvert.SerializeObject(expected, Settings);
-            var actual = JsonConvert.DeserializeObject<Symbol>(json, Settings);
+            var json = JsonSerialization.Serialize(expected, Settings);
+            var actual = JsonSerialization.Deserialize<Symbol>(json, Settings);
             Assert.AreEqual(expected, actual);
 
             Assert.AreEqual(SecurityIdentifier.DefaultDate, actual.ID.Date);
@@ -83,8 +80,8 @@ namespace QuantConnect.Tests.Common
         {
             var sid = SecurityIdentifier.GenerateEquity("SPY", Market.USA);
             var expected = new Symbol(sid, "value");
-            var json = JsonConvert.SerializeObject(expected, Settings);
-            var actual = JsonConvert.DeserializeObject<Symbol>(json);
+            var json = JsonSerialization.Serialize(expected, Settings);
+            var actual = JsonSerialization.Deserialize<Symbol>(json);
             Assert.AreEqual(expected, actual);
         }
 
@@ -103,7 +100,7 @@ namespace QuantConnect.Tests.Common
 
             var expected = new Symbol(SecurityIdentifier.GenerateForex("EURGBP", Market.FXCM), "EURGBP");
             var settings = Settings;
-            var actual = JsonConvert.DeserializeObject<List<BaseData>>(json, settings);
+            var actual = JsonSerialization.Deserialize<List<BaseData>>(json, settings);
             Assert.AreEqual(expected, actual[0].Symbol);
         }
 
@@ -130,14 +127,14 @@ namespace QuantConnect.Tests.Common
 
                     "]}";
 
-            var actual = JsonConvert.DeserializeObject<List<BaseData>>(json, Settings);
+            var actual = JsonSerialization.Deserialize<List<BaseData>>(json, Settings);
             Assert.IsFalse(actual.All(x => x.Symbol == new Symbol(SecurityIdentifier.GenerateForex("EURUSD", Market.FXCM), "EURUSD")));
         }
 
         [TestCaseSource(nameof(TestSymbols))]
         public void CamelCaseSymbolIsDeserializedCorrectly(string json, string value, string id, SecurityType securityType, Symbol underlying)
         {
-            var deserializedSymbol = JsonConvert.DeserializeObject<Symbol>(json, Settings);
+            var deserializedSymbol = JsonSerialization.Deserialize<Symbol>(json, Settings);
             Assert.AreEqual(value, deserializedSymbol.Value);
             Assert.AreEqual(id, deserializedSymbol.ID.ToString());
             Assert.AreEqual(securityType, deserializedSymbol.SecurityType);
@@ -159,12 +156,12 @@ namespace QuantConnect.Tests.Common
                 BidPrice = 2,
                 SaleCondition = ""
             };
-            var json = JsonConvert.SerializeObject(tick, Settings);
-            var actual = JsonConvert.DeserializeObject<Tick>(json, Settings);
+            var json = JsonSerialization.Serialize(tick, Settings);
+            var actual = JsonSerialization.Deserialize<Tick>(json, Settings);
             Assert.AreEqual(tick.Symbol, actual.Symbol);
 
-            json = JsonConvert.SerializeObject(tick, Settings);
-            actual = JsonConvert.DeserializeObject<Tick>(json);
+            json = JsonSerialization.Serialize(tick, Settings);
+            actual = JsonSerialization.Deserialize<Tick>(json);
             Assert.AreEqual(tick.Symbol, actual.Symbol);
         }
 
@@ -172,8 +169,8 @@ namespace QuantConnect.Tests.Common
         public void BackwardsCompatibleJson()
         {
             var symbol = new Symbol(SecurityIdentifier.GenerateForex("a", Market.FXCM), "a");
-            var json = JsonConvert.SerializeObject(symbol, new JsonSerializerSettings { Formatting = Formatting.Indented, TypeNameHandling = TypeNameHandling.All });
-            var oldSymbol = JsonConvert.DeserializeObject<OldSymbol>(json);
+            var json = JsonSerialization.Serialize(symbol, JsonSerialization.Create());
+            var oldSymbol = JsonSerialization.Deserialize<OldSymbol>(json);
             Assert.AreEqual("A", oldSymbol.Value);
             Assert.AreEqual("A", oldSymbol.Permtick);
         }
@@ -186,7 +183,7 @@ namespace QuantConnect.Tests.Common
         [TestCase("{\"value\":\"SPXW  210618C04165000\",\"type\":\"10\"}", SecurityType.IndexOption, "SPX", "SPXW", OptionRight.Call, OptionStyle.American, 2021)]
         public void OptionUserFriendlyDeserialization(string jsonValue, SecurityType type, string underlying, string option, OptionRight optionRight, OptionStyle optionStyle, int expirationYear)
         {
-            var symbol = JsonConvert.DeserializeObject<Symbol>(jsonValue);
+            var symbol = JsonSerialization.Deserialize<Symbol>(jsonValue);
 
             Assert.IsNotNull(symbol);
             Assert.AreEqual(type, symbol.SecurityType);
@@ -201,7 +198,7 @@ namespace QuantConnect.Tests.Common
         [TestCase("{\"value\":\"ESZ1\",\"type\":\"5\"}", SecurityType.Future, "ES", 12, Market.CME)]
         public void FutureUserFriendlyDeserialization(string jsonValue, SecurityType type, string symbolId, int month, string market)
         {
-            var symbol = JsonConvert.DeserializeObject<Symbol>(jsonValue);
+            var symbol = JsonSerialization.Deserialize<Symbol>(jsonValue);
 
             Assert.IsNotNull(symbol);
             Assert.AreEqual(type, symbol.SecurityType);
@@ -221,7 +218,7 @@ namespace QuantConnect.Tests.Common
         [TestCase("{\"value\":\"eurusd\",\"type\":\"4\",\"market\":\"oanda\"}", SecurityType.Forex, "EURUSD", Market.Oanda)]
         public void UserFriendlyDeserialization(string jsonValue, SecurityType type, string symbolTicker, string market)
         {
-            var symbol = JsonConvert.DeserializeObject<Symbol>(jsonValue);
+            var symbol = JsonSerialization.Deserialize<Symbol>(jsonValue);
 
             Assert.IsNotNull(symbol);
             Assert.AreEqual(type, symbol.SecurityType);

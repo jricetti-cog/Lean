@@ -46,13 +46,13 @@ namespace QuantConnect.Tests.Common.Util
             }
         };
 
-        private readonly static string ListJson = JsonConvert.SerializeObject(WellFormedInstance);
-        private readonly static string ObjectJson = JsonConvert.SerializeObject(PoorlyFormedInstance);
+        private readonly static string ListJson = JsonSerialization.Serialize(WellFormedInstance);
+        private readonly static string ObjectJson = JsonSerialization.Serialize(PoorlyFormedInstance);
 
         [Test]
         public void DeserializesList()
         {
-            var converted = JsonConvert.DeserializeObject(ListJson, typeof(WellFormedContainer));
+            var converted = JsonSerialization.Deserialize(ListJson, typeof(WellFormedContainer));
             Assert.IsInstanceOf<WellFormedContainer>(converted);
             var instance = (WellFormedContainer)converted;
             Assert.AreEqual(1, instance.ComplexTypes.Count);
@@ -63,7 +63,7 @@ namespace QuantConnect.Tests.Common.Util
         [Test]
         public void DeserializesSingleValue()
         {
-            var converted = JsonConvert.DeserializeObject(ObjectJson, typeof(WellFormedContainer));
+            var converted = JsonSerialization.Deserialize(ObjectJson, typeof(WellFormedContainer));
             Assert.IsInstanceOf<WellFormedContainer>(converted);
             var instance = (WellFormedContainer)converted;
             Assert.AreEqual(1, instance.ComplexTypes.Count);
@@ -74,7 +74,7 @@ namespace QuantConnect.Tests.Common.Util
         [Test]
         public void SerializesListWithOneValue()
         {
-            var serialized = JsonConvert.SerializeObject(WellFormedInstance);
+            var serialized = JsonSerialization.Serialize(WellFormedInstance);
             Assert.AreEqual(ListJson, serialized);
         }
 

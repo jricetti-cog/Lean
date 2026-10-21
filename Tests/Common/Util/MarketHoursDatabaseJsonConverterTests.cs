@@ -34,8 +34,8 @@ namespace QuantConnect.Tests.Common.Util
         public void HandlesRoundTrip()
         {
             var database = MarketHoursDatabase.FromDataFolder();
-            var result = JsonConvert.SerializeObject(database, Formatting.Indented);
-            var deserializedDatabase = JsonConvert.DeserializeObject<MarketHoursDatabase>(result);
+            var result = JsonSerialization.Serialize(database, JsonSerialization.Indented());
+            var deserializedDatabase = JsonSerialization.Deserialize<MarketHoursDatabase>(result);
 
             var originalListing = database.ExchangeHoursListing.ToDictionary();
             foreach (var kvp in deserializedDatabase.ExchangeHoursListing)
@@ -269,7 +269,7 @@ namespace QuantConnect.Tests.Common.Util
                 return new KeyValuePair<string, IEnumerable<DateTime>>(market, dates);
             }).ToDictionary();
             var database = FromCsvFile(input, allHolidays);
-            File.WriteAllText(output, JsonConvert.SerializeObject(database, Formatting.Indented));
+            File.WriteAllText(output, JsonSerialization.Serialize(database, JsonSerialization.Indented()));
         }
 
         #region These methods represent the old way of reading MarketHoursDatabase from csv and are left here to allow users to convert

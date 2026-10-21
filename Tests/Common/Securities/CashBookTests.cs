@@ -15,7 +15,6 @@
 
 using System;
 using System.Linq;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using QuantConnect.Packets;
 using QuantConnect.Securities;
@@ -34,8 +33,8 @@ namespace QuantConnect.Tests.Common.Securities
 
             var expected = new LiveResult { CashBook = cashBook };
 
-            var serialized = JsonConvert.SerializeObject(expected);
-            var result = JsonConvert.DeserializeObject<LiveResult>(serialized);
+            var serialized = JsonSerialization.Serialize(expected);
+            var result = JsonSerialization.Deserialize<LiveResult>(serialized);
 
             Assert.AreEqual(expected.AccountCurrency, result.AccountCurrency);
             Assert.AreEqual(expected.AccountCurrencySymbol, result.AccountCurrencySymbol);

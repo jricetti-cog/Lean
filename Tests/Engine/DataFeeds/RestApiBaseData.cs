@@ -15,7 +15,6 @@
 */
 
 using System;
-using Newtonsoft.Json;
 using NodaTime;
 using QuantConnect.Data;
 using QuantConnect.Data.Market;
@@ -32,7 +31,7 @@ namespace QuantConnect.Tests.Engine.DataFeeds
         {
             ReaderCount++;
             //[{"symbol":"SPY","time":1444271505,"alpha":1,"beta":2}]
-            var array = JsonConvert.DeserializeObject<JsonSerialization[]>(line);
+            var array = QuantConnect.JsonSerialization.Deserialize<JsonSerialization[]>(line);
             if (array.Length > 0)
             {
                 return array[0].ToBaseData(config.DataTimeZone, config.Increment, config.Symbol);

@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.IO;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -119,7 +120,14 @@ namespace QuantConnect
             {
                 return default;
             }
-            return JsonSerializer.Deserialize<T>(json, options ?? Default);
+            try
+            {
+                return JsonSerializer.Deserialize<T>(json, options ?? Default);
+            }
+            catch (JsonException) when (TryNormalizeQuotes(json, out var normalized))
+            {
+                return JsonSerializer.Deserialize<T>(normalized, options ?? Default);
+            }
         }
 
         /// <summary>
@@ -132,7 +140,14 @@ namespace QuantConnect
             {
                 return null;
             }
-            return JsonSerializer.Deserialize(json, type, options ?? Default);
+            try
+            {
+                return JsonSerializer.Deserialize(json, type, options ?? Default);
+            }
+            catch (JsonException) when (TryNormalizeQuotes(json, out var normalized))
+            {
+                return JsonSerializer.Deserialize(normalized, type, options ?? Default);
+            }
         }
 
         /// <summary>
@@ -157,7 +172,73 @@ namespace QuantConnect
         /// </summary>
         public static JsonNode Parse(string json)
         {
-            return JsonNode.Parse(json, documentOptions: DocumentOptions);
+            try
+            {
+                return JsonNode.Parse(json, documentOptions: DocumentOptions);
+            }
+            catch (JsonException) when (TryNormalizeQuotes(json, out var normalized))
+            {
+                return JsonNode.Parse(normalized, documentOptions: DocumentOptions);
+            }
+        }
+
+        /// <summary>
+        /// Newtonsoft.Json accepted single quoted strings and property names, STJ only accepts double quotes.
+        /// Rewrites single quoted strings into double quoted ones
+        /// </summary>
+        private static bool TryNormalizeQuotes(string json, out string normalized)
+        {
+            normalized = null;
+            if (json.IndexOf('\'') < 0)
+            {
+                return false;
+            }
+            var builder = new StringBuilder(json.Length);
+            char? quote = null;
+            for (var i = 0; i < json.Length; i++)
+            {
+                var c = json[i];
+                if (quote == null)
+                {
+                    if (c == '\'' || c == '"')
+                    {
+                        quote = c;
+                        builder.Append('"');
+                    }
+                    else
+                    {
+                        builder.Append(c);
+                    }
+                    continue;
+                }
+                if (c == '\\' && i + 1 < json.Length)
+                {
+                    var next = json[++i];
+                    if (next == '\'' && quote == '\'')
+                    {
+                        builder.Append('\'');
+                    }
+                    else
+                    {
+                        builder.Append(c).Append(next);
+                    }
+                }
+                else if (c == quote)
+                {
+                    quote = null;
+                    builder.Append('"');
+                }
+                else if (c == '"')
+                {
+                    builder.Append("\\\"");
+                }
+                else
+                {
+                    builder.Append(c);
+                }
+            }
+            normalized = builder.ToString();
+            return normalized != json;
         }
 
         /// <summary>

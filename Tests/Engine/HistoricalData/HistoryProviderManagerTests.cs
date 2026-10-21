@@ -152,7 +152,7 @@ namespace QuantConnect.Tests.Engine.HistoricalData
         private void Setup(DeploymentTarget deploymentTarget)
         {
             _historyProviderWrapper = new();
-            var historyProviders = Newtonsoft.Json.JsonConvert.SerializeObject(new[] { nameof(SubscriptionDataReaderHistoryProvider), nameof(TestHistoryProvider) });
+            var historyProviders = JsonSerialization.Serialize(new[] { nameof(SubscriptionDataReaderHistoryProvider), nameof(TestHistoryProvider) });
             var jobWithArrayHistoryProviders = new LiveNodePacket
             {
                 HistoryProvider = historyProviders,

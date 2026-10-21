@@ -17,7 +17,6 @@
 using System.Collections.Generic;
 using NetMQ;
 using NetMQ.Sockets;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using QuantConnect.Configuration;
 using QuantConnect.Messaging;
