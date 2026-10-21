@@ -14,8 +14,8 @@
 */
 
 using System.ComponentModel;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 
 namespace QuantConnect.Orders.Serialization
 {
@@ -27,127 +27,127 @@ namespace QuantConnect.Orders.Serialization
         /// <summary>
         /// The unique order event id
         /// </summary>
-        [JsonProperty("id")]
+        [JsonPropertyName("id")]
         public virtual string Id => $"{AlgorithmId}-{OrderId}-{OrderEventId}";
 
         /// <summary>
         /// Algorithm Id, BacktestId or DeployId
         /// </summary>
-        [JsonProperty("algorithmId")]
+        [JsonPropertyName("algorithmId")]
         public string AlgorithmId { get; set; }
 
         /// <summary>
         /// Id of the order this event comes from.
         /// </summary>
-        [JsonProperty("orderId")]
+        [JsonPropertyName("orderId")]
         public int OrderId { get; set; }
 
         /// <summary>
         /// The unique order event id for each order
         /// </summary>
-        [JsonProperty("orderEventId")]
+        [JsonPropertyName("orderEventId")]
         public int OrderEventId { get; set; }
 
         /// <summary>
         /// Easy access to the order symbol associated with this event.
         /// </summary>
-        [JsonProperty("symbol")]
+        [JsonPropertyName("symbol")]
         public string Symbol { get; set; }
 
         /// <summary>
         /// The mapped symbol value
         /// </summary>
-        [JsonProperty(PropertyName = "symbolValue")]
+        [JsonPropertyName("symbolValue")]
         public string SymbolValue { get; set; }
 
         /// <summary>
         /// The symbols permanent ticker. For equities, by convention this is the first ticker symbol for which the security traded
         /// </summary>
-        [JsonProperty(PropertyName = "symbolPermtick")]
+        [JsonPropertyName("symbolPermtick")]
         public string SymbolPermtick { get; set; }
 
         /// <summary>
         /// The time of this event in unix timestamp
         /// </summary>
-        [JsonProperty("time")]
+        [JsonPropertyName("time")]
         public double Time { get; set; }
 
         /// <summary>
         /// Status message of the order.
         /// </summary>
-        [JsonProperty("status"), JsonConverter(typeof(StringEnumConverter), true)]
+        [JsonPropertyName("status"), JsonConverterWithArgs(typeof(StringEnumJsonConverter), true)]
         public OrderStatus Status { get; set; }
 
         /// <summary>
         /// The fee amount associated with the order
         /// </summary>
-        [JsonProperty("orderFeeAmount", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonPropertyName("orderFeeAmount"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public decimal? OrderFeeAmount { get; set; }
 
         /// <summary>
         /// The fee currency associated with the order
         /// </summary>
-        [JsonProperty("orderFeeCurrency", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonPropertyName("orderFeeCurrency"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public string OrderFeeCurrency { get; set; }
 
         /// <summary>
         /// Fill price information about the order
         /// </summary>
-        [JsonProperty("fillPrice")]
+        [JsonPropertyName("fillPrice")]
         public decimal FillPrice { get; set; }
 
         /// <summary>
         /// Currency for the fill price
         /// </summary>
-        [JsonProperty("fillPriceCurrency")]
+        [JsonPropertyName("fillPriceCurrency")]
         public string FillPriceCurrency { get; set; }
 
         /// <summary>
         /// Number of shares of the order that was filled in this event.
         /// </summary>
-        [JsonProperty("fillQuantity")]
+        [JsonPropertyName("fillQuantity")]
         public decimal FillQuantity { get; set; }
 
         /// <summary>
         /// Order direction.
         /// </summary>
-        [JsonProperty("direction"), JsonConverter(typeof(StringEnumConverter), true)]
+        [JsonPropertyName("direction"), JsonConverterWithArgs(typeof(StringEnumJsonConverter), true)]
         public OrderDirection Direction { get; set; }
 
         /// <summary>
         /// Any message from the exchange.
         /// </summary>
-        [DefaultValue(""), JsonProperty("message", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [DefaultValue(""), JsonPropertyName("message"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public string Message { get; set; }
 
         /// <summary>
         /// True if the order event is an assignment
         /// </summary>
-        [JsonProperty("isAssignment")]
+        [JsonPropertyName("isAssignment")]
         public bool IsAssignment { get; set; }
 
         /// <summary>
         /// The current order quantity
         /// </summary>
-        [JsonProperty("quantity")]
+        [JsonPropertyName("quantity")]
         public decimal Quantity { get; set; }
 
         /// <summary>
         /// The current stop price
         /// </summary>
-        [JsonProperty("stopPrice", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonPropertyName("stopPrice"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public decimal? StopPrice { get; set; }
 
         /// <summary>
         /// The current limit price
         /// </summary>
-        [JsonProperty("limitPrice", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonPropertyName("limitPrice"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public decimal? LimitPrice { get; set; }
 
         /// <summary>
         /// True if the order event's option is In-The-Money (ITM)
         /// </summary>
-        [JsonProperty("isInTheMoney", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonPropertyName("isInTheMoney"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public bool IsInTheMoney { get; set; }
 
         /// <summary>
@@ -189,7 +189,7 @@ namespace QuantConnect.Orders.Serialization
 
         #region BackwardsCompatibility
 
-        [JsonProperty("algorithm-id")]
+        [JsonPropertyName("algorithm-id")]
         string OldAlgorithmId
         {
             set
@@ -197,7 +197,7 @@ namespace QuantConnect.Orders.Serialization
                 AlgorithmId = value;
             }
         }
-        [JsonProperty("order-id")]
+        [JsonPropertyName("order-id")]
         int OldOrderId
         {
             set
@@ -205,7 +205,7 @@ namespace QuantConnect.Orders.Serialization
                 OrderId = value;
             }
         }
-        [JsonProperty("order-event-id")]
+        [JsonPropertyName("order-event-id")]
         int OldOrderEventId
         {
             set
@@ -213,7 +213,7 @@ namespace QuantConnect.Orders.Serialization
                 OrderEventId = value;
             }
         }
-        [JsonProperty(PropertyName = "symbol-value")]
+        [JsonPropertyName("symbol-value")]
         string OldSymbolValue
         {
             set
@@ -221,7 +221,7 @@ namespace QuantConnect.Orders.Serialization
                 SymbolValue = value;
             }
         }
-        [JsonProperty(PropertyName = "symbol-permtick")]
+        [JsonPropertyName("symbol-permtick")]
         string OldSymbolPermtick
         {
             set
@@ -229,7 +229,7 @@ namespace QuantConnect.Orders.Serialization
                 SymbolPermtick = value;
             }
         }
-        [JsonProperty("order-fee-amount", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonPropertyName("order-fee-amount"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         decimal? OldOrderFeeAmount
         {
             set
@@ -237,7 +237,7 @@ namespace QuantConnect.Orders.Serialization
                 OrderFeeAmount = value;
             }
         }
-        [JsonProperty("order-fee-currency", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonPropertyName("order-fee-currency"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         string OldOrderFeeCurrency
         {
             set
@@ -245,7 +245,7 @@ namespace QuantConnect.Orders.Serialization
                 OrderFeeCurrency = value;
             }
         }
-        [JsonProperty("fill-price")]
+        [JsonPropertyName("fill-price")]
         decimal OldFillPrice
         {
             set
@@ -253,7 +253,7 @@ namespace QuantConnect.Orders.Serialization
                 FillPrice = value;
             }
         }
-        [JsonProperty("fill-price-currency")]
+        [JsonPropertyName("fill-price-currency")]
         string OldFillPriceCurrency
         {
             set
@@ -261,7 +261,7 @@ namespace QuantConnect.Orders.Serialization
                 FillPriceCurrency = value;
             }
         }
-        [JsonProperty("fill-quantity")]
+        [JsonPropertyName("fill-quantity")]
         decimal OldFillQuantity
         {
             set
@@ -269,7 +269,7 @@ namespace QuantConnect.Orders.Serialization
                 FillQuantity = value;
             }
         }
-        [JsonProperty("is-assignment")]
+        [JsonPropertyName("is-assignment")]
         bool OldIsAssignment
         {
             set
@@ -277,7 +277,7 @@ namespace QuantConnect.Orders.Serialization
                 IsAssignment = value;
             }
         }
-        [JsonProperty("stop-price", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonPropertyName("stop-price"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         decimal? OldStopPrice
         {
             set
@@ -285,7 +285,7 @@ namespace QuantConnect.Orders.Serialization
                 StopPrice = value;
             }
         }
-        [JsonProperty("limit-price", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonPropertyName("limit-price"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         decimal? OldLimitPrice
         {
             set
@@ -293,7 +293,7 @@ namespace QuantConnect.Orders.Serialization
                 LimitPrice = value;
             }
         }
-        [JsonProperty("is-in-the-money", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonPropertyName("is-in-the-money"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         bool OldIsInTheMoney
         {
             set

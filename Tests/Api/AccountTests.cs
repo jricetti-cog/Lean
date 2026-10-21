@@ -14,7 +14,6 @@
 */
 
 using System;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using QuantConnect.Api;
 
@@ -27,7 +26,7 @@ namespace QuantConnect.Tests.API
         [TestCase("{\"organizationId\":\"organizationID\",\"creditBalance\":111.56,\"card\":null,\"success\":true}", false)]
         public void Deserialize(string response, bool hasCard)
         {
-            var account = JsonConvert.DeserializeObject<Account>(response);
+            var account = JsonSerialization.Deserialize<Account>(response);
 
             Assert.AreEqual("organizationID", account.OrganizationId);
             Assert.AreEqual(111.56m, account.CreditBalance);

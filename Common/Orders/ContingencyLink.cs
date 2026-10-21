@@ -14,7 +14,7 @@
 */
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace QuantConnect.Orders
 {
@@ -28,32 +28,32 @@ namespace QuantConnect.Orders
         /// The contingency id, unique within its set of contingent orders.
         /// Orders sharing a contingency id are related through it
         /// </summary>
-        [JsonProperty(PropertyName = "id")]
+        [JsonPropertyName("id")]
         public int Id { get; }
 
         /// <summary>
         /// The contingency type
         /// </summary>
-        [JsonProperty(PropertyName = "type")]
+        [JsonPropertyName("type")]
         public ContingencyType Type { get; }
 
         /// <summary>
         /// The role of the order in this contingency, for a <see cref="ContingencyType.OneTriggersOther"/> contingency.
         /// Null for the other types, whose orders are all siblings
         /// </summary>
-        [JsonProperty(PropertyName = "role", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonPropertyName("role"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public ContingencyRole? Role { get; }
 
         /// <summary>
         /// For a <see cref="ContingencyRole.Child"/>, whether the parent filled and so the order was released to the market
         /// </summary>
-        [JsonProperty(PropertyName = "triggered", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonPropertyName("triggered"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public bool Triggered { get; internal set; }
 
         /// <summary>
         /// For a <see cref="ContingencyRole.Child"/>, the utc time at which the order was triggered, if any
         /// </summary>
-        [JsonProperty(PropertyName = "triggeredTime", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonPropertyName("triggeredTime"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public DateTime? TriggeredTime { get; internal set; }
 
         /// <summary>

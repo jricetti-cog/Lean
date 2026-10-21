@@ -13,7 +13,7 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System;
 using System.Collections.Generic;
 
@@ -51,7 +51,7 @@ namespace QuantConnect.Statistics
         /// <summary>
         /// Just needed so that "Symbol" is never serialized but can be deserialized, if present, for backward compatibility
         /// </summary>
-        [JsonProperty("Symbol")]
+        [JsonPropertyName("Symbol")]
         private Symbol SymbolForDeserialization { set => Symbol = value; }
 
         /// <summary>

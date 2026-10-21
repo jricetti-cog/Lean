@@ -14,7 +14,6 @@
  *
 */
 
-using Newtonsoft.Json;
 using NUnit.Framework;
 using QuantConnect.Optimizer;
 using QuantConnect.Optimizer.Analysis;

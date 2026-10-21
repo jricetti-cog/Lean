@@ -14,7 +14,8 @@
 */
 
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 using QuantConnect.Util;
 
 namespace QuantConnect.Securities.FutureOption.Api
@@ -27,7 +28,7 @@ namespace QuantConnect.Securities.FutureOption.Api
         /// <summary>
         /// The future options contracts with/without settlements
         /// </summary>
-        [JsonProperty("optionContractQuotes")]
+        [JsonPropertyName("optionContractQuotes")]
         public List<CMEOptionChainQuoteEntry> Quotes { get; private set; }
     }
 
@@ -39,7 +40,7 @@ namespace QuantConnect.Securities.FutureOption.Api
         /// <summary>
         /// Strike price of the future option quote entry
         /// </summary>
-        [JsonProperty("strikePrice"), JsonConverter(typeof(StringDecimalJsonConverter), true)]
+        [JsonPropertyName("strikePrice"), JsonConverterWithArgs(typeof(StringDecimalJsonConverter), true)]
         public decimal StrikePrice { get; private set; }
     }
 }

@@ -16,7 +16,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
 using NodaTime;
 using NUnit.Framework;
 using Python.Runtime;
@@ -60,7 +59,7 @@ namespace QuantConnect.Tests.Algorithm
             Dictionary<SecurityType, List<TickType>> dataFeeds = new Dictionary<SecurityType, List<TickType>>();
             if (!string.IsNullOrEmpty(dataFeedsConfigString))
             {
-                dataFeeds = JsonConvert.DeserializeObject<Dictionary<SecurityType, List<TickType>>>(dataFeedsConfigString);
+                dataFeeds = JsonSerialization.Deserialize<Dictionary<SecurityType, List<TickType>>>(dataFeedsConfigString);
             }
 
             algo.SetAvailableDataTypes(dataFeeds);

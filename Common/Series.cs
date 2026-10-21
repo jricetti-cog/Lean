@@ -18,8 +18,8 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Runtime.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 using QuantConnect.Util;
 
 namespace QuantConnect
@@ -213,7 +213,7 @@ namespace QuantConnect
     /// <summary>
     /// Shape or symbol for the marker in a scatter plot
     /// </summary>
-    [JsonConverter(typeof(StringEnumConverter))]
+    [JsonConverter(typeof(StringEnumJsonConverter))]
     public enum ScatterMarkerSymbol
     {
         /// <summary>

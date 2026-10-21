@@ -15,7 +15,7 @@
 
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuantConnect.Api.Serialization;
 
 // Collection of response objects for QuantConnect Organization/ endpoints
@@ -40,13 +40,13 @@ namespace QuantConnect.Api
         /// <summary>
         /// Type of the organization's seats, like "researcher", "team", "trading firm" or "institution"
         /// </summary>
-        [JsonProperty(PropertyName = "type")]
+        [JsonPropertyName("type")]
         public string Type { get; set; }
 
         /// <summary>
         /// Data Agreement information
         /// </summary>
-        [JsonProperty(PropertyName = "data")]
+        [JsonPropertyName("data")]
         public DataAgreement DataAgreement { get; set; }
 
         /// <summary>
@@ -68,7 +68,7 @@ namespace QuantConnect.Api
         /// <summary>
         /// Epoch time the Data Agreement was Signed
         /// </summary>
-        [JsonProperty(PropertyName = "signedTime")]
+        [JsonPropertyName("signedTime")]
         public long? EpochSignedTime { get; set; }
 
         /// <summary>
@@ -81,7 +81,7 @@ namespace QuantConnect.Api
         /// <summary>
         /// True/False if it is currently signed
         /// </summary>
-        [JsonProperty(PropertyName = "current")]
+        [JsonPropertyName("current")]
         public bool Signed { get; set; }
     }
 
@@ -122,7 +122,7 @@ namespace QuantConnect.Api
         /// <summary>
         /// ID for this product
         /// </summary>
-        [JsonProperty(PropertyName = "productId")]
+        [JsonPropertyName("productId")]
         public int Id { get; set; }
 
         /// <summary>

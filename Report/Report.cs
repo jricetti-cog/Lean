@@ -18,7 +18,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Deedle;
-using Newtonsoft.Json;
 using QuantConnect.Configuration;
 using QuantConnect.Logging;
 using QuantConnect.Packets;
@@ -90,7 +89,7 @@ namespace QuantConnect.Report
 
                     var outputFile = destination.Replace(".html", string.Empty) + "-backtesting-portfolio.json";
                     Log.Trace($"Report.Report(): Writing backtest point-in-time portfolios to JSON file: {outputFile}");
-                    var backtestPortfolioOutput = JsonConvert.SerializeObject(dailyBacktestPortfolioInTime);
+                    var backtestPortfolioOutput = JsonSerialization.Serialize(dailyBacktestPortfolioInTime);
                     File.WriteAllText(outputFile, backtestPortfolioOutput);
                 }
                 if (livePortfolioInTime.Count != 0)
@@ -104,7 +103,7 @@ namespace QuantConnect.Report
 
                     var outputFile = destination.Replace(".html", string.Empty) + "-live-portfolio.json";
                     Log.Trace($"Report.Report(): Writing live point-in-time portfolios to JSON file: {outputFile}");
-                    var livePortfolioOutput = JsonConvert.SerializeObject(dailyLivePortfolioInTime);
+                    var livePortfolioOutput = JsonSerialization.Serialize(dailyLivePortfolioInTime);
                     File.WriteAllText(outputFile, livePortfolioOutput);
                 }
             }
@@ -186,7 +185,7 @@ namespace QuantConnect.Report
                 statistics[reportElement.JsonKey] = reportElement.Result;
             }
 
-            reportStatistics = JsonConvert.SerializeObject(statistics, Formatting.None);
+            reportStatistics = JsonSerialization.Serialize(statistics);
         }
 
         /// <summary>

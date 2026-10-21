@@ -15,7 +15,6 @@
 
 using System;
 using System.IO;
-using Newtonsoft.Json;
 using QuantConnect.Util;
 using System.Diagnostics;
 using QuantConnect.Logging;
@@ -61,24 +60,16 @@ namespace QuantConnect.Report
 
             // Parse content from source files into result objects
             Log.Trace($"QuantConnect.Report.Main(): Parsing source files...{backtestDataFile}, {liveDataFile}");
-            var backtestSettings = new JsonSerializerSettings
-            {
-                Converters = new List<JsonConverter> { new NullResultValueTypeJsonConverter<BacktestResult>() },
-                FloatParseHandling = FloatParseHandling.Decimal
-            };
+            var backtestSettings = JsonSerialization.Create(floatAsDecimal: true, converters: new NullResultValueTypeJsonConverter<BacktestResult>());
 
-            var backtest = JsonConvert.DeserializeObject<BacktestResult>(File.ReadAllText(backtestDataFile), backtestSettings);
+            var backtest = JsonSerialization.Deserialize<BacktestResult>(File.ReadAllText(backtestDataFile), backtestSettings);
             LiveResult live = null;
 
             if (!string.IsNullOrEmpty(liveDataFile))
             {
-                var settings = new JsonSerializerSettings
-                {
-                    NullValueHandling = NullValueHandling.Ignore,
-                    Converters = new List<JsonConverter> { new NullResultValueTypeJsonConverter<LiveResult>() }
-                };
+                var settings = JsonSerialization.Create(converters: new NullResultValueTypeJsonConverter<LiveResult>());
 
-                live = JsonConvert.DeserializeObject<LiveResult>(File.ReadAllText(liveDataFile), settings);
+                live = JsonSerialization.Deserialize<LiveResult>(File.ReadAllText(liveDataFile), settings);
             }
 
             string cssOverrideContent = null;

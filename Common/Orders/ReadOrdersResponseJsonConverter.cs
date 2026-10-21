@@ -14,60 +14,52 @@
 */
 
 using System;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using QuantConnect.Orders.Serialization;
+using QuantConnect.Util.Json;
 
 namespace QuantConnect.Orders
 {
     /// <summary>
-    /// Api orders read response json converter
+    /// Api order and order events reponse json converter
     /// </summary>
-    public class ReadOrdersResponseJsonConverter : JsonConverter
+    public class ReadOrdersResponseJsonConverter : JsonConverter<ApiOrderResponse>
     {
         /// <summary>
-        /// Determines if can convert the given open type
+        /// Writes the JSON representation of the object.
         /// </summary>
-        public override bool CanConvert(Type objectType)
+        public override void Write(Utf8JsonWriter writer, ApiOrderResponse orderResponse, JsonSerializerOptions options)
         {
-            return objectType == typeof(ApiOrderResponse);
-        }
-
-        /// <summary>
-        /// Serialize the given api order response
-        /// </summary>
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-        {
-            var orderResponse = (ApiOrderResponse)value;
-            var jObject = JObject.FromObject(orderResponse.Order);
-            jObject["symbol"] = JToken.FromObject(orderResponse.Symbol);
-            jObject["events"] = JToken.FromObject(orderResponse.Events);
+            var jObject = JsonSerialization.FromObject(orderResponse.Order).AsObject();
+            jObject["symbol"] = JsonSerialization.FromObject(orderResponse.Symbol);
+            jObject["events"] = JsonSerialization.FromObject(orderResponse.Events);
             jObject.WriteTo(writer);
         }
 
         /// <summary>
-        /// Deserialize the given api order response
+        /// Reads the JSON representation of the object.
         /// </summary>
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override ApiOrderResponse Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            var jObject = JObject.Load(reader);
+            var jObject = JsonNode.Parse(ref reader).AsObject();
 
-            serializer.Converters.Add(new OrderJsonConverter());
-            var order = jObject.ToObject<Order>(serializer);
+            var order = OrderJsonConverter.CreateOrderFromJObject(jObject);
 
             var events = jObject["Events"] ?? jObject["events"];
             List<SerializedOrderEvent> deserializedEvents = null;
             if (events != null)
             {
-                deserializedEvents = events.ToObject<List<SerializedOrderEvent>>();
+                deserializedEvents = events.Value<List<SerializedOrderEvent>>();
             }
 
             var symbol = jObject["Symbol"] ?? jObject["symbol"];
             Symbol deserializedSymbol = null;
             if (symbol != null)
             {
-                deserializedSymbol = symbol.ToObject<Symbol>();
+                deserializedSymbol = symbol.Value<Symbol>();
             }
 
             return new ApiOrderResponse(order, deserializedEvents ?? new(), deserializedSymbol);

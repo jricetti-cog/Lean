@@ -13,8 +13,8 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 using QuantConnect.Packets;
 using System;
 using System.Collections.Generic;
@@ -94,26 +94,26 @@ namespace QuantConnect.Api
         /// <summary>
         /// Runtime banner/updating statistics in the title banner of the live algorithm GUI.
         /// </summary>
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, string> RuntimeStatistics { get; set; }
 
         /// <summary>
         /// Server status information, including CPU/RAM usage, ect...
         /// </summary>
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, string> ServerStatistics { get; set; }
 
         /// <summary>
         /// Charts updates for the live algorithm since the last result packet
         /// </summary>
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, Chart> Charts { get; set; }
 
         /// <summary>
         /// Deployment details shared by the brokerage, data queue handler or any other component,
         /// for example account information. Null when the deployment reported none
         /// </summary>
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, string> DeploymentDetails { get; set; }
     }
 
@@ -130,13 +130,13 @@ namespace QuantConnect.Api
         /// <summary>
         /// Temporal resolution of the results returned from the Api
         /// </summary>
-        [JsonProperty(PropertyName = "resolution"), JsonConverter(typeof(StringEnumConverter))]
+        [JsonPropertyName("resolution"), JsonConverter(typeof(StringEnumJsonConverter))]
         public Resolution Resolution { get; set; }
 
         /// <summary>
         /// Class to represent the data groups results return from the Api
         /// </summary>
-        [JsonProperty(PropertyName = "results")]
+        [JsonPropertyName("results")]
         public LiveResult Results { get; set; }
     }
 }

@@ -13,8 +13,6 @@
 
 from AlgorithmImports import *
 
-import Newtonsoft.Json as json
-
 ### <summary>
 ### Algorithm illustrating how to manually set market hours and symbol properties database entries to be picked up by the algorithm's securities.
 ### This specific case illustrates how to do it for CFDs to match InteractiveBrokers brokerage, which has different market hours
@@ -48,7 +46,7 @@ class ManuallySetMarketHoursAndSymbolPropertiesDatabaseEntriesAlgorithm(QCAlgori
 
         spy_cfd = self.add_cfd("SPY", market=Market.INTERACTIVE_BROKERS)
 
-        if json.JsonConvert.serialize_object(spy_cfd.exchange.hours) != json.JsonConvert.serialize_object(equity_market_hours_entry.exchange_hours):
+        if JsonSerialization.serialize(spy_cfd.exchange.hours) != JsonSerialization.serialize(equity_market_hours_entry.exchange_hours):
             raise AssertionError("Expected the SPY CFD market hours to be the same as the underlying equity market hours.")
 
         if not self.symbol_properties_are_equivalent(spy_cfd.symbol_properties, equity_symbol_properties):
@@ -63,7 +61,7 @@ class ManuallySetMarketHoursAndSymbolPropertiesDatabaseEntriesAlgorithm(QCAlgori
 
         aud_usd_cfd = self.add_cfd("AUDUSD", market=Market.INTERACTIVE_BROKERS)
 
-        if json.JsonConvert.serialize_object(aud_usd_cfd.exchange.hours) != json.JsonConvert.serialize_object(aud_usd_forex_market_hours_entry.exchange_hours):
+        if JsonSerialization.serialize(aud_usd_cfd.exchange.hours) != JsonSerialization.serialize(aud_usd_forex_market_hours_entry.exchange_hours):
             raise AssertionError("Expected the AUDUSD CFD market hours to be the same as the underlying forex market hours.")
 
         if not self.symbol_properties_are_equivalent(aud_usd_cfd.symbol_properties, aud_usd_forex_symbol_properties):

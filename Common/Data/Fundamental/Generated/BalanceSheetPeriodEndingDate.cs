@@ -17,7 +17,7 @@
 using System;
 using System.Linq;
 using Python.Runtime;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using QuantConnect.Data.UniverseSelection;
 
@@ -36,25 +36,25 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the ThreeMonths period value for the field
         /// </summary>
-        [JsonProperty("3M")]
+        [JsonPropertyName("3M")]
         public DateTime ThreeMonths => FundamentalService.Get<DateTime>(TimeProvider.GetUtcNow(), SecurityIdentifier, FundamentalProperty.FinancialStatements_BalanceSheet_PeriodEndingDate_ThreeMonths);
 
         /// <summary>
         /// Gets/sets the SixMonths period value for the field
         /// </summary>
-        [JsonProperty("6M")]
+        [JsonPropertyName("6M")]
         public DateTime SixMonths => FundamentalService.Get<DateTime>(TimeProvider.GetUtcNow(), SecurityIdentifier, FundamentalProperty.FinancialStatements_BalanceSheet_PeriodEndingDate_SixMonths);
 
         /// <summary>
         /// Gets/sets the NineMonths period value for the field
         /// </summary>
-        [JsonProperty("9M")]
+        [JsonPropertyName("9M")]
         public DateTime NineMonths => FundamentalService.Get<DateTime>(TimeProvider.GetUtcNow(), SecurityIdentifier, FundamentalProperty.FinancialStatements_BalanceSheet_PeriodEndingDate_NineMonths);
 
         /// <summary>
         /// Gets/sets the TwelveMonths period value for the field
         /// </summary>
-        [JsonProperty("12M")]
+        [JsonPropertyName("12M")]
         public DateTime TwelveMonths => FundamentalService.Get<DateTime>(TimeProvider.GetUtcNow(), SecurityIdentifier, FundamentalProperty.FinancialStatements_BalanceSheet_PeriodEndingDate_TwelveMonths);
 
         /// <summary>

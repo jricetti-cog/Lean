@@ -17,7 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuantConnect.Data;
 using QuantConnect.Interfaces;
 using QuantConnect.Securities;
@@ -162,24 +162,24 @@ namespace QuantConnect.Algorithm.CSharp
         /// </summary>
         public class Bitcoin : BaseData
         {
-            [JsonProperty("timestamp")]
+            [JsonPropertyName("timestamp")]
             public int Timestamp { get; set; }
-            [JsonProperty("open")]
+            [JsonPropertyName("open")]
             public decimal Open { get; set; }
-            [JsonProperty("high")]
+            [JsonPropertyName("high")]
             public decimal High { get; set; }
-            [JsonProperty("low")]
+            [JsonPropertyName("low")]
             public decimal Low { get; set; }
             public decimal Mid { get; set; }
-            [JsonProperty("last")]
+            [JsonPropertyName("last")]
             public decimal Close { get; set; }
-            [JsonProperty("bid")]
+            [JsonPropertyName("bid")]
             public decimal Bid { get; set; }
-            [JsonProperty("ask")]
+            [JsonPropertyName("ask")]
             public decimal Ask { get; set; }
-            [JsonProperty("vwap")]
+            [JsonPropertyName("vwap")]
             public decimal WeightedPrice { get; set; }
-            [JsonProperty("volume")]
+            [JsonPropertyName("volume")]
             public decimal VolumeBTC { get; set; }
             public decimal VolumeUSD { get; set; }
 
@@ -241,7 +241,7 @@ namespace QuantConnect.Algorithm.CSharp
                     //{"high": "441.00", "last": "421.86", "timestamp": "1411606877", "bid": "421.96", "vwap": "428.58", "volume": "14120.40683975", "low": "418.83", "ask": "421.99"}
                     try
                     {
-                        coin = JsonConvert.DeserializeObject<Bitcoin>(line);
+                        coin = JsonSerialization.Deserialize<Bitcoin>(line);
                         coin.EndTime = DateTime.UtcNow.ConvertFromUtc(config.ExchangeTimeZone);
                         coin.Value = coin.Close;
                     }

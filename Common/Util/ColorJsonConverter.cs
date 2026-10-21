@@ -17,7 +17,7 @@
 using System;
 using System.Drawing;
 using System.Globalization;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace QuantConnect.Util
 {
@@ -44,6 +44,14 @@ namespace QuantConnect.Util
         /// <returns>The converted value</returns>
         protected override Color Convert(string value)
         {
+            return FromString(value);
+        }
+
+        /// <summary>
+        /// Converts the hex color string into a color
+        /// </summary>
+        public static Color FromString(string value)
+        {
             if (string.IsNullOrWhiteSpace(value))
             {
                 return Color.Empty;
@@ -65,7 +73,7 @@ namespace QuantConnect.Util
         /// </summary>
         /// <param name="hexValue">Hexadecimal number</param>
         /// <returns>Integer representation of the hexadecimal</returns>
-        private int HexToInt(string hexValue)
+        private static int HexToInt(string hexValue)
         {
             if (hexValue.Length != 2)
             {

@@ -31,7 +31,9 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using QuantConnect.Util.Json;
 using NodaTime;
 using ProtoBuf;
 using Python.Runtime;
@@ -58,9 +60,7 @@ using QuantConnect.Securities.Future;
 using QuantConnect.Securities.FutureOption;
 using QuantConnect.Securities.Option;
 using QuantConnect.Statistics;
-using Newtonsoft.Json.Linq;
 using QuantConnect.Orders.Fees;
-using Newtonsoft.Json.Serialization;
 using QuantConnect.Api;
 
 namespace QuantConnect
@@ -104,18 +104,7 @@ namespace QuantConnect
         /// <summary>
         /// Json converter deserializer for streams
         /// </summary>
-        private static readonly JsonSerializer JsonSerializer = new()
-        {
-            Converters = { new LiveAlgorithmResultsJsonConverter(), new OrderJsonConverter() },
-            ContractResolver = new DefaultContractResolver
-            {
-                NamingStrategy = new CamelCaseNamingStrategy
-                {
-                    ProcessDictionaryKeys = false,
-                    OverrideSpecifiedNames = true
-                }
-            }
-        };
+        private static readonly JsonSerializerOptions CamelCaseJsonOptions = JsonSerialization.Create(camelCase: true, converters: new System.Text.Json.Serialization.JsonConverter[] { new LiveAlgorithmResultsJsonConverter(), new OrderJsonConverter() });
 
         /// <summary>
         /// The offset span from the market close to liquidate or exercise a security on the delisting date
@@ -133,7 +122,7 @@ namespace QuantConnect
         /// <param name="jObject">The jobject source</param>
         /// <param name="name">The property name</param>
         /// <returns>The property value if present or it's default value</returns>
-        public static T TryGetPropertyValue<T>(this JObject jObject, string name)
+        public static T TryGetPropertyValue<T>(this JsonObject jObject, string name)
         {
             T result = default;
             if (jObject == null)
@@ -142,7 +131,7 @@ namespace QuantConnect
             }
 
             var jValue = jObject[name];
-            if (jValue != null && jValue.Type != JTokenType.Null)
+            if (!jValue.IsNull())
             {
                 result = jValue.Value<T>();
             }
@@ -270,11 +259,11 @@ namespace QuantConnect
                 {
                     return new();
                 }
-                return JsonConvert.DeserializeObject<List<T>>(jsonArray);
+                return JsonSerialization.Deserialize<List<T>>(jsonArray);
             }
             catch (Exception ex)
             {
-                if (ex is not JsonReaderException && ex is not JsonSerializationException)
+                if (ex is not JsonException)
                 {
                     throw;
                 }
@@ -283,7 +272,7 @@ namespace QuantConnect
                 {
                     return new List<T> { (T)Convert.ChangeType(jsonArray, typeof(T), CultureInfo.InvariantCulture) };
                 }
-                return new List<T> { JsonConvert.DeserializeObject<T>(jsonArray) };
+                return new List<T> { JsonSerialization.Deserialize<T>(jsonArray) };
             }
         }
 
@@ -330,7 +319,7 @@ namespace QuantConnect
         /// <param name="headers">Add custom headers for the request</param>
         /// <param name="settings">Optional JSON serializer settings</param>
         /// <returns>The deserialized data</returns>
-        public static T DownloadData<T>(this HttpClient client, string url, Dictionary<string, string> headers = null, JsonSerializerSettings settings = null)
+        public static T DownloadData<T>(this HttpClient client, string url, Dictionary<string, string> headers = null, JsonSerializerOptions settings = null)
         {
             client.TryDownloadData<T>(url, out var result, out _, headers, settings);
             return result;
@@ -344,7 +333,7 @@ namespace QuantConnect
         /// <param name="headers">Add custom headers for the request</param>
         /// <param name="settings">Optional JSON serializer settings</param>
         /// <returns>The deserialized data</returns>
-        public static T DownloadData<T>(this string url, Dictionary<string, string> headers = null, JsonSerializerSettings settings = null)
+        public static T DownloadData<T>(this string url, Dictionary<string, string> headers = null, JsonSerializerOptions settings = null)
         {
             using var client = new HttpClient();
             return client.DownloadData<T>(url, headers, settings);
@@ -361,7 +350,7 @@ namespace QuantConnect
         /// <param name="headers">Add custom headers for the request</param>
         /// <param name="settings">Optional JSON serializer settings</param>
         /// <returns>True if successful, otherwise false</returns>
-        public static bool TryDownloadData<T>(this HttpClient client, string url, out T result, out HttpStatusCode? statusCode, Dictionary<string, string> headers = null, JsonSerializerSettings settings = null)
+        public static bool TryDownloadData<T>(this HttpClient client, string url, out T result, out HttpStatusCode? statusCode, Dictionary<string, string> headers = null, JsonSerializerOptions settings = null)
         {
             result = default;
             statusCode = null;
@@ -395,9 +384,7 @@ namespace QuantConnect
                 }
                 else
                 {
-                    using var jsonReader = new JsonTextReader(reader);
-                    var serializer = JsonSerializer.Create(settings);
-                    result = serializer.Deserialize<T>(jsonReader);
+                    result = JsonSerialization.Deserialize<T>(reader.ReadToEnd(), settings);
                 }
                 return true;
             }
@@ -670,7 +657,7 @@ namespace QuantConnect
                                 limitIfTouched.LimitPrice = limitIfTouched.LimitPrice.SmartRounding();
                                 limitIfTouched.TriggerPrice = limitIfTouched.TriggerPrice.SmartRounding();
                             }
-                            return JsonConvert.SerializeObject(pair.Value, Formatting.None);
+                            return JsonSerialization.Serialize(pair.Value);
                         }
                     )
             );
@@ -1019,11 +1006,23 @@ namespace QuantConnect
         /// <param name="serializer">The json serializer to use</param>
         /// <param name="leaveOpen">Whether to leave the source stream open</param>
         /// <returns>The deserialized object</returns>
-        public static T DeserializeJson<T>(this Stream stream, JsonSerializer serializer = null, bool leaveOpen = true)
+        public static T DeserializeJson<T>(this Stream stream, JsonSerializerOptions serializer = null, bool leaveOpen = true)
         {
-            using var streamReader = new StreamReader(stream, leaveOpen: leaveOpen);
-            using var jsonReader = new JsonTextReader(streamReader);
-            return (serializer ?? JsonSerializer).Deserialize<T>(jsonReader);
+            try
+            {
+                if (stream.CanSeek && stream.Length - stream.Position == 0)
+                {
+                    return default;
+                }
+                return JsonSerializer.Deserialize<T>(stream, serializer ?? CamelCaseJsonOptions);
+            }
+            finally
+            {
+                if (!leaveOpen)
+                {
+                    stream.Dispose();
+                }
+            }
         }
 
         /// <summary>
@@ -1032,11 +1031,9 @@ namespace QuantConnect
         /// <param name="content">The string to deserialize</param>
         /// <param name="serializer">The json serializer to use</param>
         /// <returns>The deserialized object</returns>
-        public static T DeserializeJson<T>(this string content, JsonSerializer serializer = null)
+        public static T DeserializeJson<T>(this string content, JsonSerializerOptions serializer = null)
         {
-            using var stringReader = new StringReader(content);
-            using var jsonReader = new JsonTextReader(stringReader);
-            return (serializer ?? JsonSerializer).Deserialize<T>(jsonReader);
+            return JsonSerialization.Deserialize<T>(content, serializer ?? CamelCaseJsonOptions);
         }
 
         /// <summary>
@@ -1045,12 +1042,9 @@ namespace QuantConnect
         /// <param name="value">The object to serialize</param>
         /// <param name="target">The stream to serialize the object to</param>
         /// <param name="serializer">The json serializer to use</param>
-        public static void SerializeJsonToStream<T>(this T value, Stream target, JsonSerializer serializer = null)
+        public static void SerializeJsonToStream<T>(this T value, Stream target, JsonSerializerOptions serializer = null)
         {
-            using var writer = new StreamWriter(target, leaveOpen: true);
-            using var jsonWriter = new JsonTextWriter(writer);
-            (serializer ?? JsonSerializer).Serialize(jsonWriter, value);
-            jsonWriter.Flush();
+            JsonSerializer.Serialize(target, value, value?.GetType() ?? typeof(T), serializer ?? CamelCaseJsonOptions);
             target.Position = 0;
         }
 
@@ -1060,12 +1054,9 @@ namespace QuantConnect
         /// <param name="value">The object to serialize</param>
         /// <param name="serializer">The json serializer to use</param>
         /// <returns>The serialized string</returns>
-        public static string SerializeJsonToString<T>(this T value, JsonSerializer serializer = null)
+        public static string SerializeJsonToString<T>(this T value, JsonSerializerOptions serializer = null)
         {
-            using var stringWriter = new StringWriter();
-            using var jsonWriter = new JsonTextWriter(stringWriter);
-            (serializer ?? JsonSerializer).Serialize(jsonWriter, value);
-            return stringWriter.ToString();
+            return JsonSerialization.Serialize(value, serializer ?? CamelCaseJsonOptions);
         }
 
         /// <summary>
@@ -2364,7 +2355,7 @@ namespace QuantConnect
                 return result;
             }
 
-            return JsonConvert.DeserializeObject(value, type);
+            return JsonSerialization.Deserialize(value, type);
         }
 
         /// <summary>

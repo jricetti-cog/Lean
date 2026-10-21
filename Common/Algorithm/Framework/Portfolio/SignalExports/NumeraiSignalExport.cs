@@ -1,4 +1,4 @@
-/*
+﻿/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -13,8 +13,8 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
+using QuantConnect.Util.Json;
 using QuantConnect.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -182,7 +182,7 @@ namespace QuantConnect.Algorithm.Framework.Portfolio.SignalExports
                 filename = _fileName,
                 modelId = _modelId
             };
-            var argumentsMessage = JsonConvert.SerializeObject(arguments);
+            var argumentsMessage = JsonSerialization.Serialize(arguments);
 
             using var variables = new StringContent(argumentsMessage, Encoding.UTF8, "application/json");
             using var query = new StringContent(authQuery, Encoding.UTF8, "application/json");
@@ -205,15 +205,15 @@ namespace QuantConnect.Algorithm.Framework.Portfolio.SignalExports
                 return false;
             }
 
-            var parsedResponseContent = JObject.Parse(responseContent);
-            if (!parsedResponseContent["data"]["submissionUploadSignalsAuth"].HasValues)
+            var parsedResponseContent = JsonSerialization.ParseObject(responseContent);
+            if (!HasValues(parsedResponseContent["data"]?["submissionUploadSignalsAuth"]))
             {
-                _algorithm.Error($"Numerai API returned the following errors: {string.Join(",", parsedResponseContent["errors"])}");
+                _algorithm.Error($"Numerai API returned the following errors: {string.Join(",", parsedResponseContent["errors"]?.AsArray() ?? new JsonArray())}");
                 return false;
             }
 
-            var putUrl = new Uri((string)parsedResponseContent["data"]["submissionUploadSignalsAuth"]["url"]);
-            var submissionFileName = (string)parsedResponseContent["data"]["submissionUploadSignalsAuth"]["filename"];
+            var putUrl = new Uri(parsedResponseContent["data"]["submissionUploadSignalsAuth"]["url"].Value<string>());
+            var submissionFileName = parsedResponseContent["data"]["submissionUploadSignalsAuth"]["filename"].Value<string>();
 
             // PUT REQUEST
             // Create positions stream
@@ -246,7 +246,7 @@ namespace QuantConnect.Algorithm.Framework.Portfolio.SignalExports
                 filename = submissionFileName,
                 modelId = _modelId
             };
-            var createArgumentsMessage = JsonConvert.SerializeObject(createArguments);
+            var createArgumentsMessage = JsonSerialization.Serialize(createArguments);
 
             using var submissionQuery = new StringContent(createQuery, Encoding.UTF8, "application/json");
             using var submissionVariables = new StringContent(createArgumentsMessage, Encoding.UTF8, "application/json");
@@ -268,14 +268,19 @@ namespace QuantConnect.Algorithm.Framework.Portfolio.SignalExports
                 return false;
             }
 
-            var parsedSubmissionResponseContent = JObject.Parse(submissionResponseContent);
-            if (!parsedSubmissionResponseContent["data"]["createSignalsSubmission"].HasValues)
+            var parsedSubmissionResponseContent = JsonSerialization.ParseObject(submissionResponseContent);
+            if (!HasValues(parsedSubmissionResponseContent["data"]?["createSignalsSubmission"]))
             {
-                _algorithm.Error($"Numerai API returned the following errors: {string.Join(",", parsedSubmissionResponseContent["errors"])}");
+                _algorithm.Error($"Numerai API returned the following errors: {string.Join(",", parsedSubmissionResponseContent["errors"]?.AsArray() ?? new JsonArray())}");
                 return false;
             }
 
             return true;
+        }
+
+        private static bool HasValues(JsonNode node)
+        {
+            return node is JsonObject jObject ? jObject.Count > 0 : node is JsonArray jArray && jArray.Count > 0;
         }
     }
 }

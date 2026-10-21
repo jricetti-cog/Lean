@@ -1,4 +1,4 @@
-/*
+﻿/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -16,12 +16,13 @@
 
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 using NUnit.Framework;
 using QuantConnect.Optimizer.Parameters;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json.Serialization;
 
 namespace QuantConnect.Tests.Optimizer.Parameters
 {
@@ -94,8 +95,8 @@ namespace QuantConnect.Tests.Optimizer.Parameters
             [Test, TestCaseSource(nameof(OptimizationParameters))]
             public void Serialize(OptimizationStepParameter parameterSet)
             {
-                var json = JsonConvert.SerializeObject(parameterSet);
-                var optimizationParameter = JsonConvert.DeserializeObject<OptimizationParameter>(json) as OptimizationStepParameter;
+                var json = JsonSerialization.Serialize(parameterSet);
+                var optimizationParameter = JsonSerialization.Deserialize<OptimizationParameter>(json) as OptimizationStepParameter;
 
                 Assert.NotNull(optimizationParameter);
                 Assert.AreEqual(parameterSet.Name, optimizationParameter.Name);
@@ -108,8 +109,8 @@ namespace QuantConnect.Tests.Optimizer.Parameters
             [Test, TestCaseSource(nameof(OptimizationParameters))]
             public void SerializeCollection(OptimizationStepParameter parameterSet)
             {
-                var json = JsonConvert.SerializeObject(new[] { parameterSet as OptimizationParameter });
-                var optimizationParameters = JsonConvert.DeserializeObject<List<OptimizationParameter>>(json);
+                var json = JsonSerialization.Serialize(new[] { parameterSet as OptimizationParameter });
+                var optimizationParameters = JsonSerialization.Deserialize<List<OptimizationParameter>>(json);
 
                 Assert.AreEqual(1, optimizationParameters.Count);
 
@@ -127,23 +128,13 @@ namespace QuantConnect.Tests.Optimizer.Parameters
             {
                 var expected = "{\"value\":\"50.0\",\"name\":\"ema-fast\"}";
 
-                var staticParameter = JsonConvert.DeserializeObject<StaticOptimizationParameter>(expected);
+                var staticParameter = JsonSerialization.Deserialize<StaticOptimizationParameter>(expected);
 
                 Assert.IsNotNull(staticParameter);
                 Assert.AreEqual("50.0", staticParameter.Value);
                 Assert.AreEqual("ema-fast", staticParameter.Name);
 
-                var serialized = JsonConvert.SerializeObject(staticParameter, new JsonSerializerSettings()
-                {
-                    ContractResolver = new DefaultContractResolver
-                    {
-                        NamingStrategy = new CamelCaseNamingStrategy
-                        {
-                            ProcessDictionaryKeys = false,
-                            OverrideSpecifiedNames = true
-                        }
-                    }
-                });
+                var serialized = JsonSerialization.Serialize(staticParameter, JsonSerialization.Create(camelCase: true));
 
                 Assert.AreEqual(expected, serialized);
             }
@@ -159,7 +150,7 @@ namespace QuantConnect.Tests.Optimizer.Parameters
                         ""step"": 50,
                     }";
 
-                var optimizationParameter = JsonConvert.DeserializeObject<OptimizationParameter>(json) as OptimizationStepParameter;
+                var optimizationParameter = JsonSerialization.Deserialize<OptimizationParameter>(json) as OptimizationStepParameter;
 
                 Assert.NotNull(optimizationParameter);
                 Assert.AreEqual("ema-fast", optimizationParameter.Name);
@@ -180,7 +171,7 @@ namespace QuantConnect.Tests.Optimizer.Parameters
                         ""STEP"": 50,
                     }";
 
-                var optimizationParameter = JsonConvert.DeserializeObject<OptimizationParameter>(json) as OptimizationStepParameter;
+                var optimizationParameter = JsonSerialization.Deserialize<OptimizationParameter>(json) as OptimizationStepParameter;
 
                 Assert.NotNull(optimizationParameter);
                 Assert.AreEqual("ema-fast", optimizationParameter.Name);
@@ -201,7 +192,7 @@ namespace QuantConnect.Tests.Optimizer.Parameters
                         ""min-step"": 0.001
                     }";
 
-                var optimizationParameter = JsonConvert.DeserializeObject<OptimizationParameter>(json) as OptimizationStepParameter;
+                var optimizationParameter = JsonSerialization.Deserialize<OptimizationParameter>(json) as OptimizationStepParameter;
 
                 Assert.NotNull(optimizationParameter);
                 Assert.AreEqual("ema-fast", optimizationParameter.Name);
@@ -227,7 +218,7 @@ namespace QuantConnect.Tests.Optimizer.Parameters
                         ""step"": 10,
                     }]";
 
-                var optimizationParameters = JsonConvert.DeserializeObject<List<OptimizationParameter>>(json)
+                var optimizationParameters = JsonSerialization.Deserialize<List<OptimizationParameter>>(json)
                     .OfType<OptimizationStepParameter>()
                     .ToList();
 
@@ -248,7 +239,7 @@ namespace QuantConnect.Tests.Optimizer.Parameters
             [TestCase("{\"key\":\"ema-fast\",\"min\":50,\"max\":150,\"step\":50}")]
             public void DeserializeKeyValueStepParameter(string json)
             {
-                var optimizationParameter = JsonConvert.DeserializeObject<OptimizationParameter>(json) as OptimizationStepParameter;
+                var optimizationParameter = JsonSerialization.Deserialize<OptimizationParameter>(json) as OptimizationStepParameter;
 
                 Assert.NotNull(optimizationParameter);
                 Assert.AreEqual("ema-fast", optimizationParameter.Name);
@@ -264,7 +255,7 @@ namespace QuantConnect.Tests.Optimizer.Parameters
             [TestCase("{\"key\":\"ema-fast\",\"value\":\"100\",\"min\":50,\"step\":50}")]
             public void DeserializeKeyValueStaticParameter(string json)
             {
-                var optimizationParameter = JsonConvert.DeserializeObject<OptimizationParameter>(json) as StaticOptimizationParameter;
+                var optimizationParameter = JsonSerialization.Deserialize<OptimizationParameter>(json) as StaticOptimizationParameter;
 
                 Assert.NotNull(optimizationParameter);
                 Assert.AreEqual("ema-fast", optimizationParameter.Name);
@@ -278,7 +269,7 @@ namespace QuantConnect.Tests.Optimizer.Parameters
             [TestCase("{\"name\":\"ema-fast\",\"value\":null}", null)]
             public void DeserializeStaticParameterKeepsValue(string json, string expected)
             {
-                var optimizationParameter = JsonConvert.DeserializeObject<OptimizationParameter>(json) as StaticOptimizationParameter;
+                var optimizationParameter = JsonSerialization.Deserialize<OptimizationParameter>(json) as StaticOptimizationParameter;
 
                 Assert.NotNull(optimizationParameter);
                 Assert.AreEqual(expected, optimizationParameter.Value);
@@ -288,16 +279,9 @@ namespace QuantConnect.Tests.Optimizer.Parameters
             public void DeserializeCollectionCamelCase()
             {
                 var json = "[{\"key\":\"ema-fast\",\"min\":50,\"max\":150,\"step\":50,\"minStep\":10},{\"key\":\"start-date\",\"value\":\"2024-01-01T10:00:00Z\"}]";
-                var settings = new JsonSerializerSettings
-                {
-                    ContractResolver = new DefaultContractResolver
-                    {
-                        NamingStrategy = new CamelCaseNamingStrategy { ProcessDictionaryKeys = false, OverrideSpecifiedNames = true }
-                    }
-                };
-                settings.Converters.Add(new OptimizationParameterJsonConverter());
+                var settings = JsonSerialization.Create(camelCase: true, converters: new OptimizationParameterJsonConverter());
 
-                var optimizationParameters = JsonConvert.DeserializeObject<List<OptimizationParameter>>(json, settings);
+                var optimizationParameters = JsonSerialization.Deserialize<List<OptimizationParameter>>(json, settings);
 
                 var stepParameter = optimizationParameters[0] as OptimizationStepParameter;
                 Assert.NotNull(stepParameter);
@@ -314,7 +298,7 @@ namespace QuantConnect.Tests.Optimizer.Parameters
             {
                 var json = "[{\"key\":\"ema-fast\",\"value\":\"100\",\"min\":50,\"max\":150,\"step\":50},{\"key\":\"ema-slow\",\"value\":\"200\"}]";
 
-                var optimizationParameters = JsonConvert.DeserializeObject<List<OptimizationParameter>>(json);
+                var optimizationParameters = JsonSerialization.Deserialize<List<OptimizationParameter>>(json);
 
                 Assert.AreEqual(2, optimizationParameters.Count);
                 var stepParameter = optimizationParameters[0] as OptimizationStepParameter;
@@ -340,7 +324,7 @@ namespace QuantConnect.Tests.Optimizer.Parameters
 
                 Assert.Throws<ArgumentException>(() =>
                 {
-                    JsonConvert.DeserializeObject<OptimizationParameter>(json);
+                    JsonSerialization.Deserialize<OptimizationParameter>(json);
                 });
             }
 

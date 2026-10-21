@@ -17,7 +17,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using Newtonsoft.Json;
 using NodaTime;
 using NUnit.Framework;
 using QuantConnect.Brokerages;
@@ -640,7 +639,7 @@ namespace QuantConnect.Tests.Common.Securities
 
             book.EnsureCurrencyDataFeeds(securities, subscriptions, MarketMap, SecurityChanges.None, dataManager.SecurityService);
 
-            Assert.DoesNotThrow(() => JsonConvert.SerializeObject(book, Formatting.Indented));
+            Assert.DoesNotThrow(() => JsonSerialization.Serialize(book, JsonSerialization.Indented()));
         }
 
         [Test]

@@ -13,7 +13,6 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace QuantConnect.Tests.Common
@@ -91,8 +90,8 @@ namespace QuantConnect.Tests.Common
         [Test]
         public void RoundTripSerialization_unknown()
         {
-            var serialized = JsonConvert.SerializeObject(Exchange.UNKNOWN);
-            var deserialized = JsonConvert.DeserializeObject<Exchange>(serialized);
+            var serialized = JsonSerialization.Serialize(Exchange.UNKNOWN);
+            var deserialized = JsonSerialization.Deserialize<Exchange>(serialized);
 
             Assert.AreEqual(Exchange.UNKNOWN, deserialized);
         }
@@ -100,8 +99,8 @@ namespace QuantConnect.Tests.Common
         [Test]
         public void RoundTripSerialization()
         {
-            var serialized = JsonConvert.SerializeObject(Exchange.C2);
-            var deserialized = JsonConvert.DeserializeObject<Exchange>(serialized);
+            var serialized = JsonSerialization.Serialize(Exchange.C2);
+            var deserialized = JsonSerialization.Deserialize<Exchange>(serialized);
 
             Assert.AreEqual(Exchange.C2, deserialized);
         }

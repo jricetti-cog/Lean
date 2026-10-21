@@ -15,7 +15,6 @@
 
 using System;
 using System.Linq;
-using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace QuantConnect.Tests.Common
@@ -31,8 +30,8 @@ namespace QuantConnect.Tests.Common
             series.AddPoint(new DateTime(2023, 03, 03), 100);
             chart.AddSeries(series);
 
-            var serialized = JsonConvert.SerializeObject(chart);
-            var result = JsonConvert.DeserializeObject<Chart>(serialized);
+            var serialized = JsonSerialization.Serialize(chart);
+            var result = JsonSerialization.Deserialize<Chart>(serialized);
 
             Assert.AreEqual(result.Name, chart.Name);
             Assert.AreEqual(result.Symbol, chart.Symbol);
@@ -71,8 +70,8 @@ namespace QuantConnect.Tests.Common
             series2.AddPoint(new DateTime(2023, 05, 03), 100);
             chart.AddSeries(series2);
 
-            var serialized = JsonConvert.SerializeObject(chart);
-            var result = JsonConvert.DeserializeObject<Chart>(serialized);
+            var serialized = JsonSerialization.Serialize(chart);
+            var result = JsonSerialization.Deserialize<Chart>(serialized);
 
             Assert.AreEqual(result.Name, chart.Name);
             Assert.AreEqual(result.Symbol, chart.Symbol);

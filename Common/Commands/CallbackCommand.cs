@@ -13,7 +13,6 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
 using QuantConnect.Interfaces;
 
 namespace QuantConnect.Commands
@@ -42,7 +41,7 @@ namespace QuantConnect.Commands
             if (string.IsNullOrEmpty(Type))
             {
                 // target is the untyped algorithm handler
-                var result = algorithm.OnCommand(string.IsNullOrEmpty(Payload) ? null : JsonConvert.DeserializeObject<Command>(Payload));
+                var result = algorithm.OnCommand(string.IsNullOrEmpty(Payload) ? null : JsonSerialization.Deserialize<Command>(Payload));
                 return new CommandResultPacket(this, result);
             }
             return algorithm.RunCommand(this);

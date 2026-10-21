@@ -14,7 +14,7 @@
 */
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuantConnect.Util;
 using QuantConnect.Data.Market;
 

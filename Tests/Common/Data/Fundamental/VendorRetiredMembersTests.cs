@@ -56,7 +56,7 @@ namespace QuantConnect.Tests.Common.Data.Fundamental
             var member = typeof(DividendCoverageRatio).GetProperty("ThreeMonths");
             var obsolete = member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Cast<ObsoleteAttribute>().Single();
             Assert.IsTrue(obsolete.Message.Contains("use DividendCoverageRatio.TwelveMonths"), obsolete.Message);
-            Assert.IsTrue(member.GetCustomAttributes(typeof(Newtonsoft.Json.JsonIgnoreAttribute), false).Any());
+            Assert.IsTrue(member.GetCustomAttributes(typeof(System.Text.Json.Serialization.JsonIgnoreAttribute), false).Any());
         }
     }
 }

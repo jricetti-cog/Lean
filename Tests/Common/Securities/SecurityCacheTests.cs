@@ -14,9 +14,10 @@
 */
 
 using System;
+using System.Globalization;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 using NUnit.Framework;
 using Python.Runtime;
 using QuantConnect.Algorithm.CSharp;
@@ -661,11 +662,11 @@ def get_security_cache_custom_data_type():
 
         private void AddDataAndAssertChanges(SecurityCache cache, SecuritySeedData seedType, SecuritySeedData dataType, BaseData data, Dictionary<string, string> cacheToBaseDataPropertyMap = null)
         {
-            var before = JObject.FromObject(cache);
-            var dataSnapshot = JObject.FromObject(data);
+            var before = (JsonObject)JsonSerialization.FromObject(cache);
+            var dataSnapshot = (JsonObject)JsonSerialization.FromObject(data);
 
             cache.AddData(data);
-            var after = JObject.FromObject(cache);
+            var after = (JsonObject)JsonSerialization.FromObject(cache);
 
             var updatedCacheProperties = GetPropertiesBy(dataType);
             if (seedType == SecuritySeedData.QuoteBar && (dataType  == SecuritySeedData.QuoteBar || dataType == SecuritySeedData.TradeBar))
@@ -680,28 +681,35 @@ def get_security_cache_custom_data_type():
                 ).ToArray();
             }
 
-            foreach (var property in before.Properties())
+            foreach (var property in before)
             {
                 string dataPropertyName = null;
-                if (updatedCacheProperties.Contains(property.Name))
+                if (updatedCacheProperties.Contains(property.Key))
                 {
-                    if (cacheToBaseDataPropertyMap?.TryGetValue(property.Name, out dataPropertyName) == true)
+                    if (cacheToBaseDataPropertyMap?.TryGetValue(property.Key, out dataPropertyName) == true)
                     {
-                        // avoiding failures due to decimal <> long in JToken.DeepEquals
-                        var e = dataSnapshot.SelectToken(dataPropertyName).ToString();
-                        var a = after.SelectToken(property.Name).ToString();
-                        Assert.AreEqual(e, a, $"{property.Name}: Expected {e}. Actual {a}");
+                        // avoiding failures due to decimal <> long in JsonNode.DeepEquals
+                        var e = NormalizeNumber(dataSnapshot.SelectToken(dataPropertyName)?.ToString());
+                        var a = NormalizeNumber(after.SelectToken(property.Key)?.ToString());
+                        Assert.AreEqual(e, a, $"{property.Key}: Expected {e}. Actual {a}");
                     }
                     else
                     {
-                        dataSnapshot.IsEqualTo(after, property.Name);
+                        dataSnapshot.IsEqualTo(after, property.Key);
                     }
                 }
                 else
                 {
-                    before.IsEqualTo(after, property.Name);
+                    before.IsEqualTo(after, property.Key);
                 }
             }
+        }
+
+        private static string NormalizeNumber(string value)
+        {
+            return decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var number)
+                ? number.ToString("G29", CultureInfo.InvariantCulture)
+                : value;
         }
 
         public enum SecuritySeedData

@@ -24,7 +24,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Moq;
 using Moq.Protected;
-using Newtonsoft.Json;
 using NodaTime;
 using NUnit.Framework;
 using Python.Runtime;
@@ -1071,7 +1070,7 @@ namespace QuantConnect.Tests.Common.Util
         public void ConvertsDictionaryFromString()
         {
             var expected = new Dictionary<string, int> { { "a", 1 }, { "b", 2 } };
-            var input = JsonConvert.SerializeObject(expected);
+            var input = JsonSerialization.Serialize(expected);
             var actual = input.ConvertTo<Dictionary<string, int>>();
             CollectionAssert.AreEqual(expected, actual);
         }

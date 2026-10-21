@@ -18,7 +18,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuantConnect.Interfaces;
 using QuantConnect.Securities;
 using QuantConnect.Securities.Positions;
@@ -39,7 +39,7 @@ namespace QuantConnect.Orders
         /// <summary>
         /// Order ID.
         /// </summary>
-        [JsonProperty(PropertyName = "id")]
+        [JsonPropertyName("id")]
         public int Id
         {
             get => _id;
@@ -60,25 +60,25 @@ namespace QuantConnect.Orders
         /// <summary>
         /// Order id to process before processing this order.
         /// </summary>
-        [JsonProperty(PropertyName = "contingentId")]
+        [JsonPropertyName("contingentId")]
         public int ContingentId { get; internal set; }
 
         /// <summary>
         /// Brokerage Id for this order for when the brokerage splits orders into multiple pieces
         /// </summary>
-        [JsonProperty(PropertyName = "brokerId")]
+        [JsonPropertyName("brokerId")]
         public List<string> BrokerId { get; internal set; }
 
         /// <summary>
         /// Symbol of the Asset
         /// </summary>
-        [JsonProperty(PropertyName = "symbol")]
+        [JsonPropertyName("symbol")]
         public Symbol Symbol { get; internal set; }
 
         /// <summary>
         /// Price of the Order.
         /// </summary>
-        [JsonProperty(PropertyName = "price")]
+        [JsonPropertyName("price")]
         public decimal Price
         {
             get { return _price; }
@@ -88,43 +88,43 @@ namespace QuantConnect.Orders
         /// <summary>
         /// Currency for the order price
         /// </summary>
-        [JsonProperty(PropertyName = "priceCurrency")]
+        [JsonPropertyName("priceCurrency")]
         public string PriceCurrency { get; internal set; }
 
         /// <summary>
         /// Gets the utc time the order was created.
         /// </summary>
-        [JsonProperty(PropertyName = "time")]
+        [JsonPropertyName("time")]
         public DateTime Time { get; internal set; }
 
         /// <summary>
         /// Gets the utc time this order was created. Alias for <see cref="Time"/>
         /// </summary>
-        [JsonProperty(PropertyName = "createdTime")]
+        [JsonPropertyName("createdTime")]
         public DateTime CreatedTime => Time;
 
         /// <summary>
         /// Gets the utc time the last fill was received, or null if no fills have been received
         /// </summary>
-        [JsonProperty(PropertyName = "lastFillTime", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonPropertyName("lastFillTime"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public DateTime? LastFillTime { get; internal set; }
 
         /// <summary>
         /// Gets the utc time this order was last updated, or null if the order has not been updated.
         /// </summary>
-        [JsonProperty(PropertyName = "lastUpdateTime", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonPropertyName("lastUpdateTime"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public DateTime? LastUpdateTime { get; internal set; }
 
         /// <summary>
         /// Gets the utc time this order was canceled, or null if the order was not canceled.
         /// </summary>
-        [JsonProperty(PropertyName = "canceledTime", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonPropertyName("canceledTime"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public DateTime? CanceledTime { get; internal set; }
 
         /// <summary>
         /// Number of shares to execute.
         /// </summary>
-        [JsonProperty(PropertyName = "quantity")]
+        [JsonPropertyName("quantity")]
         public virtual decimal Quantity
         {
             get { return _quantity; }
@@ -134,13 +134,13 @@ namespace QuantConnect.Orders
         /// <summary>
         /// Order Type
         /// </summary>
-        [JsonProperty(PropertyName = "type")]
+        [JsonPropertyName("type")]
         public abstract OrderType Type { get; }
 
         /// <summary>
         /// Status of the Order
         /// </summary>
-        [JsonProperty(PropertyName = "status")]
+        [JsonPropertyName("status")]
         public OrderStatus Status { get; set; }
 
         /// <summary>
@@ -152,25 +152,25 @@ namespace QuantConnect.Orders
         /// <summary>
         /// Tag the order with some custom data
         /// </summary>
-        [JsonProperty(PropertyName = "tag" ,DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonPropertyName("tag"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public string Tag { get; internal set; }
 
         /// <summary>
         /// Additional properties of the order
         /// </summary>
-        [JsonProperty(PropertyName = "properties")]
+        [JsonPropertyName("properties")]
         public IOrderProperties Properties { get; internal set; }
 
         /// <summary>
         /// The symbol's security type
         /// </summary>
-        [JsonProperty(PropertyName = "securityType")]
+        [JsonPropertyName("securityType")]
         public SecurityType SecurityType => Symbol.ID.SecurityType;
 
         /// <summary>
         /// Order Direction Property based off Quantity.
         /// </summary>
-        [JsonProperty(PropertyName = "direction")]
+        [JsonPropertyName("direction")]
         public OrderDirection Direction
         {
             get
@@ -196,19 +196,19 @@ namespace QuantConnect.Orders
         /// <summary>
         /// Deprecated
         /// </summary>
-        [JsonProperty(PropertyName = "value"), Obsolete("Please use Order.GetValue(security) or security.Holdings.HoldingsValue")]
+        [JsonPropertyName("value"), Obsolete("Please use Order.GetValue(security) or security.Holdings.HoldingsValue")]
         public decimal Value => Quantity * Price;
 
         /// <summary>
         /// Gets the price data at the time the order was submitted
         /// </summary>
-        [JsonProperty(PropertyName = "orderSubmissionData")]
+        [JsonPropertyName("orderSubmissionData")]
         public OrderSubmissionData OrderSubmissionData { get; internal set; }
 
         /// <summary>
         /// Returns true if the order is a marketable order.
         /// </summary>
-        [JsonProperty(PropertyName = "isMarketable")]
+        [JsonPropertyName("isMarketable")]
         public bool IsMarketable
         {
             get
@@ -229,14 +229,14 @@ namespace QuantConnect.Orders
         /// <summary>
         /// Manager for the orders in the group if this is a combo order
         /// </summary>
-        [JsonProperty(PropertyName = "groupOrderManager", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonPropertyName("groupOrderManager"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public GroupOrderManager GroupOrderManager { get; set; }
 
         /// <summary>
         /// The contingency of this order, if any: the set of contingent orders it belongs to (OCO, OTO, OUO, brackets)
         /// and the links defining how it relates to the rest of the orders in the set
         /// </summary>
-        [JsonProperty(PropertyName = "contingency", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonPropertyName("contingency"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public OrderContingency Contingency
         {
             get => _contingency;
@@ -251,7 +251,7 @@ namespace QuantConnect.Orders
         /// <summary>
         /// The adjustment mode used on the order fill price
         /// </summary>
-        [JsonProperty(PropertyName = "priceAdjustmentMode")]
+        [JsonPropertyName("priceAdjustmentMode")]
         public DataNormalizationMode PriceAdjustmentMode { get; set; }
 
         /// <summary>

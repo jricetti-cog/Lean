@@ -17,7 +17,7 @@
 using System;
 using System.Linq;
 using Python.Runtime;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using QuantConnect.Data.UniverseSelection;
 
@@ -34,7 +34,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 3000
         /// </remarks>
-        [JsonProperty("3000")]
+        [JsonPropertyName("3000")]
         public int StockType => FundamentalService.Get<int>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.AssetClassification_StockType);
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 3001
         /// </remarks>
-        [JsonProperty("3001")]
+        [JsonPropertyName("3001")]
         public int StyleBox => FundamentalService.Get<int>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.AssetClassification_StyleBox);
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 3002
         /// </remarks>
-        [JsonProperty("3002")]
+        [JsonPropertyName("3002")]
         public string GrowthGrade => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.AssetClassification_GrowthGrade);
 
         /// <summary>
@@ -61,7 +61,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 3003
         /// </remarks>
-        [JsonProperty("3003")]
+        [JsonPropertyName("3003")]
         public string FinancialHealthGrade => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.AssetClassification_FinancialHealthGrade);
 
         /// <summary>
@@ -70,7 +70,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 3004
         /// </remarks>
-        [JsonProperty("3004")]
+        [JsonPropertyName("3004")]
         public string ProfitabilityGrade => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.AssetClassification_ProfitabilityGrade);
 
         /// <summary>
@@ -79,7 +79,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 3005
         /// </remarks>
-        [JsonProperty("3005")]
+        [JsonPropertyName("3005")]
         public int MorningstarIndustryCode => FundamentalService.Get<int>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.AssetClassification_MorningstarIndustryCode);
 
         /// <summary>
@@ -88,7 +88,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 3006
         /// </remarks>
-        [JsonProperty("3006")]
+        [JsonPropertyName("3006")]
         public int MorningstarIndustryGroupCode => FundamentalService.Get<int>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.AssetClassification_MorningstarIndustryGroupCode);
 
         /// <summary>
@@ -97,7 +97,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 3007
         /// </remarks>
-        [JsonProperty("3007")]
+        [JsonPropertyName("3007")]
         public int MorningstarSectorCode => FundamentalService.Get<int>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.AssetClassification_MorningstarSectorCode);
 
         /// <summary>
@@ -106,7 +106,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 3008
         /// </remarks>
-        [JsonProperty("3008")]
+        [JsonPropertyName("3008")]
         public int MorningstarEconomySphereCode => FundamentalService.Get<int>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.AssetClassification_MorningstarEconomySphereCode);
 
         /// <summary>
@@ -115,7 +115,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 3009
         /// </remarks>
-        [JsonProperty("3009")]
+        [JsonPropertyName("3009")]
         public int SIC => FundamentalService.Get<int>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.AssetClassification_SIC);
 
         /// <summary>
@@ -124,7 +124,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 3010
         /// </remarks>
-        [JsonProperty("3010")]
+        [JsonPropertyName("3010")]
         public int NAICS => FundamentalService.Get<int>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.AssetClassification_NAICS);
 
         /// <summary>
@@ -133,7 +133,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 3011
         /// </remarks>
-        [JsonProperty("3011")]
+        [JsonPropertyName("3011")]
         public double StyleScore => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.AssetClassification_StyleScore);
 
         /// <summary>
@@ -142,7 +142,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 3012
         /// </remarks>
-        [JsonProperty("3012")]
+        [JsonPropertyName("3012")]
         public double SizeScore => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.AssetClassification_SizeScore);
 
         /// <summary>
@@ -151,7 +151,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 3013
         /// </remarks>
-        [JsonProperty("3013")]
+        [JsonPropertyName("3013")]
         public double GrowthScore => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.AssetClassification_GrowthScore);
 
         /// <summary>
@@ -160,7 +160,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 3014
         /// </remarks>
-        [JsonProperty("3014")]
+        [JsonPropertyName("3014")]
         public double ValueScore => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.AssetClassification_ValueScore);
 
         /// <summary>
@@ -169,7 +169,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 3015
         /// </remarks>
-        [JsonProperty("3015")]
+        [JsonPropertyName("3015")]
         public double NACE => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.AssetClassification_NACE);
 
         /// <summary>
@@ -178,7 +178,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 3016
         /// </remarks>
-        [JsonProperty("3016")]
+        [JsonPropertyName("3016")]
         public int CANNAICS => FundamentalService.Get<int>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.AssetClassification_CANNAICS);
 
         /// <summary>
@@ -187,7 +187,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQIPC
         /// </remarks>
-        [JsonProperty("EQIPC")]
+        [JsonPropertyName("EQIPC")]
         public double DistanceToDefault => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.AssetClassification_DistanceToDefault);
 
         /// <summary>
@@ -196,7 +196,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQRXR
         /// </remarks>
-        [JsonProperty("EQRXR")]
+        [JsonPropertyName("EQRXR")]
         public double ProbabilityOfDefault => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.AssetClassification_ProbabilityOfDefault);
 
         /// <summary>

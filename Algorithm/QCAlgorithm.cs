@@ -55,7 +55,6 @@ using QuantConnect.Algorithm.Framework.Alphas.Analysis;
 using QuantConnect.Algorithm.Framework.Portfolio.SignalExports;
 using Python.Runtime;
 using QuantConnect.Commands;
-using Newtonsoft.Json;
 using QuantConnect.Securities.Index;
 using QuantConnect.Api;
 
@@ -3704,7 +3703,7 @@ namespace QuantConnect.Algorithm
         {
             _registeredCommands[typeof(T).Name] = (CallbackCommand command) =>
             {
-                var commandInstance = JsonConvert.DeserializeObject<T>(command.Payload);
+                var commandInstance = JsonSerialization.Deserialize<T>(command.Payload);
                 return commandInstance.Run(this);
             };
         }
@@ -3719,8 +3718,8 @@ namespace QuantConnect.Algorithm
             var typeName = command.GetType().Name;
             if (command is Command || typeName.Contains("AnonymousType", StringComparison.InvariantCultureIgnoreCase))
             {
-                var serialized = JsonConvert.SerializeObject(command);
-                var payload = JsonConvert.DeserializeObject<Dictionary<string, object>>(serialized);
+                var serialized = JsonSerialization.Serialize(command);
+                var payload = JsonSerialization.Deserialize<Dictionary<string, object>>(serialized);
                 return SendBroadcast(typeName, payload);
             }
             // this shouldn't happen but just in case

@@ -14,7 +14,8 @@
 */
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 using QuantConnect.Statistics;
 using System.Collections.Generic;
 using QuantConnect.Optimizer.Parameters;
@@ -81,7 +82,7 @@ namespace QuantConnect.Api
         /// <summary>
         /// Backtest creation date and time
         /// </summary>
-        [JsonConverter(typeof(DateTimeJsonConverter), DateFormat.ISOShort, DateFormat.UI)]
+        [JsonConverterWithArgs(typeof(DateTimeJsonConverter), DateFormat.ISOShort, DateFormat.UI)]
         public DateTime Created { get; set; }
 
         /// <summary>
@@ -133,38 +134,38 @@ namespace QuantConnect.Api
         /// <summary>
         /// Rolling window detailed statistics.
         /// </summary>
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public Dictionary<string, AlgorithmPerformance> RollingWindow { get; set; }
 
         /// <summary>
         /// Total algorithm performance statistics.
         /// </summary>
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public AlgorithmPerformance TotalPerformance { get; set; }
 
         /// <summary>
         /// Charts updates for the live algorithm since the last result packet
         /// </summary>
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, Chart> Charts { get; set; }
 
         /// <summary>
         /// Statistics information sent during the algorithm operations.
         /// </summary>
         /// <remarks>Intended for update mode -- send updates to the existing statistics in the result GUI. If statistic key does not exist in GUI, create it</remarks>
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, string> Statistics { get; set; }
 
         /// <summary>
         /// Runtime banner/updating statistics in the title banner of the live algorithm GUI.
         /// </summary>
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, string> RuntimeStatistics { get; set; }
 
         /// <summary>
         /// Server status information, including CPU/RAM usage, ect...
         /// </summary>
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, string> ServerStatistics { get; set; }
 
         /// <summary>
@@ -210,7 +211,7 @@ namespace QuantConnect.Api
         /// <summary>
         /// Backtest analysis results.
         /// </summary>
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IReadOnlyList<Analysis> Analysis { get; set; }
 
         /// <summary>

@@ -16,7 +16,7 @@
 
 using System;
 using System.Linq;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuantConnect.Logging;
 using QuantConnect.Securities;
 using System.Collections.Generic;
@@ -46,19 +46,19 @@ namespace QuantConnect.Securities.Positions
         /// <summary>
         /// The different positions groups
         /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public List<PositionGroupState> PositionGroups { get; set; }
 
         /// <summary>
         /// Gets the cash book that keeps track of all currency holdings (only settled cash)
         /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public Dictionary<string, Cash> CashBook { get; set; }
 
         /// <summary>
         /// Gets the cash book that keeps track of all currency holdings (only unsettled cash)
         /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public Dictionary<string, Cash> UnsettledCashBook { get; set; }
 
         /// <summary>

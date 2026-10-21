@@ -15,7 +15,6 @@
 */
 
 using System.Collections.Generic;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using QuantConnect.Notifications;
 using QuantConnect.Packets;
@@ -29,7 +28,7 @@ namespace QuantConnect.Tests.Common.Packets
         [TestCase("[{\"key\":\"ema-fast\",\"value\":\"10\",\"min\":null,\"max\":null,\"step\":null}]")]
         public void ParametersDeserialization(string parameters)
         {
-            var packet = JsonConvert.DeserializeObject<LiveNodePacket>($"{{\"Parameters\":{parameters}}}");
+            var packet = JsonSerialization.Deserialize<LiveNodePacket>($"{{\"Parameters\":{parameters}}}");
 
             Assert.AreEqual(1, packet.Parameters.Count);
             Assert.AreEqual("10", packet.Parameters["ema-fast"]);
@@ -50,9 +49,9 @@ namespace QuantConnect.Tests.Common.Packets
                 }
             };
 
-            var serialized = JsonConvert.SerializeObject(packet);
+            var serialized = JsonSerialization.Serialize(packet);
 
-            var instance = JsonConvert.DeserializeObject<LiveNodePacket>(serialized);
+            var instance = JsonSerialization.Deserialize<LiveNodePacket>(serialized);
 
             var email = instance.NotificationTargets[0] as NotificationEmail;
             Assert.IsNotNull(email);

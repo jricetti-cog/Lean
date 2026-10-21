@@ -21,7 +21,6 @@ using System.Linq;
 using Python.Runtime;
 using QuantConnect.Packets;
 using QuantConnect.Report;
-using Newtonsoft.Json;
 
 namespace QuantConnect.Tests.Report
 {
@@ -121,12 +120,8 @@ namespace QuantConnect.Tests.Report
 
         static BacktestResult GetBacktestResult()
         {
-            var backtestSettings = new JsonSerializerSettings
-            {
-                Converters = new List<JsonConverter> { new NullResultValueTypeJsonConverter<BacktestResult>() },
-                FloatParseHandling = FloatParseHandling.Decimal
-            };
-            var backtest = JsonConvert.DeserializeObject<BacktestResult>(
+            var backtestSettings = JsonSerialization.Create(floatAsDecimal: true, converters: new System.Text.Json.Serialization.JsonConverter[] { new NullResultValueTypeJsonConverter<BacktestResult>() });
+            var backtest = JsonSerialization.Deserialize<BacktestResult>(
                 File.ReadAllText(Path.Combine("TestData", "test_report_data.json")), backtestSettings);
 
             return backtest;

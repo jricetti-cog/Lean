@@ -14,7 +14,6 @@
 */
 
 using QuantConnect.Statistics;
-using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace QuantConnect.Tests.Common.Util
@@ -32,8 +31,8 @@ namespace QuantConnect.Tests.Common.Util
                 CompoundingAnnualReturn = decimal.MaxValue
             };
 
-            var serializedValue = JsonConvert.SerializeObject(portfolioStatistics);
-            var deserializedValue = JsonConvert.DeserializeObject<PortfolioStatistics>(serializedValue);
+            var serializedValue = JsonSerialization.Serialize(portfolioStatistics);
+            var deserializedValue = JsonSerialization.Deserialize<PortfolioStatistics>(serializedValue);
 
             Assert.AreEqual(portfolioStatistics.AverageWinRate, deserializedValue.AverageWinRate);
             Assert.AreEqual(portfolioStatistics.AverageLossRate, deserializedValue.AverageLossRate);

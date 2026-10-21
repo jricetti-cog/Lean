@@ -15,7 +15,6 @@
 
 using System;
 using System.IO;
-using Newtonsoft.Json;
 using QuantConnect.Util;
 using QuantConnect.Interfaces;
 using QuantConnect.Configuration;
@@ -45,7 +44,7 @@ namespace QuantConnect.Lean.Engine.DataFeeds
             var dataProvidersConfig = Config.Get("composite-data-providers");
             if (!string.IsNullOrEmpty(dataProvidersConfig))
             {
-                var dataProviders = JsonConvert.DeserializeObject<List<string>>(dataProvidersConfig);
+                var dataProviders = JsonSerialization.Deserialize<List<string>>(dataProvidersConfig);
                 foreach (var dataProvider in dataProviders)
                 {
                     _dataProviders.Add(Composer.Instance.GetExportedValueByTypeName<IDataProvider>(dataProvider));

@@ -1,11 +1,11 @@
-﻿/*
+/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,58 +14,41 @@
 */
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace QuantConnect.Util
 {
     /// <summary>
     /// Converts the string "null" into a new instance of T.
-    /// This converter only handles deserialization concerns.
+    /// This converter only handles deserialization of JSON into an object of type T.
     /// </summary>
-    /// <typeparam name="T">The output type of the converter</typeparam>
-    public class NullStringValueConverter<T> : JsonConverter
+    public class NullStringValueConverter<T> : JsonConverter<T>
         where T : new()
     {
         /// <summary>
-        /// Writes the JSON representation of the object.
+        /// Null tokens also produce a new instance
         /// </summary>
-        /// <param name="writer">The <see cref="T:Newtonsoft.Json.JsonWriter"/> to write to.</param>
-        /// <param name="value">The value.</param>
-        /// <param name="serializer">The calling serializer.</param>
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        public override bool HandleNull => true;
+
+        /// <summary>
+        /// Writing is not supported
+        /// </summary>
+        public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
         {
             throw new NotImplementedException();
         }
 
         /// <summary>
-        /// Reads the JSON representation of the object.
+        /// Converts "null" (string) or null tokens into a new instance of T, deserializing T otherwise
         /// </summary>
-        /// <param name="reader">The <see cref="T:Newtonsoft.Json.JsonReader"/> to read from.</param>
-        /// <param name="objectType">Type of the object.</param>
-        /// <param name="existingValue">The existing value of object being read.</param>
-        /// <param name="serializer">The calling serializer.</param>
-        /// <returns>
-        /// The object value.
-        /// </returns>
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            if (reader.TokenType == JsonToken.Null || (reader.TokenType == JsonToken.String && (string)reader.Value == "null"))
+            if (reader.TokenType == JsonTokenType.Null || (reader.TokenType == JsonTokenType.String && reader.GetString() == "null"))
             {
                 return new T();
             }
-            return serializer.Deserialize<T>(reader);
-        }
-
-        /// <summary>
-        /// Determines whether this instance can convert the specified object type.
-        /// </summary>
-        /// <param name="objectType">Type of the object.</param>
-        /// <returns>
-        /// <c>true</c> if this instance can convert the specified object type; otherwise, <c>false</c>.
-        /// </returns>
-        public override bool CanConvert(Type objectType)
-        {
-            throw new NotImplementedException();
+            return JsonSerializer.Deserialize<T>(ref reader, options);
         }
     }
 }

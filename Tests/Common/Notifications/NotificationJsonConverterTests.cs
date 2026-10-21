@@ -16,7 +16,6 @@
 
 using System.Collections.Generic;
 using System.Text;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using QuantConnect.Notifications;
 
@@ -36,9 +35,9 @@ namespace QuantConnect.Tests.Common.Notifications
                 expected.Data = "dataContent";
             }
 
-            var serialized = JsonConvert.SerializeObject(expected);
+            var serialized = JsonSerialization.Serialize(expected);
 
-            var result = (NotificationEmail)JsonConvert.DeserializeObject<Notification>(serialized);
+            var result = (NotificationEmail)JsonSerialization.Deserialize<Notification>(serialized);
 
             Assert.AreEqual(expected.Subject, result.Subject);
             Assert.AreEqual(expected.Address, result.Address);
@@ -53,9 +52,9 @@ namespace QuantConnect.Tests.Common.Notifications
         {
             var expected = new NotificationSms("123", nullFields ? null : "ImATextMessage");
 
-            var serialized = JsonConvert.SerializeObject(expected);
+            var serialized = JsonSerialization.Serialize(expected);
 
-            var result = (NotificationSms)JsonConvert.DeserializeObject<Notification>(serialized);
+            var result = (NotificationSms)JsonSerialization.Deserialize<Notification>(serialized);
 
             Assert.AreEqual(expected.PhoneNumber, result.PhoneNumber);
             Assert.AreEqual(expected.Message, result.Message);
@@ -69,9 +68,9 @@ namespace QuantConnect.Tests.Common.Notifications
                 nullFields ? null : "JijiData",
                 nullFields ? null : new Dictionary<string, string> { { "key", "value" } });
 
-            var serialized = JsonConvert.SerializeObject(expected);
+            var serialized = JsonSerialization.Serialize(expected);
 
-            var result = (NotificationWeb)JsonConvert.DeserializeObject<Notification>(serialized);
+            var result = (NotificationWeb)JsonSerialization.Deserialize<Notification>(serialized);
 
             Assert.AreEqual(expected.Address, result.Address);
             Assert.AreEqual(expected.Data, result.Data);
@@ -86,9 +85,9 @@ namespace QuantConnect.Tests.Common.Notifications
         {
             var expected = new NotificationTelegram("pepe", nullMessage ? null : "ImAMessage", nullToken ? null : "botToken");
 
-            var serialized = JsonConvert.SerializeObject(expected);
+            var serialized = JsonSerialization.Serialize(expected);
 
-            var result = (NotificationTelegram)JsonConvert.DeserializeObject<Notification>(serialized);
+            var result = (NotificationTelegram)JsonSerialization.Deserialize<Notification>(serialized);
 
             Assert.AreEqual(expected.Id, result.Id);
             Assert.AreEqual(expected.Message, result.Message);
@@ -107,8 +106,8 @@ namespace QuantConnect.Tests.Common.Notifications
                 secure,
                 withPort ? 2121: null);
 
-            var serialized = JsonConvert.SerializeObject(expected);
-            var result = (NotificationFtp)JsonConvert.DeserializeObject<Notification>(serialized);
+            var serialized = JsonSerialization.Serialize(expected);
+            var result = (NotificationFtp)JsonSerialization.Deserialize<Notification>(serialized);
 
             Assert.AreEqual(expected.Hostname, result.Hostname);
             Assert.AreEqual(expected.Username, result.Username);
@@ -133,8 +132,8 @@ namespace QuantConnect.Tests.Common.Notifications
                 Encoding.ASCII.GetBytes("{}"),
                 withPort ? 2121 : null);
 
-            var serialized = JsonConvert.SerializeObject(expected);
-            var result = (NotificationFtp)JsonConvert.DeserializeObject<Notification>(serialized);
+            var serialized = JsonSerialization.Serialize(expected);
+            var result = (NotificationFtp)JsonSerialization.Deserialize<Notification>(serialized);
 
             Assert.AreEqual(expected.Hostname, result.Hostname);
             Assert.AreEqual(expected.Username, result.Username);
@@ -196,7 +195,7 @@ namespace QuantConnect.Tests.Common.Notifications
 			""secure"": ""false"",
 			""port"": 2222
 		}]";
-            var result = JsonConvert.DeserializeObject<List<Notification>>(serialized);
+            var result = JsonSerialization.Deserialize<List<Notification>>(serialized);
 
             Assert.AreEqual(7, result.Count);
 

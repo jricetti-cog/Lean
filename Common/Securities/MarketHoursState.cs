@@ -14,15 +14,15 @@
 */
 
 using System.Runtime.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 
 namespace QuantConnect.Securities
 {
     /// <summary>
     /// Specifies the open/close state for a <see cref="MarketHoursSegment"/>
     /// </summary>
-    [JsonConverter(typeof(StringEnumConverter))]
+    [JsonConverter(typeof(StringEnumJsonConverter))]
     public enum MarketHoursState
     {
         /// <summary>

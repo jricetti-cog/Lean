@@ -17,7 +17,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using QuantConnect.Orders;
 using QuantConnect.Orders.TimeInForces;
@@ -549,8 +548,8 @@ namespace QuantConnect.Tests.Common.Orders
             };
 
             var converter = new OrderJsonConverter();
-            var serialized = JsonConvert.SerializeObject(expected, converter);
-            var actual = JsonConvert.DeserializeObject<Order>(serialized, converter);
+            var serialized = JsonSerialization.Serialize(expected, JsonSerialization.Create(converters: converter));
+            var actual = JsonSerialization.Deserialize<Order>(serialized, JsonSerialization.Create(converters: converter));
 
             CollectionAssert.AreEqual(expected.BrokerId, actual.BrokerId);
             Assert.AreEqual(expected.ContingentId, actual.ContingentId);
@@ -610,10 +609,6 @@ namespace QuantConnect.Tests.Common.Orders
         [Test]
         public void WorksWithJsonConvert()
         {
-            JsonConvert.DefaultSettings = () => new JsonSerializerSettings
-            {
-                Converters = {new OrderJsonConverter()}
-            };
 
             const string json = @"{'Type':0,
 'Value':99986.827413672,
@@ -632,7 +627,7 @@ namespace QuantConnect.Tests.Common.Orders
 'Direction':0,
 'AbsoluteQuantity':999}";
 
-            var order = JsonConvert.DeserializeObject<Order>(json);
+            var order = JsonSerialization.Deserialize<Order>(json);
             Assert.IsInstanceOf<MarketOrder>(order);
             Assert.AreEqual(Market.USA, order.Symbol.ID.Market);
             Assert.IsTrue(order.TimeInForce is DayTimeInForce);
@@ -641,10 +636,6 @@ namespace QuantConnect.Tests.Common.Orders
         [Test]
         public void DeserializesOldDurationProperty()
         {
-            JsonConvert.DefaultSettings = () => new JsonSerializerSettings
-            {
-                Converters = { new OrderJsonConverter() }
-            };
 
             // The Duration property has been renamed to TimeInForce,
             // we still want to deserialize old JSON files containing Duration.
@@ -665,7 +656,7 @@ namespace QuantConnect.Tests.Common.Orders
 'Direction':0,
 'AbsoluteQuantity':999}";
 
-            var order = JsonConvert.DeserializeObject<Order>(json);
+            var order = JsonSerialization.Deserialize<Order>(json);
             Assert.IsInstanceOf<MarketOrder>(order);
             Assert.AreEqual(Market.USA, order.Symbol.ID.Market);
             Assert.IsTrue(order.TimeInForce is DayTimeInForce);
@@ -674,10 +665,6 @@ namespace QuantConnect.Tests.Common.Orders
         [Test]
         public void DeserializesOldDurationValueProperty()
         {
-            JsonConvert.DefaultSettings = () => new JsonSerializerSettings
-            {
-                Converters = { new OrderJsonConverter() }
-            };
 
             // The DurationValue property has been moved to GoodTilDateTimeInforce.Expiry,
             // we still want to deserialize old JSON files containing Duration.
@@ -699,7 +686,7 @@ namespace QuantConnect.Tests.Common.Orders
 'Direction':0,
 'AbsoluteQuantity':999}";
 
-            var order = JsonConvert.DeserializeObject<Order>(json);
+            var order = JsonSerialization.Deserialize<Order>(json);
             Assert.IsInstanceOf<MarketOrder>(order);
             Assert.AreEqual(Market.USA, order.Symbol.ID.Market);
             Assert.IsTrue(order.TimeInForce is GoodTilDateTimeInForce);
@@ -739,7 +726,7 @@ namespace QuantConnect.Tests.Common.Orders
             var expected = new MarketOrder(Symbols.BTCUSD, 0.123m, DateTime.Today, "", orderProperties);
             TestOrderType(expected);
 
-            var json = JsonConvert.SerializeObject(expected);
+            var json = JsonSerialization.Serialize(expected);
             var actual = DeserializeOrder<MarketOrder>(json);
 
             var gtd = (GoodTilDateTimeInForce)actual.Properties.TimeInForce;
@@ -749,12 +736,12 @@ namespace QuantConnect.Tests.Common.Orders
         [Test]
         public void JsonIgnores()
         {
-            var json = JsonConvert.SerializeObject(new MarketOrder(Symbols.BTCUSD, 0.123m, DateTime.Today));
+            var json = JsonSerialization.Serialize(new MarketOrder(Symbols.BTCUSD, 0.123m, DateTime.Today));
 
             Assert.IsFalse(json.Contains("Tag"));
             Assert.IsFalse(json.Contains("AbsoluteQuantity"));
 
-            json = JsonConvert.SerializeObject(new MarketOrder(Symbols.BTCUSD, 0.123m, DateTime.Today, "This is a Tag"));
+            json = JsonSerialization.Serialize(new MarketOrder(Symbols.BTCUSD, 0.123m, DateTime.Today, "This is a Tag"));
 
             Assert.IsTrue(json.Contains("Tag"));
             Assert.IsTrue(json.Contains("This is a Tag"));
@@ -763,10 +750,6 @@ namespace QuantConnect.Tests.Common.Orders
         [Test]
         public void TimeInForceInProperties()
         {
-            JsonConvert.DefaultSettings = () => new JsonSerializerSettings
-            {
-                Converters = { new OrderJsonConverter() }
-            };
 
             const string json = @"{'Type':0,
 'Value':99986.827413672,
@@ -787,7 +770,7 @@ namespace QuantConnect.Tests.Common.Orders
 'Direction':0,
 'AbsoluteQuantity':999}";
 
-            var order = JsonConvert.DeserializeObject<Order>(json);
+            var order = JsonSerialization.Deserialize<Order>(json);
             Assert.IsInstanceOf<MarketOrder>(order);
             Assert.AreEqual(Market.USA, order.Symbol.ID.Market);
             Assert.IsTrue(order.TimeInForce is DayTimeInForce);
@@ -893,7 +876,7 @@ namespace QuantConnect.Tests.Common.Orders
         private static T TestOrderType<T>(T expected)
             where T : Order
         {
-            var json = JsonConvert.SerializeObject(expected);
+            var json = JsonSerialization.Serialize(expected);
 
             var actual = DeserializeOrder<T>(json);
 
@@ -941,11 +924,7 @@ namespace QuantConnect.Tests.Common.Orders
 
         private static Order DeserializeOrder<T>(string json) where T : Order
         {
-            var converter = new OrderJsonConverter();
-            using var reader = new JsonTextReader(new StringReader(json));
-            var jsonSerializer = new JsonSerializer();
-            jsonSerializer.Converters.Add(converter);
-            var actual = jsonSerializer.Deserialize<Order>(reader);
+            var actual = JsonSerialization.Deserialize<Order>(json, JsonSerialization.Create(converters: new OrderJsonConverter()));
             return actual;
         }
     }

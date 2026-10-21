@@ -17,7 +17,7 @@
 using System;
 using System.Linq;
 using Python.Runtime;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using QuantConnect.Data.UniverseSelection;
 
@@ -36,13 +36,13 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the OneYear period value for the field
         /// </summary>
-        [JsonProperty("1Y")]
+        [JsonPropertyName("1Y")]
         public double OneYear => FundamentalService.Get<double>(TimeProvider.GetUtcNow(), SecurityIdentifier, FundamentalProperty.OperationRatios_FixAssetsTuronver_OneYear);
 
         /// <summary>
         /// Gets/sets the ThreeMonths period value for the field
         /// </summary>
-        [JsonProperty("3M")]
+        [JsonPropertyName("3M")]
         [Obsolete("FixAssetsTuronver.ThreeMonths was retired by Morningstar in 2026; use FixAssetsTuronver.OneYear.")]
         [JsonIgnore]
         public double ThreeMonths => throw new NotSupportedException("FixAssetsTuronver.ThreeMonths was retired by Morningstar in 2026; use FixAssetsTuronver.OneYear.");
@@ -50,7 +50,7 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the SixMonths period value for the field
         /// </summary>
-        [JsonProperty("6M")]
+        [JsonPropertyName("6M")]
         [Obsolete("FixAssetsTuronver.SixMonths was retired by Morningstar in 2026; use FixAssetsTuronver.OneYear.")]
         [JsonIgnore]
         public double SixMonths => throw new NotSupportedException("FixAssetsTuronver.SixMonths was retired by Morningstar in 2026; use FixAssetsTuronver.OneYear.");

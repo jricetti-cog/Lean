@@ -17,8 +17,8 @@
 using System;
 using System.Web;
 using System.Text;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
+using QuantConnect.Util.Json;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 
@@ -98,16 +98,16 @@ namespace QuantConnect.Api
             else
             {
                 // let's take advantage of json to load the properties we should include
-                var serialized = JsonConvert.SerializeObject(keyValuePairs.Value);
-                foreach (var jObject in JObject.Parse(serialized))
+                var serialized = JsonSerialization.Serialize(keyValuePairs.Value);
+                foreach (var jObject in JsonSerialization.ParseObject(serialized))
                 {
                     var subKey = $"{keyValuePairs.Key}[{jObject.Key}]";
-                    if (jObject.Value is JObject)
+                    if (jObject.Value is JsonObject)
                     {
                         // inception
-                        AddToQuery(queryString, new KeyValuePair<string, object>(subKey, jObject.Value.ToObject<object>()));
+                        AddToQuery(queryString, new KeyValuePair<string, object>(subKey, jObject.Value));
                     }
-                    else if(jObject.Value is JArray jArray)
+                    else if(jObject.Value is JsonArray jArray)
                     {
                         var counter = 0;
                         foreach (var value in jArray.ToObject<List<object>>())
@@ -117,7 +117,7 @@ namespace QuantConnect.Api
                     }
                     else
                     {
-                        queryString.Add(subKey, jObject.Value.ToString());
+                        queryString.Add(subKey, jObject.Value.AsText());
                     }
                 }
             }

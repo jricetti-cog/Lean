@@ -14,7 +14,7 @@
  *
 */
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using System.ComponentModel;
 
@@ -29,7 +29,7 @@ namespace QuantConnect.Optimizer
         /// Natural-language interpretation of the analysis produced by a downstream AI consumer; empty until populated.
         /// </summary>
         [DefaultValue("")]
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public string Interpretation { get; set; } = string.Empty;
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace QuantConnect.Optimizer
         /// <summary>
         /// The best-performing backtest (argmax of Sharpe).
         /// </summary>
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public BacktestSummary Best { get; set; }
 
         /// <summary>
@@ -71,7 +71,7 @@ namespace QuantConnect.Optimizer
         /// <summary>
         /// Breakdown of zero-order backtests; null when none exist.
         /// </summary>
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public FailedBacktestSummary FailedBacktests { get; set; }
     }
 }

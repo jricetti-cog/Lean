@@ -1,4 +1,4 @@
-﻿/*
+/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -15,9 +15,11 @@
 
 using System;
 using System.Globalization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using QuantConnect.Orders;
+using QuantConnect.Util.Json;
 
 namespace QuantConnect.Report
 {
@@ -35,27 +37,25 @@ namespace QuantConnect.Report
     /// ]
     /// </code>
     /// </example>
-    public class OrderTypeNormalizingJsonConverter : JsonConverter
+    public class OrderTypeNormalizingJsonConverter : JsonConverter<Order>
     {
         /// <summary>
-        /// Determine if this Converter can convert a given object type
+        /// Determine if this Converter can convert this type
         /// </summary>
-        /// <param name="objectType">Object type to convert</param>
-        /// <returns>True if assignable from <see cref="Order"/></returns>
         public override bool CanConvert(Type objectType)
         {
             return typeof(Order).IsAssignableFrom(objectType);
         }
 
         /// <summary>
-        /// Read Json and convert
+        /// Read Json for conversion
         /// </summary>
-        /// <returns>Resulting <see cref="Order"/></returns>
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override Order Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            var token = JToken.ReadFrom(reader);
+            var token = JsonNode.Parse(ref reader).AsObject();
             var jtokenType = token["Type"] ?? token["type"];
             int orderType = GetOrderType(jtokenType);
+
             if (token["Type"] != null)
             {
                 token["Type"] = orderType;
@@ -65,18 +65,18 @@ namespace QuantConnect.Report
                 token["type"] = orderType;
             }
 
-            return OrderJsonConverter.CreateOrderFromJObject((JObject)token);
+            return OrderJsonConverter.CreateOrderFromJObject(token);
         }
 
         /// <summary>
-        /// Write Json; Not implemented
+        /// Writes the order using its default serialization
         /// </summary>
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        public override void Write(Utf8JsonWriter writer, Order value, JsonSerializerOptions options)
         {
-            throw new NotImplementedException();
+            writer.WriteDefault(value, options);
         }
 
-        private int GetOrderType(JToken type)
+        private int GetOrderType(JsonNode type)
         {
             var orderTypeValue = type.Value<string>();
             int orderTypeNumber;

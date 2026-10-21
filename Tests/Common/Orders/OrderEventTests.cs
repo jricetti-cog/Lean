@@ -14,7 +14,6 @@
 */
 
 using System;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using QuantConnect.Orders;
 using QuantConnect.Orders.Fees;
@@ -30,15 +29,14 @@ namespace QuantConnect.Tests.Common.Orders
         public void JsonIgnores()
         {
             var order = new MarketOrder(Symbols.BTCUSD, 0.123m, DateTime.UtcNow);
-            var json = JsonConvert.SerializeObject(new OrderEvent(order, DateTime.UtcNow, OrderFee.Zero),
-                new OrderEventJsonConverter("id"));
+            var json = JsonSerialization.Serialize(new OrderEvent(order, DateTime.UtcNow, OrderFee.Zero), JsonSerialization.Create(converters: new System.Text.Json.Serialization.JsonConverter[] { new OrderEventJsonConverter("id") }));
 
             Assert.IsFalse(json.Contains("Message", StringComparison.InvariantCulture));
             Assert.IsFalse(json.Contains("LimitPrice", StringComparison.InvariantCulture));
             Assert.IsFalse(json.Contains("StopPrice", StringComparison.InvariantCulture));
             Assert.IsFalse(json.Contains(value: "IsInTheMoney", StringComparison.InvariantCulture));
 
-            json = JsonConvert.SerializeObject(new OrderEvent(order, DateTime.UtcNow, OrderFee.Zero, "This is a message")
+            json = JsonSerialization.Serialize(new OrderEvent(order, DateTime.UtcNow, OrderFee.Zero, "This is a message")
             {
                 LimitPrice = 1,
                 StopPrice = 2,
@@ -71,7 +69,7 @@ namespace QuantConnect.Tests.Common.Orders
             };
 
             var converter = new OrderEventJsonConverter("id");
-            var serializeObject = JsonConvert.SerializeObject(orderEvent, converter);
+            var serializeObject = JsonSerialization.Serialize(orderEvent, JsonSerialization.Create(converters: converter));
 
             // OrderFee zero uses null currency and should be ignored when serializing
             Assert.IsFalse(serializeObject.Contains(Currencies.NullCurrency, StringComparison.InvariantCulture));
@@ -79,7 +77,7 @@ namespace QuantConnect.Tests.Common.Orders
             Assert.IsFalse(serializeObject.Contains("order-fee-currency", StringComparison.InvariantCulture));
             Assert.AreEqual(isInTheMoney, serializeObject.Contains("isInTheMoney", StringComparison.InvariantCulture));
 
-            var deserializeObject = JsonConvert.DeserializeObject<OrderEvent>(serializeObject, converter);
+            var deserializeObject = JsonSerialization.Deserialize<OrderEvent>(serializeObject, JsonSerialization.Create(converters: converter));
 
             Assert.AreEqual(orderEvent.Symbol, deserializeObject.Symbol);
             Assert.AreEqual(orderEvent.StopPrice, deserializeObject.StopPrice);
@@ -109,8 +107,8 @@ namespace QuantConnect.Tests.Common.Orders
             var orderEvent = new OrderEvent(order, DateTime.UtcNow, new OrderFee(new CashAmount(88, Currencies.USD)));
 
             var converter = new OrderEventJsonConverter("id");
-            var serializeObject = JsonConvert.SerializeObject(orderEvent, converter);
-            var deserializeObject = JsonConvert.DeserializeObject<OrderEvent>(serializeObject, converter);
+            var serializeObject = JsonSerialization.Serialize(orderEvent, JsonSerialization.Create(converters: converter));
+            var deserializeObject = JsonSerialization.Deserialize<OrderEvent>(serializeObject, JsonSerialization.Create(converters: converter));
 
             Assert.IsFalse(serializeObject.Contains("order-fee-amount", StringComparison.InvariantCulture));
             Assert.IsFalse(serializeObject.Contains("order-fee-currency", StringComparison.InvariantCulture));
@@ -158,7 +156,7 @@ namespace QuantConnect.Tests.Common.Orders
             var orderEvent = new OrderEvent(order, DateTime.UtcNow, new OrderFee(new CashAmount(88, Currencies.USD)));
 
             var converter = new OrderEventJsonConverter("id");
-            var deserializeObject = JsonConvert.DeserializeObject<OrderEvent>(serializeObject, converter);
+            var deserializeObject = JsonSerialization.Deserialize<OrderEvent>(serializeObject, JsonSerialization.Create(converters: converter));
 
             // has the old version
             Assert.IsTrue(serializeObject.Contains("order-fee-amount", StringComparison.InvariantCulture));

@@ -15,7 +15,7 @@
 */
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuantConnect.Configuration;
 
 namespace QuantConnect.Packets

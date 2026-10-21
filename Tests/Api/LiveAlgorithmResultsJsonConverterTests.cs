@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using QuantConnect.Api;
 
@@ -60,7 +59,7 @@ namespace QuantConnect.Tests.API
         public void EveryFieldIsOptional()
         {
             // an errored or not yet started deployment only reports a subset of the fields
-            var result = JsonConvert.DeserializeObject<LiveAlgorithmResults>("{}", new LiveAlgorithmResultsJsonConverter());
+            var result = JsonSerialization.Deserialize<LiveAlgorithmResults>("{}", JsonSerialization.Create(converters: new System.Text.Json.Serialization.JsonConverter[] { new LiveAlgorithmResultsJsonConverter() }));
 
             Assert.IsFalse(result.Success);
             Assert.IsNull(result.Status);
@@ -86,7 +85,7 @@ namespace QuantConnect.Tests.API
         public void AFailedResponseStopsAtTheErrors()
         {
             var json = @"{ ""success"": false, ""errors"": [ ""Not started"" ], ""charts"": { ""Equity"": {} } }";
-            var result = JsonConvert.DeserializeObject<LiveAlgorithmResults>(json, new LiveAlgorithmResultsJsonConverter());
+            var result = JsonSerialization.Deserialize<LiveAlgorithmResults>(json, JsonSerialization.Create(converters: new System.Text.Json.Serialization.JsonConverter[] { new LiveAlgorithmResultsJsonConverter() }));
 
             CollectionAssert.AreEqual(new[] { "Not started" }, result.Errors);
             Assert.IsNull(result.Charts, "Charts and files are not read once the response reports a failure");
@@ -107,7 +106,7 @@ namespace QuantConnect.Tests.API
                 ""success"": true,
                 ""files"": [ { ""id"": null, ""content"": ""code"", ""modified"": null, ""name"": ""Main.cs"", ""open"": false, ""isLibrary"": false, ""projectId"": 123 } ]
             }";
-            var result = JsonConvert.DeserializeObject<LiveAlgorithmResults>(json, new LiveAlgorithmResultsJsonConverter());
+            var result = JsonSerialization.Deserialize<LiveAlgorithmResults>(json, JsonSerialization.Create(converters: new System.Text.Json.Serialization.JsonConverter[] { new LiveAlgorithmResultsJsonConverter() }));
 
             Assert.AreEqual(1, result.Files.Count);
             var file = result.Files[0];
@@ -139,7 +138,7 @@ namespace QuantConnect.Tests.API
                 ""runtimeStatistics"": {{ ""Unrealized"": ""0"" }}
             }}";
 
-            return JsonConvert.DeserializeObject<LiveAlgorithmResults>(json, new LiveAlgorithmResultsJsonConverter());
+            return JsonSerialization.Deserialize<LiveAlgorithmResults>(json, JsonSerialization.Create(converters: new System.Text.Json.Serialization.JsonConverter[] { new LiveAlgorithmResultsJsonConverter() }));
         }
     }
 }

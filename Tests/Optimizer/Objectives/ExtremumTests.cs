@@ -17,7 +17,6 @@
 using NUnit.Framework;
 using QuantConnect.Optimizer.Objectives;
 using System;
-using Newtonsoft.Json;
 
 namespace QuantConnect.Tests.Optimizer.Objectives
 {
@@ -37,7 +36,7 @@ namespace QuantConnect.Tests.Optimizer.Objectives
         [TestCase("\"miN\"")]
         public void Deserialize(string extremum)
         {
-            var actual = JsonConvert.DeserializeObject<Extremum>(extremum);
+            var actual = JsonSerialization.Deserialize<Extremum>(extremum);
             Extremum expected = extremum.Equals("\"max\"", StringComparison.OrdinalIgnoreCase)
                 ? new Maximization() as Extremum
                 : new Minimization();
@@ -52,16 +51,16 @@ namespace QuantConnect.Tests.Optimizer.Objectives
         {
             Assert.Throws<InvalidOperationException>(() =>
             {
-                JsonConvert.DeserializeObject<Extremum>(extremum);
+                JsonSerialization.Deserialize<Extremum>(extremum);
             });
         }
 
         [Test, TestCaseSource(nameof(Extremums))]
         public void Serialize(Extremum extremum)
         {
-            var json = JsonConvert.SerializeObject(extremum);
+            var json = JsonSerialization.Serialize(extremum);
 
-            var actual = JsonConvert.DeserializeObject<Extremum>(json);
+            var actual = JsonSerialization.Deserialize<Extremum>(json);
             Assert.NotNull(actual);
             Assert.AreEqual(extremum.GetType(), actual.GetType());
         }

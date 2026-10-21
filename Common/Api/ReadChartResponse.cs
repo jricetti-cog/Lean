@@ -13,7 +13,7 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace QuantConnect.Api
 {
@@ -25,19 +25,19 @@ namespace QuantConnect.Api
         /// <summary>
         /// Chart object from the ReadChart response
         /// </summary>
-        [JsonProperty(PropertyName = "chart")]
+        [JsonPropertyName("chart")]
         public Chart Chart { get; set; }
 
         /// <summary>
         /// Status of the chart generation process, "loading" while the chart is not ready yet
         /// </summary>
-        [JsonProperty(PropertyName = "status")]
+        [JsonPropertyName("status")]
         public string Status { get; set; }
 
         /// <summary>
         /// Loading percentage of the chart generation process
         /// </summary>
-        [JsonProperty(PropertyName = "progress")]
+        [JsonPropertyName("progress")]
         public decimal Progress { get; set; }
     }
 }

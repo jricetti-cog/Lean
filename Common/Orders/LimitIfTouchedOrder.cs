@@ -14,7 +14,7 @@
 */
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuantConnect.Interfaces;
 using QuantConnect.Securities;
 
@@ -36,19 +36,19 @@ namespace QuantConnect.Orders
         /// <summary>
         /// The price which, when touched, will trigger the setting of a limit order at <see cref="LimitPrice"/>.
         /// </summary>
-        [JsonProperty(PropertyName = "triggerPrice")]
+        [JsonPropertyName("triggerPrice")]
         public decimal TriggerPrice { get; internal set; }
 
         /// <summary>
         /// The price at which to set the limit order following <see cref="TriggerPrice"/> being touched.
         /// </summary>
-        [JsonProperty(PropertyName = "limitPrice")]
+        [JsonPropertyName("limitPrice")]
         public decimal LimitPrice { get; internal set; }
 
         /// <summary>
         /// Whether or not the <see cref="TriggerPrice"/> has been touched.
         /// </summary>
-        [JsonProperty(PropertyName = "triggerTouched")]
+        [JsonPropertyName("triggerTouched")]
         public bool TriggerTouched { get; internal set; }
 
         /// <summary>

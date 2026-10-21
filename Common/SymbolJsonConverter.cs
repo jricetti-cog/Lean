@@ -15,8 +15,10 @@
 */
 
 using System;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 
 namespace QuantConnect
 {
@@ -24,28 +26,21 @@ namespace QuantConnect
     /// Defines a <see cref="JsonConverter"/> to be used when deserializing to
     /// the <see cref="Symbol"/> class.
     /// </summary>
-    public class SymbolJsonConverter : JsonConverter
+    public class SymbolJsonConverter : JsonConverter<Symbol>
     {
         /// <summary>
         /// Writes the JSON representation of the object.
         /// </summary>
-        /// <param name="writer">The <see cref="T:Newtonsoft.Json.JsonWriter"/> to write to.</param><param name="value">The value.</param><param name="serializer">The calling serializer.</param>
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        public override void Write(Utf8JsonWriter writer, Symbol symbol, JsonSerializerOptions options)
         {
-            var symbol = value as Symbol;
-            if (ReferenceEquals(symbol, null)) return;
-
             writer.WriteStartObject();
-            writer.WritePropertyName("value");
-            writer.WriteValue(symbol.Value);
-            writer.WritePropertyName("id");
-            writer.WriteValue(symbol.ID.ToString());
-            writer.WritePropertyName("permtick");
-            writer.WriteValue(symbol.Value);
+            writer.WriteString("value", symbol.Value);
+            writer.WriteString("id", symbol.ID.ToString());
+            writer.WriteString("permtick", symbol.Value);
             if (symbol.HasUnderlying)
             {
                 writer.WritePropertyName("underlying");
-                WriteJson(writer, symbol.Underlying, serializer);
+                Write(writer, symbol.Underlying, options);
             }
             writer.WriteEndObject();
         }
@@ -53,15 +48,15 @@ namespace QuantConnect
         /// <summary>
         /// Reads the JSON representation of the object.
         /// </summary>
-        /// <param name="reader">The <see cref="T:Newtonsoft.Json.JsonReader"/> to read from.</param><param name="objectType">Type of the object.</param><param name="existingValue">The existing value of object being read.</param><param name="serializer">The calling serializer.</param>
-        /// <returns>
-        /// The object value.
-        /// </returns>
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override Symbol Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            var jobject = JObject.Load(reader);
+            var jobject = JsonNode.Parse(ref reader) as JsonObject;
+            if (jobject == null)
+            {
+                throw new JsonException($"Unexpected token {reader.TokenType} when reading a Symbol.");
+            }
 
-            if (jobject.TryGetValue("type", StringComparison.InvariantCultureIgnoreCase, out var type))
+            if (jobject.TryGetValue("type", StringComparison.InvariantCultureIgnoreCase, out _))
             {
                 return BuildSymbolFromUserFriendlyValue(jobject);
             }
@@ -69,21 +64,27 @@ namespace QuantConnect
         }
 
         /// <summary>
-        /// Determines whether this instance can convert the specified object type.
+        /// Reads a symbol used as a dictionary key
         /// </summary>
-        /// <param name="objectType">Type of the object.</param>
-        /// <returns>
-        /// <c>true</c> if this instance can convert the specified object type; otherwise, <c>false</c>.
-        /// </returns>
-        public override bool CanConvert(Type objectType)
+        public override Symbol ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            return objectType == typeof (Symbol);
+#pragma warning disable CS0618
+            return reader.GetString();
+#pragma warning restore CS0618
         }
 
-        private Symbol ReadSymbolFromJson(JObject jObject)
+        /// <summary>
+        /// Writes a symbol used as a dictionary key
+        /// </summary>
+        public override void WriteAsPropertyName(Utf8JsonWriter writer, Symbol value, JsonSerializerOptions options)
         {
-            JToken symbolId;
-            JToken value;
+            writer.WritePropertyName(value.ToString());
+        }
+
+        private Symbol ReadSymbolFromJson(JsonObject jObject)
+        {
+            JsonNode symbolId;
+            JsonNode value;
 
             if ((jObject.TryGetValue("ID", StringComparison.InvariantCultureIgnoreCase, out symbolId)
                 && jObject.TryGetValue("Value", StringComparison.InvariantCultureIgnoreCase, out value))
@@ -91,32 +92,28 @@ namespace QuantConnect
                 && jObject.TryGetValue("value", StringComparison.InvariantCultureIgnoreCase, out value)))
             {
                 Symbol underlyingSymbol = null;
-                JToken underlying;
+                JsonNode underlying;
                 if (jObject.TryGetValue("Underlying", StringComparison.InvariantCultureIgnoreCase, out underlying)
                     || jObject.TryGetValue("underlying", StringComparison.InvariantCultureIgnoreCase, out underlying))
                 {
-                    underlyingSymbol = ReadSymbolFromJson(underlying as JObject);
+                    underlyingSymbol = underlying is JsonObject underlyingObject ? ReadSymbolFromJson(underlyingObject) : null;
                 }
 
-                return new Symbol(SecurityIdentifier.Parse(symbolId.ToString()), value.ToString(), underlyingSymbol);
+                return new Symbol(SecurityIdentifier.Parse(symbolId.AsText()), value.AsText(), underlyingSymbol);
             }
             return null;
         }
 
-        /// <summary>
-        /// Creates a symbol from the user friendly string representation
-        /// </summary>
-        private static Symbol BuildSymbolFromUserFriendlyValue(JObject jObject)
+        private static Symbol BuildSymbolFromUserFriendlyValue(JsonObject jObject)
         {
             if (jObject.TryGetValue("value", StringComparison.InvariantCultureIgnoreCase, out var value)
                 && jObject.TryGetValue("type", StringComparison.InvariantCultureIgnoreCase, out var securityTypeToken)
-                && securityTypeToken.ToString().TryParseSecurityType(out var securityType))
+                && securityTypeToken.AsText().TryParseSecurityType(out var securityType))
             {
-                if (!jObject.TryGetValue("market", StringComparison.InvariantCultureIgnoreCase, out var market))
-                {
-                    market = Market.USA;
-                }
-                return SymbolRepresentation.ParseTickerFromUserInput(value.ToString(), securityType, market.ToString());
+                var market = jObject.TryGetValue("market", StringComparison.InvariantCultureIgnoreCase, out var marketToken)
+                    ? marketToken.AsText()
+                    : Market.USA;
+                return SymbolRepresentation.ParseTickerFromUserInput(value.AsText(), securityType, market);
             }
             return null;
         }

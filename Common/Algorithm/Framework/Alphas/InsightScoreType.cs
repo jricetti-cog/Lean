@@ -14,15 +14,15 @@
  *
 */
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 
 namespace QuantConnect.Algorithm.Framework.Alphas
 {
     /// <summary>
     /// Defines a specific type of score for a insight
     /// </summary>
-    [JsonConverter(typeof(StringEnumConverter), true)]
+    [JsonConverterWithArgs(typeof(StringEnumJsonConverter), true)]
     public enum InsightScoreType
     {
         /// <summary>
