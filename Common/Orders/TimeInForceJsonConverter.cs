@@ -15,53 +15,38 @@
 
 using System;
 using System.Reflection;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using QuantConnect.Orders.TimeInForces;
+using QuantConnect.Util.Json;
 
 namespace QuantConnect.Orders
 {
     /// <summary>
     /// Provides an implementation of <see cref="JsonConverter"/> that can deserialize TimeInForce objects
     /// </summary>
-    public class TimeInForceJsonConverter : JsonConverter
+    public class TimeInForceJsonConverter : JsonConverter<TimeInForce>
     {
-        /// <summary>
-        /// Gets a value indicating whether this <see cref="T:Newtonsoft.Json.JsonConverter"/> can write JSON.
-        /// </summary>
-        /// <value>
-        /// <c>true</c> if this <see cref="T:Newtonsoft.Json.JsonConverter"/> can write JSON; otherwise, <c>false</c>.
-        /// </value>
-        public override bool CanWrite => true;
-
         /// <summary>
         /// Determines whether this instance can convert the specified object type.
         /// </summary>
-        /// <param name="objectType">Type of the object.</param>
-        /// <returns>
-        /// <c>true</c> if this instance can convert the specified object type; otherwise, <c>false</c>.
-        /// </returns>
-        public override bool CanConvert(Type objectType)
+        public override bool CanConvert(Type typeToConvert)
         {
-            return typeof(TimeInForce).IsAssignableFrom(objectType);
+            return typeof(TimeInForce).IsAssignableFrom(typeToConvert);
         }
 
         /// <summary>
         /// Writes the JSON representation of the object.
         /// </summary>
-        /// <param name="writer">The <see cref="T:Newtonsoft.Json.JsonWriter"/> to write to.</param><param name="value">The value.</param><param name="serializer">The calling serializer.</param>
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        public override void Write(Utf8JsonWriter writer, TimeInForce value, JsonSerializerOptions options)
         {
-            var timeInForce = value as TimeInForce;
-            if (ReferenceEquals(timeInForce, null)) return;
-
-            var jo = new JObject();
-
             var type = value.GetType();
+            writer.WriteStartObject();
             // don't add if its the default value used by the reader
             if (type != typeof(GoodTilCanceledTimeInForce))
             {
-                jo.Add("$type", type.FullName);
+                writer.WriteString("$type", type.FullName);
             }
 
             foreach (var property in type.GetProperties())
@@ -71,42 +56,36 @@ namespace QuantConnect.Orders
                     var propertyValue = property.GetValue(value, null);
                     if (propertyValue != null)
                     {
-                        jo.Add(property.Name, JToken.FromObject(propertyValue, serializer));
+                        writer.WritePropertyName(property.Name);
+                        JsonSerializer.Serialize(writer, propertyValue, propertyValue.GetType(), options);
                     }
                 }
             }
-
-            jo.WriteTo(writer);
+            writer.WriteEndObject();
         }
 
         /// <summary>
         /// Reads the JSON representation of the object.
         /// </summary>
-        /// <param name="reader">The <see cref="T:Newtonsoft.Json.JsonReader"/> to read from.</param><param name="objectType">Type of the object.</param><param name="existingValue">The existing value of object being read.</param><param name="serializer">The calling serializer.</param>
-        /// <returns>
-        /// The object value.
-        /// </returns>
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override TimeInForce Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            var jObject = JToken.Load(reader);
+            var jObject = JsonNode.Parse(ref reader);
 
             Type type;
-            var array = jObject as JArray;
-            if (array != null)
+            if (jObject is JsonArray array)
             {
                 if (array.Count != 0)
                 {
-                    throw new InvalidOperationException($"Unexpected time in force value: {jObject}");
+                    throw new InvalidOperationException($"Unexpected time in force value: {jObject.ToJsonString()}");
                 }
                 // default value if not present. for php [] & {} are the same representation of empty object
                 type = typeof(GoodTilCanceledTimeInForce);
             }
             else if (jObject["$type"] != null)
             {
-                var jToken = jObject["$type"];
-                var typeName = jToken.ToString();
+                var typeName = jObject["$type"].AsText();
                 type = Type.GetType(typeName, throwOnError: false, ignoreCase: true);
-                if (type == null)
+                if (type == null || !typeof(TimeInForce).IsAssignableFrom(type))
                 {
                     throw new InvalidOperationException($"Unable to find the type: {typeName}");
                 }
@@ -123,14 +102,14 @@ namespace QuantConnect.Orders
                 throw new NotImplementedException($"Unable to find a constructor for type: {type.FullName}");
             }
 
-            var timeInForce = constructor.Invoke(null);
+            var timeInForce = (TimeInForce)constructor.Invoke(null);
 
             foreach (var property in timeInForce.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
             {
                 var value = jObject[property.Name];
                 if (value != null)
                 {
-                    property.SetValue(timeInForce, value.ToObject(property.PropertyType));
+                    property.SetValue(timeInForce, value.Deserialize(property.PropertyType, JsonSerialization.Default));
                 }
             }
 

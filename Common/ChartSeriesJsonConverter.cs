@@ -15,7 +15,8 @@
 
 using System;
 using System.Linq;
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 
 namespace QuantConnect
@@ -23,52 +24,42 @@ namespace QuantConnect
     /// <summary>
     /// Convert a Chart Series to and from JSON
     /// </summary>
-    public class ChartSeriesJsonConverter : JsonConverter
+    public class ChartSeriesJsonConverter : JsonConverter<Dictionary<string, BaseSeries>>
     {
         /// <summary>
-        /// This converter wont be used to read JSON. Will throw exception if manually called.
+        /// Writes the series sorted
         /// </summary>
-        public override bool CanRead => false;
-
-        /// <summary>
-        /// Indicates whether the given object type can be converted into Chart Series
-        /// </summary>
-        public override bool CanConvert(Type objectType)
+        public override void Write(Utf8JsonWriter writer, Dictionary<string, BaseSeries> series, JsonSerializerOptions options)
         {
-            return typeof(Dictionary<string, BaseSeries>).IsAssignableFrom(objectType);
-        }
-
-        /// <summary>
-        /// Converts a Chart Series object into a JSON file
-        /// </summary>
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-        {
-            var series = value as Dictionary<string, BaseSeries>;
-            if (series == null)
-            {
-                return;
-            }
-
             writer.WriteStartObject();
-            // we sort the series in ascending count so that they are chart nicely, has value for stacked area series so they're continuous 
+            // we sort the series in ascending count so that they are chart nicely, has value for stacked area series so they're continuous
             foreach (var kvp in series.OrderBy(x => x.Value.Index)
                 .ThenBy(x => x.Value.Values.Count)
                 .ThenBy(x => x.Value.Values.Select(x => (x as ChartPoint)?.Y ?? 0).Sum()))
             {
                 writer.WritePropertyName(kvp.Key);
-                writer.WriteRawValue(JsonConvert.SerializeObject(kvp.Value));
+                JsonSerializer.Serialize(writer, kvp.Value, kvp.Value?.GetType() ?? typeof(BaseSeries), JsonSerialization.Default);
             }
-
             writer.WriteEndObject();
         }
 
         /// <summary>
-        /// Converts a JSON file into a Chart Series object
+        /// Reads the series dictionary
         /// </summary>
-        /// <remarks>Throws NotImplementedException</remarks>
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override Dictionary<string, BaseSeries> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            throw new NotImplementedException();
+            if (reader.TokenType != JsonTokenType.StartObject)
+            {
+                throw new JsonException($"Unexpected token {reader.TokenType} when reading chart series.");
+            }
+            var result = new Dictionary<string, BaseSeries>();
+            while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
+            {
+                var key = reader.GetString();
+                reader.Read();
+                result[key] = JsonSerializer.Deserialize<BaseSeries>(ref reader, options);
+            }
+            return result;
         }
     }
 }

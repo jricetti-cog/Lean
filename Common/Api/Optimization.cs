@@ -15,7 +15,8 @@
 
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 using QuantConnect.Optimizer;
 using QuantConnect.Optimizer.Objectives;
 using QuantConnect.Util;
@@ -45,13 +46,13 @@ namespace QuantConnect.Api
         /// <summary>
         /// Runtime banner/updating statistics for the optimization
         /// </summary>
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, string> RuntimeStatistics { get; set; }
 
         /// <summary>
         /// Optimization constraints
         /// </summary>
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IReadOnlyList<Constraint> Constraints { get; set; }
 
         /// <summary>
@@ -62,7 +63,7 @@ namespace QuantConnect.Api
         /// <summary>
         /// Optimization constraints
         /// </summary>
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, OptimizationBacktest> Backtests { get; set; }
 
         /// <summary>
@@ -73,13 +74,13 @@ namespace QuantConnect.Api
         /// <summary>
         /// Optimization requested date and time
         /// </summary>
-        [JsonConverter(typeof(DateTimeJsonConverter), DateFormat.ISOShort, DateFormat.UI)]
+        [JsonConverterWithArgs(typeof(DateTimeJsonConverter), DateFormat.ISOShort, DateFormat.UI)]
         public DateTime Requested { get; set; }
 
         /// <summary>
         /// Aggregate diagnostic of the optimization; omitted when no analysis was produced.
         /// </summary>
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public OptimizationAnalysis Analysis { get; set; }
     }
 

@@ -13,7 +13,7 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace QuantConnect.Orders
 {
@@ -26,19 +26,19 @@ namespace QuantConnect.Orders
         /// <summary>
         /// The bid price at order submission time
         /// </summary>
-        [JsonProperty(PropertyName = "bidPrice")]
+        [JsonPropertyName("bidPrice")]
         public decimal BidPrice { get; }
 
         /// <summary>
         /// The ask price at order submission time
         /// </summary>
-        [JsonProperty(PropertyName = "askPrice")]
+        [JsonPropertyName("askPrice")]
         public decimal AskPrice { get; }
 
         /// <summary>
         /// The current price at order submission time
         /// </summary>
-        [JsonProperty(PropertyName = "lastPrice")]
+        [JsonPropertyName("lastPrice")]
         public decimal LastPrice { get; }
 
         /// <summary>

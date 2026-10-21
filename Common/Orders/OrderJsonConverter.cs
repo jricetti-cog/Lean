@@ -15,8 +15,10 @@
 
 using System;
 using System.Linq;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 using System.Collections.Generic;
 using QuantConnect.Brokerages;
 using QuantConnect.Securities;
@@ -26,54 +28,31 @@ namespace QuantConnect.Orders
     /// <summary>
     /// Provides an implementation of <see cref="JsonConverter"/> that can deserialize Orders
     /// </summary>
-    public class OrderJsonConverter : JsonConverter
+    public class OrderJsonConverter : JsonConverter<Order>
     {
-        /// <summary>
-        /// Gets a value indicating whether this <see cref="T:Newtonsoft.Json.JsonConverter"/> can write JSON.
-        /// </summary>
-        /// <value>
-        /// <c>true</c> if this <see cref="T:Newtonsoft.Json.JsonConverter"/> can write JSON; otherwise, <c>false</c>.
-        /// </value>
-        public override bool CanWrite
-        {
-            get { return false; }
-        }
-
         /// <summary>
         /// Determines whether this instance can convert the specified object type.
         /// </summary>
-        /// <param name="objectType">Type of the object.</param>
-        /// <returns>
-        /// <c>true</c> if this instance can convert the specified object type; otherwise, <c>false</c>.
-        /// </returns>
-        public override bool CanConvert(Type objectType)
+        public override bool CanConvert(Type typeToConvert)
         {
-            return typeof(Order).IsAssignableFrom(objectType);
+            return typeof(Order).IsAssignableFrom(typeToConvert);
         }
 
         /// <summary>
-        /// Writes the JSON representation of the object.
+        /// Writes the order using the default serialization of its runtime type
         /// </summary>
-        /// <param name="writer">The <see cref="T:Newtonsoft.Json.JsonWriter"/> to write to.</param><param name="value">The value.</param><param name="serializer">The calling serializer.</param>
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        public override void Write(Utf8JsonWriter writer, Order value, JsonSerializerOptions options)
         {
-            throw new NotImplementedException("The OrderJsonConverter does not implement a WriteJson method;.");
+            writer.WriteDefault(value, options);
         }
 
         /// <summary>
-        /// Reads the JSON representation of the object.
+        /// Reads the JSON representation of the order
         /// </summary>
-        /// <param name="reader">The <see cref="T:Newtonsoft.Json.JsonReader"/> to read from.</param><param name="objectType">Type of the object.</param><param name="existingValue">The existing value of object being read.</param><param name="serializer">The calling serializer.</param>
-        /// <returns>
-        /// The object value.
-        /// </returns>
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override Order Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            var jObject = JObject.Load(reader);
-
-            var order = CreateOrderFromJObject(jObject);
-
-            return order;
+            var jObject = JsonNode.Parse(ref reader) as JsonObject;
+            return CreateOrderFromJObject(jObject);
         }
 
         /// <summary>
@@ -81,7 +60,7 @@ namespace QuantConnect.Orders
         /// </summary>
         /// <param name="jObject"></param>
         /// <returns>Order Object</returns>
-        public static Order CreateOrderFromJObject(JObject jObject)
+        public static Order CreateOrderFromJObject(JsonObject jObject)
         {
             // create order instance based on order type field
             var orderType = (OrderType)(jObject["Type"]?.Value<int>() ?? jObject["type"].Value<int>());
@@ -92,11 +71,11 @@ namespace QuantConnect.Orders
 
             var jsonStatus = jObject["Status"] ?? jObject["status"];
             var jsonTime = jObject["Time"] ?? jObject["time"];
-            if (jsonStatus.Type == JTokenType.Integer)
+            if (jsonStatus.Kind() == JsonValueKind.Number)
             {
                 order.Status = (OrderStatus)jsonStatus.Value<int>();
             }
-            else if (jsonStatus.Type == JTokenType.Null)
+            else if (jsonStatus.IsNull())
             {
                 order.Status = OrderStatus.Canceled;
             }
@@ -105,7 +84,7 @@ namespace QuantConnect.Orders
                 // The `Status` tag can sometimes appear as a string of the enum value in the LiveResultPacket.
                 order.Status = (OrderStatus)Enum.Parse(typeof(OrderStatus), jsonStatus.Value<string>(), true);
             }
-            if (jsonTime != null && jsonTime.Type != JTokenType.Null)
+            if (!jsonTime.IsNull())
             {
                 order.Time = jsonTime.Value<DateTime>();
             }
@@ -117,7 +96,7 @@ namespace QuantConnect.Orders
             }
 
             var orderSubmissionData = jObject["OrderSubmissionData"] ?? jObject["orderSubmissionData"];
-            if (orderSubmissionData != null && orderSubmissionData.Type != JTokenType.Null)
+            if (!orderSubmissionData.IsNull())
             {
                 var bidPrice = SafeDecimalValue(orderSubmissionData["BidPrice"] ?? orderSubmissionData["bidPrice"]);
                 var askPrice = SafeDecimalValue(orderSubmissionData["AskPrice"] ?? orderSubmissionData["askPrice"]);
@@ -126,7 +105,7 @@ namespace QuantConnect.Orders
             }
 
             var priceAdjustmentMode = jObject["PriceAdjustmentMode"] ?? jObject["priceAdjustmentMode"];
-            if (priceAdjustmentMode != null && priceAdjustmentMode.Type != JTokenType.Null)
+            if (!priceAdjustmentMode.IsNull())
             {
                 var value = priceAdjustmentMode.Value<int>();
                 order.PriceAdjustmentMode = (DataNormalizationMode)value;
@@ -136,20 +115,20 @@ namespace QuantConnect.Orders
             var lastUpdateTime = jObject["LastUpdateTime"] ?? jObject["lastUpdateTime"];
             var canceledTime = jObject["CanceledTime"] ?? jObject["canceledTime"];
 
-            if (canceledTime != null && canceledTime.Type != JTokenType.Null)
+            if (!canceledTime.IsNull())
             {
                 order.CanceledTime = canceledTime.Value<DateTime>();
             }
-            if (lastFillTime != null && lastFillTime.Type != JTokenType.Null)
+            if (!lastFillTime.IsNull())
             {
                 order.LastFillTime = lastFillTime.Value<DateTime>();
             }
-            if (lastUpdateTime != null && lastUpdateTime.Type != JTokenType.Null)
+            if (!lastUpdateTime.IsNull())
             {
                 order.LastUpdateTime = lastUpdateTime.Value<DateTime>();
             }
             var tag = jObject["Tag"] ?? jObject["tag"];
-            if (tag != null && tag.Type != JTokenType.Null)
+            if (!tag.IsNull())
             {
                 order.Tag = tag.Value<string>();
             }
@@ -160,7 +139,7 @@ namespace QuantConnect.Orders
 
             order.Quantity = SafeDecimalValue(jObject["Quantity"] ?? jObject["quantity"]);
             var orderPrice = jObject["Price"] ?? jObject["price"];
-            if (orderPrice != null && orderPrice.Type != JTokenType.Null)
+            if (!orderPrice.IsNull())
             {
                 order.Price = SafeDecimalValue(orderPrice);
             }
@@ -170,13 +149,13 @@ namespace QuantConnect.Orders
             }
 
             var priceCurrency = jObject["PriceCurrency"] ?? jObject["priceCurrency"];
-            if (priceCurrency != null && priceCurrency.Type != JTokenType.Null)
+            if (!priceCurrency.IsNull())
             {
                 order.PriceCurrency = priceCurrency.Value<string>();
             }
-            order.BrokerId = jObject["BrokerId"]?.Select(x => x.Value<string>()).ToList() ?? jObject["brokerId"].Select(x => x.Value<string>()).ToList();
+            order.BrokerId = jObject["BrokerId"]?.AsArray().Select(x => x.Value<string>()).ToList() ?? jObject["brokerId"].AsArray().Select(x => x.Value<string>()).ToList();
             var jsonContingentId = jObject["ContingentId"] ?? jObject["contingentId"];
-            if (jsonContingentId != null && jsonContingentId.Type != JTokenType.Null)
+            if (!jsonContingentId.IsNull())
             {
                 order.ContingentId = jsonContingentId.Value<int>();
             }
@@ -192,16 +171,16 @@ namespace QuantConnect.Orders
                 ? CreateTimeInForce(timeInForce, jObject)
                 : TimeInForce.GoodTilCanceled;
 
-            if (jObject.SelectTokens("Symbol.ID").Any())
+            if (jObject.SelectToken("Symbol.ID") != null)
             {
-                var sid = SecurityIdentifier.Parse(jObject.SelectTokens("Symbol.ID").Single().Value<string>());
-                var ticker = jObject.SelectTokens("Symbol.Value").Single().Value<string>();
+                var sid = SecurityIdentifier.Parse(jObject.SelectToken("Symbol.ID").Value<string>());
+                var ticker = jObject.SelectToken("Symbol.Value").Value<string>();
                 order.Symbol = new Symbol(sid, ticker);
             }
-            else if (jObject.SelectTokens("symbol.id").Any())
+            else if (jObject.SelectToken("symbol.id") != null)
             {
-                var sid = SecurityIdentifier.Parse(jObject.SelectTokens("symbol.id").Single().Value<string>());
-                var ticker = jObject.SelectTokens("symbol.value").Single().Value<string>();
+                var sid = SecurityIdentifier.Parse(jObject.SelectToken("symbol.id").Value<string>());
+                var ticker = jObject.SelectToken("symbol.value").Value<string>();
                 order.Symbol = new Symbol(sid, ticker);
             }
             else
@@ -209,27 +188,27 @@ namespace QuantConnect.Orders
                 string market = null;
 
                 //does data have market?
-                var suppliedMarket = jObject.SelectTokens("Symbol.ID.Market") ?? jObject.SelectTokens("symbol.ID.Market");
-                if (suppliedMarket.Any())
+                var suppliedMarket = jObject.SelectToken("Symbol.ID.Market");
+                if (suppliedMarket != null)
                 {
-                    market = suppliedMarket.Single().Value<string>();
+                    market = suppliedMarket.Value<string>();
                 }
 
                 // we only get the security type if we need it, because it might not be there in other cases
                 var securityType = (SecurityType)(jObject["SecurityType"]?.Value<int>() ?? jObject["securityType"].Value<int>());
 
-                var symbolValueUpperCase = jObject.SelectTokens("Symbol.Value");
-                var symbolValueCamelCase = jObject.SelectTokens("symbol.value");
+                var symbolValueUpperCase = jObject.SelectToken("Symbol.Value");
+                var symbolValueCamelCase = jObject.SelectToken("symbol.value");
                 string ticker = default;
-                if (symbolValueUpperCase.Any())
+                if (symbolValueUpperCase != null)
                 {
                     // provide for backwards compatibility
-                    ticker = symbolValueUpperCase.Single().Value<string>();
+                    ticker = symbolValueUpperCase.Value<string>();
                 }
-                else if (symbolValueCamelCase.Any())
+                else if (symbolValueCamelCase != null)
                 {
                     // provide compatibility for orders in camel case
-                    ticker = symbolValueCamelCase.Single().Value<string>();
+                    ticker = symbolValueCamelCase.Value<string>();
                 }
                 else
                 {
@@ -249,7 +228,7 @@ namespace QuantConnect.Orders
         /// <summary>
         /// Creates an order of the correct type
         /// </summary>
-        private static Order CreateOrder(OrderType orderType, JObject jObject)
+        private static Order CreateOrder(OrderType orderType, JsonObject jObject)
         {
             Order order;
             switch (orderType)
@@ -334,10 +313,10 @@ namespace QuantConnect.Orders
         /// <summary>
         /// Creates a Time In Force of the correct type
         /// </summary>
-        private static TimeInForce CreateTimeInForce(JToken timeInForce, JObject jObject)
+        private static TimeInForce CreateTimeInForce(JsonNode timeInForce, JsonObject jObject)
         {
             // for backward-compatibility support deserialization of old JSON format
-            if (timeInForce is JValue)
+            if (timeInForce is JsonValue)
             {
                 var value = timeInForce.Value<int>();
 
@@ -359,13 +338,13 @@ namespace QuantConnect.Orders
             }
 
             // convert with TimeInForceJsonConverter
-            return timeInForce.ToObject<TimeInForce>();
+            return timeInForce.Value<TimeInForce>();
         }
 
         /// <summary>
         /// Deserializes the GroupOrderManager from the JSON object
         /// </summary>
-        private static GroupOrderManager DeserializeGroupOrderManager(JObject jObject)
+        private static GroupOrderManager DeserializeGroupOrderManager(JsonObject jObject)
         {
             var groupOrderManagerJObject = jObject["GroupOrderManager"] ?? jObject["groupOrderManager"];
 
@@ -393,31 +372,31 @@ namespace QuantConnect.Orders
         /// <summary>
         /// Deserializes the contingency of the order from the JSON object, if any, available for any order type
         /// </summary>
-        private static void DeserializeContingency(JObject jObject, Order order)
+        private static void DeserializeContingency(JsonObject jObject, Order order)
         {
             var contingencyToken = jObject["Contingency"] ?? jObject["contingency"];
-            if (contingencyToken == null || contingencyToken.Type != JTokenType.Object)
+            if (contingencyToken is not JsonObject)
             {
                 // not a contingent order, or an order serialized before they existed
                 return;
             }
             var linksToken = contingencyToken["Links"] ?? contingencyToken["links"];
             var count = (contingencyToken["Count"] ?? contingencyToken["count"])?.Value<int>() ?? 0;
-            if (linksToken == null || linksToken.Type != JTokenType.Array || count < 1)
+            if (linksToken is not JsonArray || count < 1)
             {
                 return;
             }
 
             var links = new List<ContingencyLink>();
-            foreach (var token in linksToken)
+            foreach (var token in linksToken.AsArray())
             {
-                if (token.Type != JTokenType.Object)
+                if (token is not JsonObject)
                 {
                     continue;
                 }
                 var type = (ContingencyType)((token["Type"] ?? token["type"])?.Value<int>() ?? 0);
                 var roleToken = token["Role"] ?? token["role"];
-                var role = roleToken != null && roleToken.Type != JTokenType.Null ? (ContingencyRole?)roleToken.Value<int>() : null;
+                var role = !roleToken.IsNull() ? (ContingencyRole?)roleToken.Value<int>() : null;
                 if (!ContingencyLink.IsValidRole(type, role))
                 {
                     continue;
@@ -428,12 +407,12 @@ namespace QuantConnect.Orders
                     type,
                     role,
                     (token["Triggered"] ?? token["triggered"])?.Value<bool>() ?? false,
-                    triggeredTime != null && triggeredTime.Type != JTokenType.Null ? triggeredTime.Value<DateTime>() : null));
+                    !triggeredTime.IsNull() ? triggeredTime.Value<DateTime>() : null));
             }
 
             var contingency = new OrderContingency((contingencyToken["Id"] ?? contingencyToken["id"])?.Value<int>() ?? 0, count, links);
             var orderIds = contingencyToken["OrderIds"] ?? contingencyToken["orderIds"];
-            if (orderIds != null && orderIds.Type == JTokenType.Array)
+            if (orderIds is JsonArray)
             {
                 contingency.OrderIds.UnionWith(orderIds.Values<int>());
             }
@@ -446,19 +425,12 @@ namespace QuantConnect.Orders
         /// like a quantity clamped to <see cref="decimal.MaxValue"/> by <see cref="Extensions.SafeDecimalCast"/>,
         /// are parsed back from JSON as doubles that round past the decimal range
         /// </summary>
-        private static decimal SafeDecimalValue(JToken token)
+        private static decimal SafeDecimalValue(JsonNode token)
         {
-            if (token is JValue { Value: double value })
-            {
-                return value.SafeDecimalCast();
-            }
-            return token.Value<decimal>();
+            return JsonNodeExtensions.SafeDecimalValue(token);
         }
 
-        /// <summary>
-        /// Gets the decimal value of the given token, or zero if the token is null
-        /// </summary>
-        private static decimal SafeDecimalValueOrDefault(JToken token)
+        private static decimal SafeDecimalValueOrDefault(JsonNode token)
         {
             return token == null ? default : SafeDecimalValue(token);
         }

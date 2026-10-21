@@ -14,7 +14,7 @@
 */
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 
 namespace QuantConnect.Orders
@@ -27,38 +27,38 @@ namespace QuantConnect.Orders
         /// <summary>
         /// The unique order group Id
         /// </summary>
-        [JsonProperty(PropertyName = "id")]
+        [JsonPropertyName("id")]
         public int Id { get; internal set; }
 
         /// <summary>
         /// The group order quantity
         /// </summary>
-        [JsonProperty(PropertyName = "quantity")]
+        [JsonPropertyName("quantity")]
         public decimal Quantity { get; internal set; }
 
         /// <summary>
         /// The total order count associated with this order group
         /// </summary>
-        [JsonProperty(PropertyName = "count")]
+        [JsonPropertyName("count")]
         public int Count { get; }
 
         /// <summary>
         /// The limit price associated with this order group if any
         /// </summary>
-        [JsonProperty(PropertyName = "limitPrice")]
+        [JsonPropertyName("limitPrice")]
         public decimal LimitPrice { get; set; }
 
         /// <summary>
         /// The order Ids in this group
         /// </summary>
         /// <remarks>In live trading we process orders in a dedicated thread so we need to be thread safe</remarks>
-        [JsonProperty(PropertyName = "orderIds")]
+        [JsonPropertyName("orderIds")]
         public HashSet<int> OrderIds { get; }
 
         /// <summary>
         /// Order Direction Property based off Quantity.
         /// </summary>
-        [JsonProperty(PropertyName = "direction")]
+        [JsonPropertyName("direction")]
         public OrderDirection Direction
         {
             get

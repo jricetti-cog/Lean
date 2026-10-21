@@ -14,7 +14,7 @@
 */
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace QuantConnect.Api
 {
@@ -58,7 +58,7 @@ namespace QuantConnect.Api
         /// <summary>
         /// The last 4 digits of the card
         /// </summary>
-        [JsonProperty(PropertyName = "last4")]
+        [JsonPropertyName("last4")]
         public string LastFourDigits { get; set; }
     }
 }

@@ -14,7 +14,7 @@
 */
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace QuantConnect.Api
 {
@@ -57,7 +57,7 @@ namespace QuantConnect.Api
         /// <summary>
         /// Summary of the algorithm created
         /// </summary>
-        [JsonProperty(PropertyName = "live")]
+        [JsonPropertyName("live")]
         public LiveAlgorithmResults Live { get; set; }
     }
 
@@ -123,7 +123,7 @@ namespace QuantConnect.Api
         /// <summary>
         /// Algorithm list matching the requested status.
         /// </summary>
-        [JsonProperty(PropertyName = "live")]
+        [JsonPropertyName("live")]
         public List<LiveAlgorithmSummary> Algorithms { get; set; }
     }
 }

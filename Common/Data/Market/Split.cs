@@ -15,7 +15,7 @@
 */
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using ProtoBuf;
 using static QuantConnect.StringExtensions;
 
@@ -30,7 +30,7 @@ namespace QuantConnect.Data.Market
         /// <summary>
         ///Gets the type of split event, warning or split.
         /// </summary>
-        [JsonProperty]
+        [JsonInclude]
         [ProtoMember(10)]
         public SplitType Type
         {
@@ -40,7 +40,7 @@ namespace QuantConnect.Data.Market
         /// <summary>
         /// Gets the split factor
         /// </summary>
-        [JsonProperty]
+        [JsonInclude]
         [ProtoMember(11)]
         public decimal SplitFactor
         {

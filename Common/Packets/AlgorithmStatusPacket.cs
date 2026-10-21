@@ -14,8 +14,8 @@
  *
 */
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 
 namespace QuantConnect.Packets
 {
@@ -27,7 +27,7 @@ namespace QuantConnect.Packets
         /// <summary>
         /// Current algorithm status
         /// </summary>
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonConverter(typeof(StringEnumJsonConverter))]
         public AlgorithmStatus Status { get; set; }
 
         /// <summary>

@@ -17,8 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Serialization;
 using NodaTime;
 using QuantConnect.Logging;
 using QuantConnect.Securities;
@@ -52,28 +51,14 @@ namespace QuantConnect.Util
         }
 
         /// <summary>
-        /// Creates an instance of the un-projected type to be deserialized
-        /// </summary>
-        /// <param name="type">The input object type, this is the data held in the token</param>
-        /// <param name="token">The input data to be converted into a T</param>
-        /// <returns>A new instance of T that is to be serialized using default rules</returns>
-        protected override MarketHoursDatabase Create(Type type, JToken token)
-        {
-            var jobject = (JObject) token;
-            var instance = jobject.ToObject<MarketHoursDatabaseJson>();
-            return Convert(instance);
-        }
-
-        /// <summary>
         /// Defines the json structure of the market-hours-database.json file
         /// </summary>
-        [JsonObject(MemberSerialization.OptIn)]
-        public class MarketHoursDatabaseJson
+                public class MarketHoursDatabaseJson
         {
             /// <summary>
             /// The entries in the market hours database, keyed by <see cref="SecurityDatabaseKey"/>
             /// </summary>
-            [JsonProperty("entries")]
+            [JsonPropertyName("entries")]
             public Dictionary<string, MarketHoursDatabaseEntryJson> Entries { get; set; }
 
             /// <summary>
@@ -162,85 +147,84 @@ namespace QuantConnect.Util
         /// <summary>
         /// Defines the json structure of a single entry in the market-hours-database.json file
         /// </summary>
-        [JsonObject(MemberSerialization.OptIn)]
-        public class MarketHoursDatabaseEntryJson
+                public class MarketHoursDatabaseEntryJson
         {
             /// <summary>
             /// The data's raw time zone
             /// </summary>
-            [JsonProperty("dataTimeZone")]
+            [JsonPropertyName("dataTimeZone")]
             public string DataTimeZone { get; set; }
 
             /// <summary>
             /// The exchange's time zone id from the tzdb
             /// </summary>
-            [JsonProperty("exchangeTimeZone")]
+            [JsonPropertyName("exchangeTimeZone")]
             public string ExchangeTimeZone { get; set; }
 
             /// <summary>
             /// Sunday market hours segments
             /// </summary>
-            [JsonProperty("sunday")]
+            [JsonPropertyName("sunday")]
             public List<MarketHoursSegment> Sunday { get; set; }
 
             /// <summary>
             /// Monday market hours segments
             /// </summary>
-            [JsonProperty("monday")]
+            [JsonPropertyName("monday")]
             public List<MarketHoursSegment> Monday { get; set; }
 
             /// <summary>
             /// Tuesday market hours segments
             /// </summary>
-            [JsonProperty("tuesday")]
+            [JsonPropertyName("tuesday")]
             public List<MarketHoursSegment> Tuesday { get; set; }
 
             /// <summary>
             /// Wednesday market hours segments
             /// </summary>
-            [JsonProperty("wednesday")]
+            [JsonPropertyName("wednesday")]
             public List<MarketHoursSegment> Wednesday { get; set; }
 
             /// <summary>
             /// Thursday market hours segments
             /// </summary>
-            [JsonProperty("thursday")]
+            [JsonPropertyName("thursday")]
             public List<MarketHoursSegment> Thursday { get; set; }
 
             /// <summary>
             /// Friday market hours segments
             /// </summary>
-            [JsonProperty("friday")]
+            [JsonPropertyName("friday")]
             public List<MarketHoursSegment> Friday { get; set; }
 
             /// <summary>
             /// Saturday market hours segments
             /// </summary>
-            [JsonProperty("saturday")]
+            [JsonPropertyName("saturday")]
             public List<MarketHoursSegment> Saturday { get; set; }
 
             /// <summary>
             /// Holiday date strings
             /// </summary>
-            [JsonProperty("holidays")]
+            [JsonPropertyName("holidays")]
             public List<string> Holidays { get; set; } = new();
 
             /// <summary>
             /// Early closes by date
             /// </summary>
-            [JsonProperty("earlyCloses")]
+            [JsonPropertyName("earlyCloses")]
             public Dictionary<string, TimeSpan> EarlyCloses { get; set; } = new Dictionary<string, TimeSpan>();
 
             /// <summary>
             /// Late opens by date
             /// </summary>
-            [JsonProperty("lateOpens")]
+            [JsonPropertyName("lateOpens")]
             public Dictionary<string, TimeSpan> LateOpens { get; set; } = new Dictionary<string, TimeSpan>();
 
             /// <summary>
             /// Bank holidays date strings
             /// </summary>
-            [JsonProperty("bankHolidays")]
+            [JsonPropertyName("bankHolidays")]
             public List<string> BankHolidays { get; set; } = new();
 
             /// <summary>

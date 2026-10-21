@@ -13,8 +13,9 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 using System;
 
 namespace QuantConnect.Optimizer.Objectives
@@ -103,20 +104,20 @@ namespace QuantConnect.Optimizer.Objectives
             }
         }
 
-        public static JToken GetTokenInJsonBacktest(string jsonBacktestResult, string target)
+        public static JsonNode GetTokenInJsonBacktest(string jsonBacktestResult, string target)
         {
-            var jObject = JObject.Parse(jsonBacktestResult);
+            var jObject = JsonSerialization.ParseObject(jsonBacktestResult);
             var path = target.Replace("[", string.Empty, StringComparison.InvariantCultureIgnoreCase)
                 .Replace("]", string.Empty, StringComparison.InvariantCultureIgnoreCase)
                 .Replace("\'", string.Empty, StringComparison.InvariantCultureIgnoreCase).Split(".");
-            JToken token = null;
+            JsonNode token = null;
             foreach (var key in path)
             {
                 if (jObject.TryGetValue(key, StringComparison.OrdinalIgnoreCase, out token))
                 {
-                    if (token is not JValue)
+                    if (token is not JsonValue && token != null)
                     {
-                        jObject = token.ToObject<JObject>();
+                        jObject = token.AsObject();
                     }
                 }
                 else

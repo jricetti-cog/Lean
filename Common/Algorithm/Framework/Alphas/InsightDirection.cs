@@ -13,15 +13,15 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 
 namespace QuantConnect.Algorithm.Framework.Alphas
 {
     /// <summary>
     /// Specifies the predicted direction for a insight (price/volatility)
     /// </summary>
-    [JsonConverter(typeof(StringEnumConverter), true)]
+    [JsonConverterWithArgs(typeof(StringEnumJsonConverter), true)]
     public enum InsightDirection
     {
         /// <summary>

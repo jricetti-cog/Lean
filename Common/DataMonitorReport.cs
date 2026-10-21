@@ -13,7 +13,7 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuantConnect.Interfaces;
 using QuantConnect.Util;
 using System;
@@ -30,31 +30,31 @@ namespace QuantConnect
         /// <summary>
         /// Gets the number of data files that were requested and successfully fetched
         /// </summary>
-        [JsonProperty(PropertyName = "succeeded-data-requests-count")]
+        [JsonPropertyName("succeeded-data-requests-count")]
         public long SucceededDataRequestsCount { get; set; }
 
         /// <summary>
         /// Gets the number of data files that were requested but could not be fetched
         /// </summary>
-        [JsonProperty(PropertyName = "failed-data-requests-count")]
+        [JsonPropertyName("failed-data-requests-count")]
         public long FailedDataRequestsCount { get; set; }
 
         /// <summary>
         /// Gets the number of universe data files that were requested and successfully fetched
         /// </summary>
-        [JsonProperty(PropertyName = "succeeded-universe-data-requests-count")]
+        [JsonPropertyName("succeeded-universe-data-requests-count")]
         public long SucceededUniverseDataRequestsCount { get; set; }
 
         /// <summary>
         /// Gets the number of universe data files that were requested but could not be fetched
         /// </summary>
-        [JsonProperty(PropertyName = "failed-universe-data-requests-count")]
+        [JsonPropertyName("failed-universe-data-requests-count")]
         public long FailedUniverseDataRequestsCount { get; set; }
 
         /// <summary>
         /// Gets the number of data files that were requested
         /// </summary>
-        [JsonProperty(PropertyName = "total-data-requests-count")]
+        [JsonPropertyName("total-data-requests-count")]
         public long TotalRequestsCount
         {
             get { return SucceededDataRequestsCount + FailedDataRequestsCount; }
@@ -63,7 +63,7 @@ namespace QuantConnect
         /// <summary>
         /// Fets the percentage of data requests that could not be satisfied
         /// </summary>
-        [JsonProperty(PropertyName = "failed-data-requests-percentage")]
+        [JsonPropertyName("failed-data-requests-percentage")]
         public double FailedDataRequestsPercentage
         {
             get { return GetPercentage(TotalRequestsCount, FailedDataRequestsCount); }
@@ -72,7 +72,7 @@ namespace QuantConnect
         /// <summary>
         /// Gets the number of universe data files that were requested
         /// </summary>
-        [JsonProperty(PropertyName = "total-universe-data-requests-count")]
+        [JsonPropertyName("total-universe-data-requests-count")]
         public long TotalUniverseDataRequestsCount
         {
             get { return SucceededUniverseDataRequestsCount + FailedUniverseDataRequestsCount; }
@@ -81,7 +81,7 @@ namespace QuantConnect
         /// <summary>
         /// Fets the percentage of universe data requests that could not be satisfied
         /// </summary>
-        [JsonProperty(PropertyName = "failed-universe-data-requests-percentage")]
+        [JsonPropertyName("failed-universe-data-requests-percentage")]
         public double FailedUniverseDataRequestsPercentage
         {
             get { return GetPercentage(TotalUniverseDataRequestsCount, FailedUniverseDataRequestsCount); }
@@ -90,19 +90,19 @@ namespace QuantConnect
         /// <summary>
         /// Rates at which data requests were made per second
         /// </summary>
-        [JsonProperty(PropertyName = "data-request-rates")]
+        [JsonPropertyName("data-request-rates")]
         public IReadOnlyList<double> DataRequestRates { get; set; }
 
         /// <summary>
         /// Name of the file listing the data requests that were successfully fetched, if they were stored
         /// </summary>
-        [JsonProperty(PropertyName = "succeeded-data-requests-file", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonPropertyName("succeeded-data-requests-file"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string SucceededDataRequestsFile { get; set; }
 
         /// <summary>
         /// Name of the file listing the data requests that could not be fetched, if they were stored
         /// </summary>
-        [JsonProperty(PropertyName = "failed-data-requests-file", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonPropertyName("failed-data-requests-file"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string FailedDataRequestsFile { get; set; }
 
         /// <summary>

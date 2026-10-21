@@ -14,7 +14,7 @@
 */
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
@@ -23,25 +23,24 @@ namespace QuantConnect.Securities
     /// <summary>
     /// Represents the state of an exchange during a specified time range
     /// </summary>
-    [JsonObject(MemberSerialization.OptIn)]
-    public class MarketHoursSegment
+        public class MarketHoursSegment
     {
         /// <summary>
         /// Gets the start time for this segment
         /// </summary>
-        [JsonProperty("start")]
+        [JsonPropertyName("start")]
         public TimeSpan Start { get; private set; }
 
         /// <summary>
         /// Gets the end time for this segment
         /// </summary>
-        [JsonProperty("end")]
+        [JsonPropertyName("end")]
         public TimeSpan End { get; private set; }
 
         /// <summary>
         /// Gets the market hours state for this segment
         /// </summary>
-        [JsonProperty("state")]
+        [JsonPropertyName("state")]
         public MarketHoursState State { get; private set; }
 
         /// <summary>

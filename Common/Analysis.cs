@@ -14,7 +14,7 @@
  *
 */
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 
 namespace QuantConnect
@@ -46,7 +46,7 @@ namespace QuantConnect
         /// If null, the analysis is reporting a single issue with the provided sample;
         /// if not null, the sample represents one of multiple occurrences of the same issue.
         /// </summary>
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public int? Count { get; set; } = count;
 
         /// <summary>

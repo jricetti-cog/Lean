@@ -14,7 +14,7 @@
 */
 
 using System.Linq;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
@@ -50,7 +50,7 @@ namespace QuantConnect.Api
         /// <summary>
         /// List of all available data from this request
         /// </summary>
-        [JsonProperty(PropertyName = "objects")]
+        [JsonPropertyName("objects")]
         public List<string> AvailableData { get; set; }
     }
 
@@ -67,7 +67,7 @@ namespace QuantConnect.Api
         /// <summary>
         /// The Agreement URL for this Organization
         /// </summary>
-        [JsonProperty(PropertyName = "agreement")]
+        [JsonPropertyName("agreement")]
         public string AgreementUrl { get; set; }
 
         /// <summary>
@@ -97,7 +97,7 @@ namespace QuantConnect.Api
         /// <summary>
         /// Vendor for this price
         /// </summary>
-        [JsonProperty(PropertyName = "vendorName")]
+        [JsonPropertyName("vendorName")]
         public string Vendor { get; set; }
 
         /// <summary>
@@ -120,7 +120,7 @@ namespace QuantConnect.Api
         /// <summary>
         /// RegEx directly from response
         /// </summary>
-        [JsonProperty(PropertyName = "regex")]
+        [JsonPropertyName("regex")]
         public string RawRegEx { get; set; }
 
         /// <summary>

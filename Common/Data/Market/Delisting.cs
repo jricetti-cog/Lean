@@ -15,7 +15,7 @@
 */
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuantConnect.Orders;
 
 namespace QuantConnect.Data.Market
@@ -29,7 +29,7 @@ namespace QuantConnect.Data.Market
         /// Gets the type of delisting, warning or delisted
         /// A <see cref="DelistingType.Warning"/> is sent
         /// </summary>
-        [JsonProperty]
+        [JsonInclude]
         public DelistingType Type { get; private set; }
 
         /// <summary>

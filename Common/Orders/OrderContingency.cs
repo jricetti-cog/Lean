@@ -15,7 +15,7 @@
 
 using System;
 using System.Linq;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 
 namespace QuantConnect.Orders
@@ -39,20 +39,20 @@ namespace QuantConnect.Orders
         /// <summary>
         /// The unique id of the set of contingent orders this order belongs to
         /// </summary>
-        [JsonProperty(PropertyName = "id")]
+        [JsonPropertyName("id")]
         public int Id => _set.Id;
 
         /// <summary>
         /// The total order count in the set of contingent orders
         /// </summary>
-        [JsonProperty(PropertyName = "count")]
+        [JsonPropertyName("count")]
         public int Count => _set.Count;
 
         /// <summary>
         /// The ids of the orders in the set
         /// </summary>
         /// <remarks>In live trading we process orders in dedicated threads so we need to be thread safe, access is synchronized locking this collection</remarks>
-        [JsonProperty(PropertyName = "orderIds")]
+        [JsonPropertyName("orderIds")]
         public HashSet<int> OrderIds => _set.OrderIds;
 
         /// <summary>
@@ -79,7 +79,7 @@ namespace QuantConnect.Orders
         /// <summary>
         /// The links of this order to the rest of the set: the role it plays in each contingency
         /// </summary>
-        [JsonProperty(PropertyName = "links")]
+        [JsonPropertyName("links")]
         public IReadOnlyList<ContingencyLink> Links => _links;
 
         /// <summary>

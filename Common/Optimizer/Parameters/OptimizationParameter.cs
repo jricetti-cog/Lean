@@ -13,7 +13,7 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace QuantConnect.Optimizer.Parameters
 {
@@ -26,7 +26,7 @@ namespace QuantConnect.Optimizer.Parameters
         /// <summary>
         /// Name of optimization parameter
         /// </summary>
-        [JsonProperty("name")]
+        [JsonPropertyName("name")]
         public string Name { get; }
 
         /// <summary>

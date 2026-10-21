@@ -14,7 +14,7 @@
 */
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace QuantConnect
 {
@@ -27,7 +27,7 @@ namespace QuantConnect
         /// <summary>
         /// A summary of this point for the tooltip
         /// </summary>
-        [JsonProperty(PropertyName = "tooltip", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonPropertyName("tooltip"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public string Tooltip { get; set; }
 
         /// <summary>

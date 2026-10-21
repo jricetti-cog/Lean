@@ -17,7 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuantConnect.Util;
 
 namespace QuantConnect.Notifications
@@ -46,7 +46,7 @@ namespace QuantConnect.Notifications
         /// <summary>
         /// Optional email headers
         /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public Dictionary<string, string> Headers { get; set; }
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace QuantConnect.Notifications
         /// <summary>
         /// Object data to send.
         /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public object Data { get; set; }
 
         /// <summary>
@@ -87,7 +87,7 @@ namespace QuantConnect.Notifications
         /// <summary>
         /// Message to send. Limited to 160 characters
         /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public string Message { get; set; }
 
         /// <summary>
@@ -110,7 +110,7 @@ namespace QuantConnect.Notifications
         /// <summary>
         /// Optional email headers
         /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public Dictionary<string, string> Headers { get; set; }
 
         /// <summary>
@@ -126,13 +126,13 @@ namespace QuantConnect.Notifications
         /// <summary>
         /// Message to send.
         /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public string Message { get; set; }
 
         /// <summary>
         /// Email Data
         /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public string Data { get; set; }
 
         /// <summary>
@@ -173,13 +173,13 @@ namespace QuantConnect.Notifications
         /// <summary>
         /// Message to send. Limited to 4096 characters
         /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public string Message { get; set; }
 
         /// <summary>
         /// Token to use
         /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public string Token { get; set; }
 
         /// <summary>
@@ -211,55 +211,55 @@ namespace QuantConnect.Notifications
         /// <summary>
         /// Whether to use SFTP or FTP.
         /// </summary>
-        [JsonProperty("secure")]
+        [JsonPropertyName("secure")]
         public bool Secure { get; }
 
         /// <summary>
         /// The FTP server hostname.
         /// </summary>
-        [JsonProperty("host")]
+        [JsonPropertyName("host")]
         public string Hostname { get; }
 
         /// <summary>
         /// The FTP server port.
         /// </summary>
-        [JsonProperty("port")]
+        [JsonPropertyName("port")]
         public int Port { get; }
 
         /// <summary>
         /// The FTP server username.
         /// </summary>
-        [JsonProperty("username")]
+        [JsonPropertyName("username")]
         public string Username { get; }
 
         /// <summary>
         /// The FTP server password.
         /// </summary>
-        [JsonProperty("password", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonPropertyName("password"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public string Password { get; }
 
         /// <summary>
         /// The path to file on the FTP server.
         /// </summary>
-        [JsonProperty("fileDestinationPath")]
+        [JsonPropertyName("fileDestinationPath")]
         public string FilePath { get; }
 
         /// <summary>
         /// The contents of the file to send.
         /// </summary>
-        [JsonProperty("fileContent")]
+        [JsonPropertyName("fileContent")]
         public string FileContent { get; private set; }
 
         /// <summary>
         /// The private key to use for authentication (optional).
         /// </summary>
-        [JsonProperty("privateKey", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonPropertyName("privateKey"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public string PrivateKey { get; }
 
         /// <summary>
         /// The passphrase for the private key (optional).
         /// </summary>
-        [JsonProperty("passphrase", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonPropertyName("passphrase"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public string PrivateKeyPassphrase { get; }
 
         private NotificationFtp(string hostname, string username, string filePath, byte[] fileContent, bool secure, int? port)

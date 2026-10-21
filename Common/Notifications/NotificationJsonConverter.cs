@@ -16,87 +16,79 @@
 
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 
 namespace QuantConnect.Notifications
 {
     /// <summary>
     /// Defines a <see cref="JsonConverter"/> to be used when deserializing to the <see cref="Notification"/> class.
     /// </summary>
-    public class NotificationJsonConverter : JsonConverter
+    public class NotificationJsonConverter : JsonConverter<Notification>
     {
         /// <summary>
-        /// Use default implementation to write the json
+        /// Writes the notification using the default serialization of its runtime type
         /// </summary>
-        public override bool CanWrite => false;
-
-        /// <summary>
-        /// Writes the JSON representation of the object.
-        /// </summary>
-        /// <param name="writer">The <see cref="T:Newtonsoft.Json.JsonWriter"/> to write to.</param><param name="value">The value.</param><param name="serializer">The calling serializer.</param>
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        public override void Write(Utf8JsonWriter writer, Notification value, JsonSerializerOptions options)
         {
-            throw new NotImplementedException(Messages.NotificationJsonConverter.WriteNotImplemented);
+            writer.WriteDefault(value, options);
         }
 
         /// <summary>
         /// Reads the JSON representation of the object.
         /// </summary>
-        /// <param name="reader">The <see cref="T:Newtonsoft.Json.JsonReader"/> to read from.</param><param name="objectType">Type of the object.</param><param name="existingValue">The existing value of object being read.</param><param name="serializer">The calling serializer.</param>
-        /// <returns>
-        /// The object value.
-        /// </returns>
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override Notification Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            var jObject = JObject.Load(reader);
+            var jObject = JsonNode.Parse(ref reader) as JsonObject;
 
-            JToken token;
+            JsonNode token;
             if (jObject.TryGetValue("PhoneNumber", StringComparison.InvariantCultureIgnoreCase, out token))
             {
                 var message = jObject.GetValue("Message", StringComparison.InvariantCultureIgnoreCase);
 
-                return new NotificationSms(token.ToString(), message?.ToString());
+                return new NotificationSms(token.AsText(), message?.AsText());
             }
             else if (jObject.TryGetValue("Subject", StringComparison.InvariantCultureIgnoreCase, out token))
             {
                 var data = jObject.GetValue("Data", StringComparison.InvariantCultureIgnoreCase);
                 var message = jObject.GetValue("Message", StringComparison.InvariantCultureIgnoreCase);
                 var address = jObject.GetValue("Address", StringComparison.InvariantCultureIgnoreCase);
-                var headers= jObject.GetValue("Headers", StringComparison.InvariantCultureIgnoreCase);
+                var headers = jObject.GetValue("Headers", StringComparison.InvariantCultureIgnoreCase);
 
-                return new NotificationEmail(address?.ToString(), token.ToString(), message?.ToString(), data?.ToString(), headers?.ToObject<Dictionary<string, string>>());
+                return new NotificationEmail(address?.AsText(), token.AsText(), message?.AsText(), data?.AsText(), headers?.Value<Dictionary<string, string>>());
             }
             else if (jObject.TryGetValue("Address", StringComparison.InvariantCultureIgnoreCase, out token))
             {
                 var headers = jObject.GetValue("Headers", StringComparison.InvariantCultureIgnoreCase);
                 var data = jObject.GetValue("Data", StringComparison.InvariantCultureIgnoreCase);
 
-                return new NotificationWeb(token.ToString(), data?.ToString(), headers?.ToObject<Dictionary<string, string>>());
+                return new NotificationWeb(token.AsText(), data?.AsText(), headers?.Value<Dictionary<string, string>>());
             }
             else if (jObject.TryGetValue("Id", StringComparison.InvariantCultureIgnoreCase, out token))
             {
                 var message = jObject.GetValue("Message", StringComparison.InvariantCultureIgnoreCase);
                 var botToken = jObject.GetValue("Token", StringComparison.InvariantCultureIgnoreCase);
-                return new NotificationTelegram(token.ToString(), message?.ToString(), botToken?.ToString());
+                return new NotificationTelegram(token.AsText(), message?.AsText(), botToken?.AsText());
             }
             else if (jObject.TryGetValue("host", StringComparison.InvariantCultureIgnoreCase, out token))
             {
                 // This is an FTP notification
-                var hostname = token.ToString();
-                var port = jObject.GetValue("port", StringComparison.InvariantCultureIgnoreCase)?.ToObject<int?>();
-                var username = jObject.GetValue("username", StringComparison.InvariantCultureIgnoreCase)?.ToString();
-                var filePath = jObject.GetValue("fileDestinationPath", StringComparison.InvariantCultureIgnoreCase)?.ToString();
-                var fileContent = jObject.GetValue("fileContent", StringComparison.InvariantCultureIgnoreCase)?.ToString();
+                var hostname = token.AsText();
+                var port = jObject.GetValue("port", StringComparison.InvariantCultureIgnoreCase)?.Value<int?>();
+                var username = jObject.GetValue("username", StringComparison.InvariantCultureIgnoreCase)?.AsText();
+                var filePath = jObject.GetValue("fileDestinationPath", StringComparison.InvariantCultureIgnoreCase)?.AsText();
+                var fileContent = jObject.GetValue("fileContent", StringComparison.InvariantCultureIgnoreCase)?.AsText();
 
                 if (jObject.TryGetValue("password", StringComparison.InvariantCultureIgnoreCase, out var password))
                 {
-                    var secure = jObject.GetValue("secure", StringComparison.InvariantCultureIgnoreCase)?.ToObject<bool>() ?? true;
-                    return NotificationFtp.FromEncodedData(hostname, username, password.ToString(), filePath, fileContent, secure, port);
+                    var secure = jObject.GetValue("secure", StringComparison.InvariantCultureIgnoreCase)?.Value<bool>() ?? true;
+                    return NotificationFtp.FromEncodedData(hostname, username, password.AsText(), filePath, fileContent, secure, port);
                 }
 
-                var privateKey = jObject.GetValue("privateKey", StringComparison.InvariantCultureIgnoreCase)?.ToString();
-                var passphrase = jObject.GetValue("passphrase", StringComparison.InvariantCultureIgnoreCase)?.ToString();
+                var privateKey = jObject.GetValue("privateKey", StringComparison.InvariantCultureIgnoreCase)?.AsText();
+                var passphrase = jObject.GetValue("passphrase", StringComparison.InvariantCultureIgnoreCase)?.AsText();
                 return NotificationFtp.FromEncodedData(hostname, username, privateKey, passphrase, filePath, fileContent, port);
             }
 
@@ -106,10 +98,6 @@ namespace QuantConnect.Notifications
         /// <summary>
         /// Determines whether this instance can convert the specified object type.
         /// </summary>
-        /// <param name="objectType">Type of the object.</param>
-        /// <returns>
-        /// <c>true</c> if this instance can convert the specified object type; otherwise, <c>false</c>.
-        /// </returns>
         public override bool CanConvert(Type objectType)
         {
             return objectType == typeof(Notification);

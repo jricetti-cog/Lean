@@ -14,68 +14,57 @@
 */
 
 using System;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 
 namespace QuantConnect.Util
 {
     /// <summary>
     /// Json Converter for ChartPoint which handles special reading
     /// </summary>
-    public class ChartPointJsonConverter : JsonConverter
+    public class ChartPointJsonConverter : JsonConverter<ChartPoint>
     {
         /// <summary>
-        /// Determine if this Converter can convert this type
+        /// Reads the JSON representation of the object.
         /// </summary>
-        /// <param name="objectType">Type that we would like to convert</param>
-        /// <returns>True if <see cref="Series"/></returns>
-        public override bool CanConvert(Type objectType)
+        public override ChartPoint Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            return objectType == typeof(ChartPoint);
-        }
-
-        /// <summary>
-        /// Reads series from Json
-        /// </summary>
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-        {
-            if (reader.TokenType == JsonToken.StartObject)
+            if (reader.TokenType == JsonTokenType.StartObject)
             {
-                var jObject = JObject.Load(reader);
+                var jObject = JsonNode.Parse(ref reader).AsObject();
                 var x = jObject["x"];
-
                 if (!jObject.ContainsKey("y"))
                 {
                     return new ChartPoint(x.Value<long>(), 0);
                 }
 
                 var y = jObject["y"];
-                if (y != null && (y.Type == JTokenType.Float || y.Type == JTokenType.Integer))
-                {
-                    return new ChartPoint(x.Value<long>(), y.Value<decimal>());
-                }
-
-                if (y.Type == JTokenType.Null)
+                if (y.IsNull())
                 {
                     return new ChartPoint(x.Value<long>(), null);
                 }
-
+                if (y.Kind() == JsonValueKind.Number)
+                {
+                    return new ChartPoint(x.Value<long>(), y.SafeDecimalValue());
+                }
                 return null;
             }
 
-            var jArray = JArray.Load(reader);
-            return new ChartPoint(jArray[0].Value<long>(), jArray[1].Value<decimal?>());
+            var jArray = JsonNode.Parse(ref reader).AsArray();
+            var value = jArray[1];
+            return new ChartPoint(jArray[0].Value<long>(), value.IsNull() ? null : value.SafeDecimalValue());
         }
 
         /// <summary>
-        /// Write point to Json
+        /// Writes a JSON object from a Chart Point
         /// </summary>
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        public override void Write(Utf8JsonWriter writer, ChartPoint chartPoint, JsonSerializerOptions options)
         {
-            var chartPoint = (ChartPoint)value;
             writer.WriteStartArray();
-            writer.WriteValue(chartPoint.X);
-            writer.WriteValue(chartPoint.Y);
+            writer.WriteNumberValue(chartPoint.X);
+            JsonSerializer.Serialize(writer, chartPoint.Y, options);
             writer.WriteEndArray();
         }
     }

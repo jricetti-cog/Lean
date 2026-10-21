@@ -13,12 +13,10 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 using QuantConnect.Util;
 using System;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Serialization;
 
 namespace QuantConnect.Optimizer.Objectives
 {
@@ -31,7 +29,7 @@ namespace QuantConnect.Optimizer.Objectives
         /// <summary>
         /// The target comparison operation, eg. 'Greater'
         /// </summary>
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonConverter(typeof(StringEnumJsonConverter))]
         public ComparisonOperatorTypes Operator { get; set; }
 
         /// <summary>
