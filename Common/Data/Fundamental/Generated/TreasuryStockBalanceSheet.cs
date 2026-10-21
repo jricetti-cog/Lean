@@ -17,7 +17,7 @@
 using System;
 using System.Linq;
 using Python.Runtime;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using QuantConnect.Data.UniverseSelection;
 
@@ -36,7 +36,7 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the OneMonth period value for the field
         /// </summary>
-        [JsonProperty("1M")]
+        [JsonPropertyName("1M")]
         [Obsolete("TreasuryStock.OneMonth was retired by Morningstar in 2026; use TreasuryStock.ThreeMonths (also available: SixMonths, TwelveMonths).")]
         [JsonIgnore]
         public double OneMonth => throw new NotSupportedException("TreasuryStock.OneMonth was retired by Morningstar in 2026; use TreasuryStock.ThreeMonths (also available: SixMonths, TwelveMonths).");
@@ -44,7 +44,7 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the TwoMonths period value for the field
         /// </summary>
-        [JsonProperty("2M")]
+        [JsonPropertyName("2M")]
         [Obsolete("TreasuryStock.TwoMonths was retired by Morningstar in 2026; use TreasuryStock.ThreeMonths (also available: SixMonths, TwelveMonths).")]
         [JsonIgnore]
         public double TwoMonths => throw new NotSupportedException("TreasuryStock.TwoMonths was retired by Morningstar in 2026; use TreasuryStock.ThreeMonths (also available: SixMonths, TwelveMonths).");
@@ -52,19 +52,19 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the ThreeMonths period value for the field
         /// </summary>
-        [JsonProperty("3M")]
+        [JsonPropertyName("3M")]
         public double ThreeMonths => FundamentalService.Get<double>(TimeProvider.GetUtcNow(), SecurityIdentifier, FundamentalProperty.FinancialStatements_BalanceSheet_TreasuryStock_ThreeMonths);
 
         /// <summary>
         /// Gets/sets the SixMonths period value for the field
         /// </summary>
-        [JsonProperty("6M")]
+        [JsonPropertyName("6M")]
         public double SixMonths => FundamentalService.Get<double>(TimeProvider.GetUtcNow(), SecurityIdentifier, FundamentalProperty.FinancialStatements_BalanceSheet_TreasuryStock_SixMonths);
 
         /// <summary>
         /// Gets/sets the NineMonths period value for the field
         /// </summary>
-        [JsonProperty("9M")]
+        [JsonPropertyName("9M")]
         [Obsolete("TreasuryStock.NineMonths was retired by Morningstar in 2026; use TreasuryStock.ThreeMonths (also available: SixMonths, TwelveMonths).")]
         [JsonIgnore]
         public double NineMonths => throw new NotSupportedException("TreasuryStock.NineMonths was retired by Morningstar in 2026; use TreasuryStock.ThreeMonths (also available: SixMonths, TwelveMonths).");
@@ -72,7 +72,7 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the TwelveMonths period value for the field
         /// </summary>
-        [JsonProperty("12M")]
+        [JsonPropertyName("12M")]
         public double TwelveMonths => FundamentalService.Get<double>(TimeProvider.GetUtcNow(), SecurityIdentifier, FundamentalProperty.FinancialStatements_BalanceSheet_TreasuryStock_TwelveMonths);
 
         /// <summary>

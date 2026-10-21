@@ -17,7 +17,7 @@
 using System;
 using System.Linq;
 using Python.Runtime;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using QuantConnect.Data.UniverseSelection;
 
@@ -34,7 +34,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 1
         /// </remarks>
-        [JsonProperty("1")]
+        [JsonPropertyName("1")]
         public string CompanyId => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.CompanyReference_CompanyId);
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 2
         /// </remarks>
-        [JsonProperty("2")]
+        [JsonPropertyName("2")]
         public string ShortName => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.CompanyReference_ShortName);
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 3
         /// </remarks>
-        [JsonProperty("3")]
+        [JsonPropertyName("3")]
         public string StandardName => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.CompanyReference_StandardName);
 
         /// <summary>
@@ -61,7 +61,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 4
         /// </remarks>
-        [JsonProperty("4")]
+        [JsonPropertyName("4")]
         public string LegalName => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.CompanyReference_LegalName);
 
         /// <summary>
@@ -70,7 +70,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 5
         /// </remarks>
-        [JsonProperty("5")]
+        [JsonPropertyName("5")]
         public string CountryId => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.CompanyReference_CountryId);
 
         /// <summary>
@@ -79,7 +79,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 6
         /// </remarks>
-        [JsonProperty("6")]
+        [JsonPropertyName("6")]
         public string CIK => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.CompanyReference_CIK);
 
         /// <summary>
@@ -88,7 +88,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 9
         /// </remarks>
-        [JsonProperty("9")]
+        [JsonPropertyName("9")]
         public string CompanyStatus => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.CompanyReference_CompanyStatus);
 
         /// <summary>
@@ -97,7 +97,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 10
         /// </remarks>
-        [JsonProperty("10")]
+        [JsonPropertyName("10")]
         public int FiscalYearEnd => FundamentalService.Get<int>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.CompanyReference_FiscalYearEnd);
 
         /// <summary>
@@ -106,7 +106,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 11
         /// </remarks>
-        [JsonProperty("11")]
+        [JsonPropertyName("11")]
         public string IndustryTemplateCode => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.CompanyReference_IndustryTemplateCode);
 
         /// <summary>
@@ -115,7 +115,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 12
         /// </remarks>
-        [JsonProperty("12")]
+        [JsonPropertyName("12")]
         public string PrimaryShareClassID => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.CompanyReference_PrimaryShareClassID);
 
         /// <summary>
@@ -124,7 +124,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 13
         /// </remarks>
-        [JsonProperty("13")]
+        [JsonPropertyName("13")]
         public string PrimarySymbol => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.CompanyReference_PrimarySymbol);
 
         /// <summary>
@@ -133,7 +133,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14
         /// </remarks>
-        [JsonProperty("14")]
+        [JsonPropertyName("14")]
         public string PrimaryExchangeID => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.CompanyReference_PrimaryExchangeID);
 
         /// <summary>
@@ -142,7 +142,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 15
         /// </remarks>
-        [JsonProperty("15")]
+        [JsonPropertyName("15")]
         public string BusinessCountryID => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.CompanyReference_BusinessCountryID);
 
         /// <summary>
@@ -151,7 +151,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 16
         /// </remarks>
-        [JsonProperty("16")]
+        [JsonPropertyName("16")]
         public string LegalNameLanguageCode => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.CompanyReference_LegalNameLanguageCode);
 
         /// <summary>
@@ -160,7 +160,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 17
         /// </remarks>
-        [JsonProperty("17")]
+        [JsonPropertyName("17")]
         [Obsolete("Auditor was retired by Morningstar in 2026; no replacement is available.")]
         [JsonIgnore]
         public string Auditor => throw new NotSupportedException("Auditor was retired by Morningstar in 2026; no replacement is available.");
@@ -171,7 +171,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 18
         /// </remarks>
-        [JsonProperty("18")]
+        [JsonPropertyName("18")]
         [Obsolete("AuditorLanguageCode was retired by Morningstar in 2026; no replacement is available.")]
         [JsonIgnore]
         public string AuditorLanguageCode => throw new NotSupportedException("AuditorLanguageCode was retired by Morningstar in 2026; no replacement is available.");
@@ -182,7 +182,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 19
         /// </remarks>
-        [JsonProperty("19")]
+        [JsonPropertyName("19")]
         [Obsolete("Advisor was retired by Morningstar in 2026; no replacement is available.")]
         [JsonIgnore]
         public string Advisor => throw new NotSupportedException("Advisor was retired by Morningstar in 2026; no replacement is available.");
@@ -193,7 +193,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 20
         /// </remarks>
-        [JsonProperty("20")]
+        [JsonPropertyName("20")]
         [Obsolete("AdvisorLanguageCode was retired by Morningstar in 2026; no replacement is available.")]
         [JsonIgnore]
         public string AdvisorLanguageCode => throw new NotSupportedException("AdvisorLanguageCode was retired by Morningstar in 2026; no replacement is available.");
@@ -204,7 +204,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 21
         /// </remarks>
-        [JsonProperty("21")]
+        [JsonPropertyName("21")]
         public bool IsLimitedPartnership => FundamentalService.Get<bool>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.CompanyReference_IsLimitedPartnership);
 
         /// <summary>
@@ -213,7 +213,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 22
         /// </remarks>
-        [JsonProperty("22")]
+        [JsonPropertyName("22")]
         public bool IsREIT => FundamentalService.Get<bool>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.CompanyReference_IsREIT);
 
         /// <summary>
@@ -222,7 +222,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 23
         /// </remarks>
-        [JsonProperty("23")]
+        [JsonPropertyName("23")]
         [Obsolete("PrimaryMIC was retired by Morningstar in 2026; no replacement is available.")]
         [JsonIgnore]
         public string PrimaryMIC => throw new NotSupportedException("PrimaryMIC was retired by Morningstar in 2026; no replacement is available.");
@@ -233,7 +233,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 24
         /// </remarks>
-        [JsonProperty("24")]
+        [JsonPropertyName("24")]
         [Obsolete("ReportStyle was retired by Morningstar in 2026; no replacement is available.")]
         [JsonIgnore]
         public int ReportStyle => throw new NotSupportedException("ReportStyle was retired by Morningstar in 2026; no replacement is available.");
@@ -244,7 +244,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 25
         /// </remarks>
-        [JsonProperty("25")]
+        [JsonPropertyName("25")]
         public string YearofEstablishment => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.CompanyReference_YearofEstablishment);
 
         /// <summary>
@@ -253,7 +253,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26
         /// </remarks>
-        [JsonProperty("26")]
+        [JsonPropertyName("26")]
         public bool IsLimitedLiabilityCompany => FundamentalService.Get<bool>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.CompanyReference_IsLimitedLiabilityCompany);
 
         /// <summary>
@@ -262,7 +262,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 27
         /// </remarks>
-        [JsonProperty("27")]
+        [JsonPropertyName("27")]
         public DateTime ExpectedFiscalYearEnd => FundamentalService.Get<DateTime>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.CompanyReference_ExpectedFiscalYearEnd);
 
         /// <summary>
@@ -271,7 +271,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 28
         /// </remarks>
-        [JsonProperty("28")]
+        [JsonPropertyName("28")]
         public bool IsSPAC => FundamentalService.Get<bool>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.CompanyReference_IsSPAC);
 
         /// <summary>
@@ -280,7 +280,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 29
         /// </remarks>
-        [JsonProperty("29")]
+        [JsonPropertyName("29")]
         public bool IsMLP => FundamentalService.Get<bool>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.CompanyReference_IsMLP);
 
         /// <summary>
@@ -289,7 +289,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 30
         /// </remarks>
-        [JsonProperty("30")]
+        [JsonPropertyName("30")]
         public bool IsBDC => FundamentalService.Get<bool>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.CompanyReference_IsBDC);
 
         /// <summary>
@@ -299,7 +299,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 31
         /// </remarks>
-        [JsonProperty("31")]
+        [JsonPropertyName("31")]
         public string LEI => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.CompanyReference_LEI);
 
         /// <summary>
@@ -308,7 +308,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQT0N
         /// </remarks>
-        [JsonProperty("EQT0N")]
+        [JsonPropertyName("EQT0N")]
         public bool IsShellCompany => FundamentalService.Get<bool>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.CompanyReference_IsShellCompany);
 
         /// <summary>
@@ -317,7 +317,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQ7O1
         /// </remarks>
-        [JsonProperty("EQ7O1")]
+        [JsonPropertyName("EQ7O1")]
         public string StateOrCountryOfIncorporation => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.CompanyReference_StateOrCountryOfIncorporation);
 
         /// <summary>

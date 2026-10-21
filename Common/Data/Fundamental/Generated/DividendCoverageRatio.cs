@@ -17,7 +17,7 @@
 using System;
 using System.Linq;
 using Python.Runtime;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using QuantConnect.Data.UniverseSelection;
 
@@ -36,7 +36,7 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the ThreeMonths period value for the field
         /// </summary>
-        [JsonProperty("3M")]
+        [JsonPropertyName("3M")]
         [Obsolete("DividendCoverageRatio.ThreeMonths was retired by Morningstar in 2026; use DividendCoverageRatio.TwelveMonths.")]
         [JsonIgnore]
         public double ThreeMonths => throw new NotSupportedException("DividendCoverageRatio.ThreeMonths was retired by Morningstar in 2026; use DividendCoverageRatio.TwelveMonths.");
@@ -44,7 +44,7 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the SixMonths period value for the field
         /// </summary>
-        [JsonProperty("6M")]
+        [JsonPropertyName("6M")]
         [Obsolete("DividendCoverageRatio.SixMonths was retired by Morningstar in 2026; use DividendCoverageRatio.TwelveMonths.")]
         [JsonIgnore]
         public double SixMonths => throw new NotSupportedException("DividendCoverageRatio.SixMonths was retired by Morningstar in 2026; use DividendCoverageRatio.TwelveMonths.");
@@ -52,7 +52,7 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the NineMonths period value for the field
         /// </summary>
-        [JsonProperty("9M")]
+        [JsonPropertyName("9M")]
         [Obsolete("DividendCoverageRatio.NineMonths was retired by Morningstar in 2026; use DividendCoverageRatio.TwelveMonths.")]
         [JsonIgnore]
         public double NineMonths => throw new NotSupportedException("DividendCoverageRatio.NineMonths was retired by Morningstar in 2026; use DividendCoverageRatio.TwelveMonths.");
@@ -60,7 +60,7 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the TwelveMonths period value for the field
         /// </summary>
-        [JsonProperty("12M")]
+        [JsonPropertyName("12M")]
         public double TwelveMonths => FundamentalService.Get<double>(TimeProvider.GetUtcNow(), SecurityIdentifier, FundamentalProperty.EarningReports_DividendCoverageRatio_TwelveMonths);
 
         /// <summary>

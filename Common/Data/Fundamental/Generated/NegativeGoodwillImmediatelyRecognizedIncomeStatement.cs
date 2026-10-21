@@ -17,7 +17,7 @@
 using System;
 using System.Linq;
 using Python.Runtime;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using QuantConnect.Data.UniverseSelection;
 
@@ -36,7 +36,7 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the ThreeMonths period value for the field
         /// </summary>
-        [JsonProperty("3M")]
+        [JsonPropertyName("3M")]
         [Obsolete("NegativeGoodwillImmediatelyRecognized was retired by Morningstar in 2026 for all periods; no replacement is available.")]
         [JsonIgnore]
         public double ThreeMonths => throw new NotSupportedException("NegativeGoodwillImmediatelyRecognized was retired by Morningstar in 2026 for all periods; no replacement is available.");
@@ -44,7 +44,7 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the SixMonths period value for the field
         /// </summary>
-        [JsonProperty("6M")]
+        [JsonPropertyName("6M")]
         [Obsolete("NegativeGoodwillImmediatelyRecognized was retired by Morningstar in 2026 for all periods; no replacement is available.")]
         [JsonIgnore]
         public double SixMonths => throw new NotSupportedException("NegativeGoodwillImmediatelyRecognized was retired by Morningstar in 2026 for all periods; no replacement is available.");
@@ -52,7 +52,7 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the TwelveMonths period value for the field
         /// </summary>
-        [JsonProperty("12M")]
+        [JsonPropertyName("12M")]
         [Obsolete("NegativeGoodwillImmediatelyRecognized was retired by Morningstar in 2026 for all periods; no replacement is available.")]
         [JsonIgnore]
         public double TwelveMonths => throw new NotSupportedException("NegativeGoodwillImmediatelyRecognized was retired by Morningstar in 2026 for all periods; no replacement is available.");
