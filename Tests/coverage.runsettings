@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Code coverage settings for QuantConnect.Tests (coverlet.collector). Run via Tests/run_coverage.sh. -->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <Include>[QuantConnect.*]*</Include>
+          <Exclude>[QuantConnect.Tests]*,[QuantConnect.Algorithm.CSharp]*</Exclude>
+          <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
+          <SkipAutoProps>true</SkipAutoProps>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+  <TestRunParameters>
+    <Parameter name="log-handler" value="ConsoleErrorLogHandler" />
+  </TestRunParameters>
+</RunSettings>
