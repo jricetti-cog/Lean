@@ -142,9 +142,9 @@ namespace QuantConnect.Tests.Brokerages.Authentication
         }
 
         [Test]
-        public void BrokerageTranslatesAuthenticationEventsIntoConnectionMessages()
+        public void BrokerageCreatesHandlerWiredToItsConnectionState()
         {
-            using var platform = new FakePlatform("token") { FailuresBeforeSuccess = int.MaxValue, ErrorMessage = "expired" };
+            using var platform = new FakePlatform("token");
             using var brokerage = new TestBrokerage();
             var messages = new List<BrokerageMessageEvent>();
             brokerage.Message += (_, e) =>
@@ -157,14 +157,14 @@ namespace QuantConnect.Tests.Brokerages.Authentication
             using var handler = brokerage.CreateHandler(platform.ApiClient);
 
             Assert.IsInstanceOf<LeanOAuthTokenHandler<LeanTokenCredentials>>(handler);
-            Assert.Throws<InvalidOperationException>(() => handler.GetAccessToken(CancellationToken.None));
+            var token = handler.GetAccessToken(CancellationToken.None);
 
+            Assert.AreEqual("token", token.AccessToken);
+            Assert.AreEqual(1, platform.Requests);
             lock (messages)
             {
-                Assert.AreEqual(1, messages.Count);
-                Assert.AreEqual(BrokerageMessageType.Disconnect, messages[0].Type);
-                Assert.AreEqual("OAuthenticationFailed", messages[0].Code);
-                StringAssert.Contains("expired", messages[0].Message);
+                // the brokerage starts connected, so a successful authentication is not a state change
+                CollectionAssert.IsEmpty(messages);
             }
         }
 
