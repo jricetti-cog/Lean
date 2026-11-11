@@ -18,11 +18,15 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using QuantConnect.Algorithm.CSharp;
 using QuantConnect.Configuration;
 using QuantConnect.Lean.Engine.DataFeeds.Remote;
 using QuantConnect.Messaging.Bus;
+using QuantConnect.Services;
+using QuantConnect.Services.BacktestWorker;
 using QuantConnect.Services.MarketData;
 
 namespace QuantConnect.Tests.Services
@@ -94,6 +98,85 @@ namespace QuantConnect.Tests.Services
                 if (Directory.Exists(cache))
                 {
                     Directory.Delete(cache, true);
+                }
+            }
+        }
+
+        [Test]
+        public void BacktestWorkerProcessProducesIdenticalBacktest()
+        {
+            var launcher = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Launcher", "bin", "Release"));
+            if (!File.Exists(Path.Combine(launcher, "QuantConnect.Lean.Launcher.dll")))
+            {
+                Assert.Ignore($"Launcher build not found in {launcher}");
+            }
+            var root = Path.Combine(Path.GetTempPath(), "lean-worker-parity-" + Guid.NewGuid().ToString("N"));
+            var broker = ServiceTestHelpers.StartBroker();
+            var busSettings = new Dictionary<string, string>
+            {
+                ["message-bus"] = "netmq",
+                ["message-bus-publish-address"] = broker.PublishAddress,
+                ["message-bus-subscribe-address"] = broker.SubscribeAddress
+            };
+            foreach (var (key, value) in busSettings)
+            {
+                Config.Set(key, value);
+            }
+            var serviceBus = MessageBusFactory.Create("parity-market-data");
+            var workerBus = MessageBusFactory.Create("parity-worker");
+            var service = new MarketDataService(serviceBus, new MarketDataStore(Globals.DataFolder)).Start();
+            try
+            {
+                var worker = new BacktestWorker(workerBus, new BacktestWorkerSettings
+                {
+                    LauncherDirectory = launcher,
+                    LeanConfigTemplate = Path.Combine(launcher, "config.json"),
+                    CacheFolder = Path.Combine(root, "cache"),
+                    ResultsFolder = Path.Combine(root, "results"),
+                    EngineSettings = busSettings
+                });
+                var job = new JobRecord
+                {
+                    JobId = "parity-" + Guid.NewGuid().ToString("N"),
+                    Submission = new JobSubmission { Type = JobType.Backtest, AlgorithmTypeName = nameof(BasicTemplateAlgorithm) }
+                };
+
+                // the final statistics, including OrderListHash, reach the bus from the engine process through BusMessagingHandler
+                Dictionary<string, string> statistics = null;
+                using var finished = new ManualResetEventSlim();
+                using var events = serviceBus.Subscribe<JobEvent>(Topics.JobEvents(job.JobId), (jobEvent, _) =>
+                {
+                    if (jobEvent.Statistics?.ContainsKey("OrderListHash") == true)
+                    {
+                        statistics = jobEvent.Statistics;
+                        finished.Set();
+                    }
+                });
+
+                Assert.AreEqual(JobStatus.Completed, worker.Execute(job));
+                Assert.IsTrue(finished.Wait(TimeSpan.FromSeconds(10)), "Expected the final statistics on the job event topic");
+                foreach (var (name, value) in new BasicTemplateAlgorithm().ExpectedStatistics)
+                {
+                    Assert.AreEqual(value, statistics[name], name);
+                }
+                var result = JObject.Parse(File.ReadAllText(Path.Combine(root, "results", job.JobId, job.JobId + ".json")));
+                Assert.AreEqual(statistics["Net Profit"], result["statistics"]["Net Profit"].ToString());
+                Assert.IsNotEmpty(Directory.GetFiles(Path.Combine(root, "cache"), "*.zip", SearchOption.AllDirectories),
+                    "Expected the backtest data to be served by the Market Data Service");
+            }
+            finally
+            {
+                service.Dispose();
+                serviceBus.Dispose();
+                workerBus.Dispose();
+                broker.Broker.Dispose();
+                foreach (var key in busSettings.Keys)
+                {
+                    Config.Set(key, "");
+                }
+                if (Directory.Exists(root))
+                {
+                    Directory.Delete(root, true);
                 }
             }
         }
