@@ -81,15 +81,24 @@ namespace QuantConnect.Lean.Engine.DataFeeds.Remote
                 }
             });
 
-            var response = _bus.Value.Request<DataSubscriptionRequest, DataSubscriptionResponse>(Topics.MarketDataSubscribe, new DataSubscriptionRequest
+            DataSubscriptionResponse response;
+            try
             {
-                SubscriptionId = subscription.Id,
-                Symbol = SymbolContract.From(dataConfig.Symbol),
-                DataType = dataConfig.Type.FullName,
-                Resolution = dataConfig.Resolution,
-                TickType = dataConfig.TickType,
-                ExtendedMarketHours = dataConfig.ExtendedMarketHours
-            }, ContractVersions.MarketDataV1);
+                response = _bus.Value.Request<DataSubscriptionRequest, DataSubscriptionResponse>(Topics.MarketDataSubscribe, new DataSubscriptionRequest
+                {
+                    SubscriptionId = subscription.Id,
+                    Symbol = SymbolContract.From(dataConfig.Symbol),
+                    DataType = dataConfig.Type.FullName,
+                    Resolution = dataConfig.Resolution,
+                    TickType = dataConfig.TickType,
+                    ExtendedMarketHours = dataConfig.ExtendedMarketHours
+                }, ContractVersions.MarketDataV1);
+            }
+            catch
+            {
+                subscription.Stream.Dispose();
+                throw;
+            }
 
             if (response?.Active != true)
             {
