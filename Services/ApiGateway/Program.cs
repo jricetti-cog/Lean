@@ -194,6 +194,12 @@ namespace QuantConnect.Services.ApiGateway
                     await WriteError(context, "WebSocket request expected").ConfigureAwait(false);
                     return;
                 }
+                var job = dispatcher.Get(jobId);
+                if (job == null || job.UserId != (string)context.Items["userId"])
+                {
+                    await WriteError(context, "Job not found", StatusCodes.Status404NotFound).ConfigureAwait(false);
+                    return;
+                }
                 var channel = Channel.CreateUnbounded<object>();
                 void OnEvent(JobEvent jobEvent)
                 {
