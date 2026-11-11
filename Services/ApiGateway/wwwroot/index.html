@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LEAN API Gateway</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 1100px; color: #1d2330; }
+  h1 { font-size: 1.4rem; } h2 { font-size: 1.1rem; margin-top: 1.6rem; }
+  fieldset { border: 1px solid #ccd; border-radius: 6px; padding: .8rem 1rem; margin-bottom: 1rem; }
+  label { display: inline-block; margin: .2rem .8rem .2rem 0; }
+  input, select { padding: .25rem .4rem; }
+  button { padding: .35rem .9rem; cursor: pointer; }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+  th, td { border-bottom: 1px solid #e3e6ee; text-align: left; padding: .35rem .5rem; vertical-align: top; }
+  tr.selected { background: #eef3ff; }
+  pre { background: #f5f6fa; padding: .8rem; max-height: 320px; overflow: auto; font-size: .8rem; }
+  .status-Completed { color: #17803d; } .status-Failed { color: #b42318; } .status-Running { color: #1d4ed8; }
+  #health { font-size: .85rem; }
+</style>
+</head>
+<body>
+<h1>LEAN API Gateway</h1>
+<div id="health">Checking services...</div>
+
+<fieldset>
+  <legend>Credentials</legend>
+  <label>User id <input id="userId" value="0" size="6"></label>
+  <label>Access token <input id="token" type="password" size="30"></label>
+</fieldset>
+
+<fieldset>
+  <legend>Submit job</legend>
+  <label>Type <select id="jobType"><option>backtest</option><option>live</option><option>research</option></select></label>
+  <label>Algorithm <input id="algorithm" value="BasicTemplateAlgorithm" size="28"></label>
+  <label>Language <select id="language"><option>CSharp</option><option>Python</option></select></label>
+  <label>Notebook <input id="notebook" placeholder="research jobs" size="18"></label>
+  <button id="submit">Submit</button>
+  <span id="submitResult"></span>
+</fieldset>
+
+<h2>Jobs</h2>
+<table>
+  <thead><tr><th>Job</th><th>Type</th><th>Algorithm</th><th>Status</th><th>Progress</th><th>Worker</th><th></th></tr></thead>
+  <tbody id="jobs"></tbody>
+</table>
+
+<h2>Selected job</h2>
+<div id="selected">Select a job to stream its events.</div>
+<pre id="statistics"></pre>
+<pre id="events"></pre>
+
+<script>
+const $ = id => document.getElementById(id);
+let selectedJob = null, socket = null;
+
+async function credentials() {
+  const userId = $('userId').value, token = $('token').value;
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${token}:${timestamp}`));
+  const hash = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+  return { userId, timestamp, hash };
+}
+
+async function api(method, path, body) {
+  const c = await credentials();
+  const response = await fetch(path, {
+    method,
+    headers: { 'Authorization': 'Basic ' + btoa(`${c.userId}:${c.hash}`), 'Timestamp': c.timestamp, 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const json = await response.json();
+  if (!response.ok) throw new Error((json.errors || [response.statusText]).join(', '));
+  return json;
+}
+
+async function refreshHealth() {
+  try {
+    const h = await (await fetch('/health')).json();
+    const md = h.marketData && h.marketData.service ? `market data ${h.marketData.instanceId}` : 'market data unreachable';
+    $('health').textContent = `gateway ${h.gateway.instanceId} | ${md} | workers: ${h.workers.map(w => w.workerId).join(', ') || 'none'}`;
+  } catch (e) { $('health').textContent = 'Health check failed: ' + e.message; }
+}
+
+async function refreshJobs() {
+  if (!$('token').value) return;
+  try {
+    const jobs = await api('GET', '/api/v1/jobs');
+    $('jobs').innerHTML = '';
+    for (const job of jobs) {
+      const tr = document.createElement('tr');
+      if (job.jobId === selectedJob) tr.className = 'selected';
+      const name = job.submission.algorithmTypeName || job.submission.notebook || '';
+      [job.jobId, job.submission.type, name].forEach(v => { const td = document.createElement('td'); td.textContent = v; tr.appendChild(td); });
+      const status = document.createElement('td'); status.textContent = job.status; status.className = 'status-' + job.status; tr.appendChild(status);
+      const progress = document.createElement('td'); progress.textContent = Math.round((job.progress || 0) * 100) + '%'; tr.appendChild(progress);
+      const worker = document.createElement('td'); worker.textContent = job.workerId || ''; tr.appendChild(worker);
+      const actions = document.createElement('td');
+      const view = document.createElement('button'); view.textContent = 'View'; view.onclick = () => select(job.jobId); actions.appendChild(view);
+      if (['Queued', 'Assigned', 'Running'].includes(job.status)) {
+        const cancel = document.createElement('button'); cancel.textContent = 'Cancel'; cancel.onclick = () => api('POST', `/api/v1/jobs/${job.jobId}/cancel`).then(refreshJobs); actions.appendChild(cancel);
+      }
+      tr.appendChild(actions);
+      $('jobs').appendChild(tr);
+      if (job.jobId === selectedJob && job.statistics) {
+        $('statistics').textContent = Object.entries(job.statistics).map(([k, v]) => `${k}: ${v}`).join('\n');
+      }
+    }
+  } catch (e) { $('submitResult').textContent = e.message; }
+}
+
+async function select(jobId) {
+  selectedJob = jobId;
+  $('selected').textContent = jobId;
+  $('events').textContent = '';
+  $('statistics').textContent = '';
+  if (socket) socket.close();
+  const c = await credentials();
+  const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
+  socket = new WebSocket(`${scheme}://${location.host}/ws/jobs/${jobId}?userId=${encodeURIComponent(c.userId)}&timestamp=${c.timestamp}&hash=${c.hash}`);
+  socket.onmessage = message => {
+    const e = JSON.parse(message.data);
+    const text = e.message || (e.progress !== undefined ? `progress ${Math.round(e.progress * 100)}%` : '');
+    if (text) $('events').textContent += `${e.timeUtc} [${e.packetType}] ${text}\n`;
+    if (e.statistics && Object.keys(e.statistics).length) {
+      $('statistics').textContent = Object.entries(e.statistics).map(([k, v]) => `${k}: ${v}`).join('\n');
+    }
+    $('events').scrollTop = $('events').scrollHeight;
+  };
+  refreshJobs();
+}
+
+$('submit').onclick = async () => {
+  const type = $('jobType').value;
+  const body = type === 'research'
+    ? { notebook: $('notebook').value }
+    : { algorithmTypeName: $('algorithm').value, algorithmLanguage: $('language').value };
+  try {
+    const job = await api('POST', `/api/v1/jobs/${type}`, body);
+    $('submitResult').textContent = `Submitted ${job.jobId}`;
+    select(job.jobId);
+  } catch (e) { $('submitResult').textContent = e.message; }
+};
+
+refreshHealth();
+setInterval(refreshHealth, 5000);
+setInterval(refreshJobs, 2000);
+</script>
+</body>
+</html>

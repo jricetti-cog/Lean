@@ -429,6 +429,9 @@
     <ProjectReference Include="..\Queues\QuantConnect.Queues.csproj" />
     <ProjectReference Include="..\Report\QuantConnect.Report.csproj" />
     <ProjectReference Include="..\ToolBox\QuantConnect.ToolBox.csproj" />
+    <ProjectReference Include="..\Services\ApiGateway\QuantConnect.Services.ApiGateway.csproj" />
+    <ProjectReference Include="..\Services\BacktestWorker\QuantConnect.Services.BacktestWorker.csproj" />
+    <ProjectReference Include="..\Services\MarketData\QuantConnect.Services.MarketData.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="TestData\spx_lwma.csv">

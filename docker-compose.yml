@@ -1,0 +1,61 @@
+# Phase 1 LEAN service topology: message broker, Market Data Service, API Gateway and backtest worker.
+# Build the solution on the host first: dotnet build QuantConnect.Lean.sln -c Release
+# Then: LEAN_API_ACCESS_TOKEN=<token> docker compose up
+x-lean-service: &lean-service
+  image: quantconnect/lean:foundation
+  working_dir: /Lean
+  volumes:
+    - ./:/Lean
+  restart: unless-stopped
+
+x-bus-environment: &bus-environment
+  LEAN_MESSAGE_BUS: netmq
+  LEAN_MESSAGE_BUS_PUBLISH_ADDRESS: tcp://broker:5560
+  LEAN_MESSAGE_BUS_SUBSCRIBE_ADDRESS: tcp://broker:5561
+
+services:
+  broker:
+    <<: *lean-service
+    command: dotnet Services/MessageBroker/bin/Release/QuantConnect.Services.MessageBroker.dll
+    environment:
+      LEAN_MESSAGE_BROKER_FRONTEND: tcp://*:5560
+      LEAN_MESSAGE_BROKER_BACKEND: tcp://*:5561
+
+  market-data:
+    <<: *lean-service
+    command: dotnet Services/MarketData/bin/Release/QuantConnect.Services.MarketData.dll
+    depends_on: [broker]
+    environment:
+      <<: *bus-environment
+      LEAN_DATA_FOLDER: /Lean/Data/
+      # optional IDataDownloader type used by marketdata.v1.download, e.g. a brokerage/data vendor downloader
+      LEAN_DATA_DOWNLOADER: ${LEAN_DATA_DOWNLOADER:-}
+
+  api-gateway:
+    <<: *lean-service
+    command: dotnet Services/ApiGateway/bin/Release/QuantConnect.Services.ApiGateway.dll
+    depends_on: [broker]
+    ports:
+      - "${LEAN_GATEWAY_PORT:-5000}:5000"
+    environment:
+      <<: *bus-environment
+      LEAN_GATEWAY_URLS: http://0.0.0.0:5000
+      LEAN_JOB_USER_ID: ${LEAN_JOB_USER_ID:-0}
+      LEAN_API_ACCESS_TOKEN: ${LEAN_API_ACCESS_TOKEN:?set LEAN_API_ACCESS_TOKEN}
+
+  backtest-worker:
+    <<: *lean-service
+    command: dotnet Services/BacktestWorker/bin/Release/QuantConnect.Services.BacktestWorker.dll
+    depends_on: [broker, market-data, api-gateway]
+    environment:
+      <<: *bus-environment
+      LEAN_WORKER_LAUNCHER_DIRECTORY: /Lean/Launcher/bin/Release
+      LEAN_WORKER_CACHE_FOLDER: /worker-data/cache
+      LEAN_WORKER_RESULTS_FOLDER: /worker-data/results
+      LEAN_RESEARCH_FOLDER: /Lean/Research
+    volumes:
+      - ./:/Lean
+      - worker-data:/worker-data
+
+volumes:
+  worker-data:

@@ -61,6 +61,7 @@
     <ProjectReference Include="..\Indicators\QuantConnect.Indicators.csproj" />
     <ProjectReference Include="..\Common\QuantConnect.csproj" />
     <ProjectReference Include="..\Logging\QuantConnect.Logging.csproj" />
+    <ProjectReference Include="..\Messaging\QuantConnect.Messaging.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\LICENSE">
