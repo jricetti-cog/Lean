@@ -124,15 +124,17 @@ namespace QuantConnect.Tests.Services
             var symbol = Symbols.SPY;
             var downloader = new FixedDataDownloader(Enumerable.Range(0, 3).Select(i =>
                 (BaseData)new TradeBar(new DateTime(2013, 10, 7, 9, 30 + i, 0), symbol, 100 + i, 101 + i, 99 + i, 100.5m + i, 1000, Time.OneMinute)).ToList());
-            using var service = new MarketDataService(_serviceBus, new MarketDataStore(_root), () => downloader);
-            service.Start();
-            var response = service.Download(new DataDownloadRequest
+            var hub = new InMemoryMessageHub();
+            using var serviceBus = new InMemoryMessageBus(hub);
+            using var clientBus = new InMemoryMessageBus(hub);
+            using var service = new MarketDataService(serviceBus, new MarketDataStore(_root), () => downloader).Start();
+            var response = clientBus.Request<DataDownloadRequest, DataDownloadResponse>(Topics.MarketDataDownload, new DataDownloadRequest
             {
                 Symbols = new List<SymbolContract> { SymbolContract.From(symbol) },
                 Resolution = Resolution.Minute,
                 Start = new DateTime(2013, 10, 7),
                 End = new DateTime(2013, 10, 8)
-            });
+            }, ContractVersions.MarketDataV1);
             Assert.AreEqual(3, response.DataPoints);
             Assert.IsTrue(File.Exists(Path.Combine(_root, "equity", "usa", "minute", "spy", "20131007_trade.zip")));
         }
