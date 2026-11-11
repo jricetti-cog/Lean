@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>QuantConnect.Services.Report</RootNamespace>
+    <AssemblyName>QuantConnect.Services.Report</AssemblyName>
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Description>QuantConnect LEAN Services: report generation service that turns backtest/live result json into the LEAN HTML report</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\Common\Properties\SharedAssemblyInfo.cs" Link="Properties\SharedAssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Report\QuantConnect.Report.csproj" />
+    <ProjectReference Include="..\Shared\QuantConnect.Services.Shared.csproj" />
+  </ItemGroup>
+</Project>

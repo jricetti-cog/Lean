@@ -1,0 +1,47 @@
+# Internal report service. Reports are kept on a PVC; one replica because the volume is ReadWriteOnce.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: lean-reports
+  namespace: lean
+spec:
+  accessModes: [ReadWriteOnce]
+  resources: { requests: { storage: 5Gi } }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lean-report
+  namespace: lean
+  labels: { app.kubernetes.io/name: lean-report, app.kubernetes.io/part-of: lean }
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector:
+    matchLabels: { app.kubernetes.io/name: lean-report }
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: lean-report, app.kubernetes.io/part-of: lean }
+    spec:
+      containers:
+        - name: report
+          image: lean-services/report:latest
+          ports: [{ name: http, containerPort: 8080 }]
+          volumeMounts: [{ name: reports, mountPath: /Lean/Reports }]
+          readinessProbe: { httpGet: { path: /health, port: http }, periodSeconds: 10 }
+          livenessProbe: { httpGet: { path: /health, port: http }, periodSeconds: 20, initialDelaySeconds: 30 }
+          resources:
+            requests: { cpu: 250m, memory: 512Mi }
+            limits: { memory: 2Gi }
+      volumes:
+        - name: reports
+          persistentVolumeClaim: { claimName: lean-reports }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lean-report
+  namespace: lean
+spec:
+  selector: { app.kubernetes.io/name: lean-report }
+  ports: [{ name: http, port: 8080, targetPort: http }]

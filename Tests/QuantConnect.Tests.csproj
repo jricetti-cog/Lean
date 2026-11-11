@@ -65,6 +65,9 @@
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>
+    <None Include="TestData\services_backtest_result.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="TestData\greeksindicator\american\third_party_1_greeks.csv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -429,6 +432,9 @@
     <ProjectReference Include="..\Queues\QuantConnect.Queues.csproj" />
     <ProjectReference Include="..\Report\QuantConnect.Report.csproj" />
     <ProjectReference Include="..\ToolBox\QuantConnect.ToolBox.csproj" />
+    <ProjectReference Include="..\Services\Shared\QuantConnect.Services.Shared.csproj" />
+    <ProjectReference Include="..\Services\Api\QuantConnect.Services.Api.csproj" />
+    <ProjectReference Include="..\Services\Report\QuantConnect.Services.Report.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="TestData\spx_lwma.csv">

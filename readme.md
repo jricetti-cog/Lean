@@ -185,6 +185,12 @@ A full explanation of the Python installation process can be found in the [Algor
 
 Seamlessly develop locally in your favorite development environment, with full autocomplete and debugging support to quickly and easily identify problems with your strategy. Please see the [CLI Home](https://www.lean.io/cli) for more information.
 
+### Service Deployment
+
+LEAN can also run as separate containers: a REST API service, a report service, ToolBox batch jobs, a Research
+(JupyterLab) image and the engine. The algorithm loop stays inside one engine process. Run `docker compose up -d --build`
+and see [Documentation/deployment-topology.md](Documentation/deployment-topology.md).
+
 ## Issues and Feature Requests ##
 
 Please submit bugs and feature requests as an issue to the [Lean Repository][5]. Before submitting an issue, please read the instructions to ensure it is not duplicated.

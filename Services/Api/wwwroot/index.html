@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LEAN services</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 2rem auto; max-width: 960px; color: #1d2733; }
+  h1 { font-size: 1.4rem; } h2 { font-size: 1.1rem; margin-top: 2rem; }
+  table { border-collapse: collapse; width: 100%; } td, th { text-align: left; padding: .35rem .6rem; border-bottom: 1px solid #e3e7ec; }
+  .ok { color: #137333; } .down { color: #b3261e; } code { background: #f2f4f7; padding: 0 .25rem; }
+  form { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+  #status { margin-left: .5rem; }
+</style>
+</head>
+<body>
+<h1>LEAN services</h1>
+<p>Front door for the LEAN service topology. The engine loop runs inside the worker containers; this API only fronts the peripheral services.</p>
+
+<h2>Services</h2>
+<table id="services"><tr><th>Route</th><th>Upstream</th><th>Status</th></tr></table>
+
+<h2>Generate a report</h2>
+<form id="report-form">
+  <input type="file" id="result-file" accept=".json" required>
+  <input type="text" id="report-name" placeholder="Report name">
+  <button type="submit">Generate</button>
+  <span id="status"></span>
+</form>
+
+<h2>Reports</h2>
+<table id="reports"><tr><th>Name</th><th>Created (UTC)</th><th></th></tr></table>
+
+<script>
+const token = new URLSearchParams(location.search).get("token");
+const headers = token ? { Authorization: "Bearer " + token } : {};
+const cell = text => { const td = document.createElement("td"); td.textContent = text; return td; };
+
+async function loadServices() {
+  const table = document.getElementById("services");
+  const services = await (await fetch("/v1/services", { headers })).json();
+  for (const [route, upstream] of Object.entries(services)) {
+    const row = table.insertRow();
+    row.append(cell(route), cell(upstream || "not configured"));
+    const status = cell("...");
+    row.append(status);
+    try {
+      const response = await fetch(route, { headers });
+      status.textContent = response.ok ? "up" : "down (" + response.status + ")";
+      status.className = response.ok ? "ok" : "down";
+    } catch { status.textContent = "down"; status.className = "down"; }
+  }
+}
+
+async function loadReports() {
+  const table = document.getElementById("reports");
+  while (table.rows.length > 1) table.deleteRow(1);
+  const response = await fetch("/v1/reports", { headers });
+  if (!response.ok) return;
+  for (const report of await response.json()) {
+    const row = table.insertRow();
+    const link = document.createElement("a");
+    link.href = "/v1/reports/" + report.id; link.textContent = "open"; link.target = "_blank";
+    const action = document.createElement("td"); action.append(link);
+    row.append(cell(report.name), cell(report.createdUtc), action);
+  }
+}
+
+document.getElementById("report-form").addEventListener("submit", async event => {
+  event.preventDefault();
+  const status = document.getElementById("status");
+  const file = document.getElementById("result-file").files[0];
+  const name = document.getElementById("report-name").value || file.name.replace(/\.json$/, "");
+  status.textContent = "generating...";
+  const response = await fetch("/v1/reports?name=" + encodeURIComponent(name), { method: "POST", headers: { ...headers, "Content-Type": "application/json" }, body: await file.text() });
+  const body = await response.json().catch(() => ({}));
+  status.textContent = response.ok ? "done: " + body.id : "failed: " + (body.error || response.status);
+  loadReports();
+});
+
+loadServices();
+loadReports();
+</script>
+</body>
+</html>

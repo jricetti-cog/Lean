@@ -4,7 +4,9 @@
 
 # Use base system for cleaning up wayward processes
 ARG LEAN_TAG=latest
-FROM quantconnect/lean:$LEAN_TAG
+# LEAN_BASE lets the Research image be built on top of a locally built engine image (see Services/Dockerfile)
+ARG LEAN_BASE=quantconnect/lean:$LEAN_TAG
+FROM $LEAN_BASE
 
 MAINTAINER QuantConnect <contact@quantconnect.com>
 
