@@ -1,0 +1,43 @@
+# Public entry point. QC credentials come from the lean-api secret:
+#   kubectl -n lean create secret generic lean-api --from-literal=user-id=<id> --from-literal=api-token=<token> --from-literal=service-token=<token>
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lean-api
+  namespace: lean
+  labels: { app.kubernetes.io/name: lean-api, app.kubernetes.io/part-of: lean }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app.kubernetes.io/name: lean-api }
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: lean-api, app.kubernetes.io/part-of: lean }
+    spec:
+      containers:
+        - name: api
+          image: lean-services/api:latest
+          ports: [{ name: http, containerPort: 8080 }]
+          env:
+            - { name: LEAN_REPORT_SERVICE_URL, value: "http://lean-report:8080" }
+            - name: LEAN_JOB_USER_ID
+              valueFrom: { secretKeyRef: { name: lean-api, key: user-id, optional: true } }
+            - name: LEAN_API_ACCESS_TOKEN
+              valueFrom: { secretKeyRef: { name: lean-api, key: api-token, optional: true } }
+            - name: LEAN_SERVICE_TOKEN
+              valueFrom: { secretKeyRef: { name: lean-api, key: service-token, optional: true } }
+          readinessProbe: { httpGet: { path: /health, port: http }, periodSeconds: 10 }
+          livenessProbe: { httpGet: { path: /health, port: http }, periodSeconds: 20, initialDelaySeconds: 20 }
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { memory: 1Gi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lean-api
+  namespace: lean
+spec:
+  type: LoadBalancer
+  selector: { app.kubernetes.io/name: lean-api }
+  ports: [{ name: http, port: 80, targetPort: http }]

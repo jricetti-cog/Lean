@@ -1,0 +1,58 @@
+# ToolBox / DownloaderDataProvider batch jobs writing into the shared LEAN data volume.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: lean-data
+  namespace: lean
+spec:
+  accessModes: [ReadWriteMany]
+  resources: { requests: { storage: 50Gi } }
+---
+# One-off example: kubectl -n lean create -f toolbox-jobs.yaml (generateName keeps every run unique)
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: lean-random-data-
+  namespace: lean
+  labels: { app.kubernetes.io/name: lean-toolbox, app.kubernetes.io/part-of: lean }
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: toolbox
+          image: lean-services/toolbox:latest
+          args: ["toolbox", "--app=RandomDataGenerator", "--start=20200101", "--end=20200201",
+                 "--security-type=Equity", "--resolution=Daily", "--symbol-count=1", "--tickers=RNDA"]
+          volumeMounts: [{ name: data, mountPath: /Lean/Data }]
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: lean-data }
+---
+# Scheduled refresh template: set the downloader and credentials for your data vendor before enabling.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: lean-daily-download
+  namespace: lean
+spec:
+  schedule: "30 22 * * 1-5"
+  suspend: true
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: downloader
+              image: lean-services/toolbox:latest
+              args: ["downloader", "--data-type=Trade", "--resolution=Daily", "--security-type=Equity",
+                     "--tickers=SPY", "--start-date=20240101", "--end-date=20240201"]
+              volumeMounts: [{ name: data, mountPath: /Lean/Data }]
+          volumes:
+            - name: data
+              persistentVolumeClaim: { claimName: lean-data }

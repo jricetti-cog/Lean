@@ -1,0 +1,62 @@
+# LEAN service topology. See Documentation/deployment-topology.md.
+#   docker compose up -d --build            api (http://localhost:8080) + report
+#   docker compose --profile research up -d  adds JupyterLab/QuantBook (http://localhost:8888)
+#   docker compose run --rm toolbox toolbox --app=RandomDataGenerator ...   one-off batch job
+name: lean
+
+x-lean-build: &lean-build
+  context: .
+  dockerfile: Services/Dockerfile
+
+services:
+  api:
+    build: { <<: *lean-build, target: api }
+    image: lean-services/api:latest
+    ports: ["8080:8080"]
+    environment:
+      LEAN_REPORT_SERVICE_URL: http://report:8080
+      LEAN_JOB_USER_ID: ${QC_USER_ID:-0}
+      LEAN_API_ACCESS_TOKEN: ${QC_API_TOKEN:-}
+      LEAN_JOB_ORGANIZATION_ID: ${QC_ORGANIZATION_ID:-}
+      LEAN_SERVICE_TOKEN: ${LEAN_SERVICE_TOKEN:-}
+    depends_on:
+      report: { condition: service_healthy }
+
+  report:
+    build: { <<: *lean-build, target: report }
+    image: lean-services/report:latest
+    volumes: ["reports:/Lean/Reports"]
+    expose: ["8080"]
+
+  toolbox:
+    build: { <<: *lean-build, target: toolbox }
+    image: lean-services/toolbox:latest
+    profiles: ["jobs"]
+    volumes: ["lean-data:/Lean/Data"]
+
+  engine:
+    build: { <<: *lean-build, target: engine }
+    image: lean-services/engine:latest
+    profiles: ["research", "engine"]
+    volumes: ["lean-data:/Lean/Data"]
+    command: ["--close-automatically", "true"]
+
+  research:
+    build:
+      context: .
+      dockerfile: DockerfileJupyter
+      additional_contexts:
+        lean-engine: service:engine
+      args:
+        LEAN_BASE: lean-engine
+    image: lean-services/research:latest
+    profiles: ["research"]
+    ports: ["8888:8888"]
+    volumes:
+      - lean-data:/home/Data
+      - notebooks:/Lean/Launcher/bin/Debug/Notebooks
+
+volumes:
+  reports:
+  lean-data:
+  notebooks:
