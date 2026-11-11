@@ -209,7 +209,12 @@ namespace QuantConnect.Services.MarketData
                 stream.Cancellation.Cancel();
                 stream.Signal.Set();
                 _dataQueueHandler.Value.Unsubscribe(stream.Config);
-                stream.Thread.Join(TimeSpan.FromSeconds(5));
+                if (stream.Thread.Join(TimeSpan.FromSeconds(5)))
+                {
+                    stream.Enumerator.DisposeSafely();
+                    stream.Signal.Dispose();
+                    stream.Cancellation.Dispose();
+                }
                 Log.Trace($"MarketDataService.Unsubscribe(): {stream.Config}");
             }
             return new DataSubscriptionResponse { SubscriptionId = subscriptionId, Active = false };
