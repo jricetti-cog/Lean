@@ -244,6 +244,7 @@ namespace QuantConnect.Services.BacktestWorker
             process.WaitForExit();
             lock (_processLock)
             {
+                _currentJobId = null;
                 _currentProcess = null;
             }
             return process.ExitCode;
