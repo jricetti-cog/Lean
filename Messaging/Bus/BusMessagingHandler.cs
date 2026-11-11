@@ -121,7 +121,7 @@ namespace QuantConnect.Messaging.Bus
         /// <summary>
         /// Flushes and disconnects the bus if this handler created it
         /// </summary>
-        public new void Dispose()
+        public override void Dispose()
         {
             if (_ownsBus)
             {
