@@ -122,6 +122,11 @@ namespace QuantConnect.Services.BacktestWorker
         {
             var jobFolder = Path.GetFullPath(Path.Combine(_settings.ResultsFolder, job.JobId));
             Directory.CreateDirectory(jobFolder);
+            lock (_processLock)
+            {
+                _cancelRequested = false;
+                _currentJobId = job.JobId;
+            }
             Publish(job, JobStatus.Running, $"running on {_settings.WorkerId}");
             try
             {
@@ -133,7 +138,7 @@ namespace QuantConnect.Services.BacktestWorker
                 }
 
                 var startInfo = job.Submission.Type == JobType.Research ? CreateResearchProcess(job, jobFolder) : CreateEngineProcess(job, jobFolder);
-                var exitCode = RunProcess(job.JobId, startInfo, Path.Combine(jobFolder, "log.txt"));
+                var exitCode = RunProcess(startInfo, Path.Combine(jobFolder, "log.txt"));
                 var status = _cancelRequested ? JobStatus.Cancelled : exitCode == 0 ? JobStatus.Completed : JobStatus.Failed;
                 Publish(job, status, $"exit code {exitCode}", exitCode);
                 return status;
@@ -143,6 +148,13 @@ namespace QuantConnect.Services.BacktestWorker
                 Log.Error(exception, $"BacktestWorker.Execute({job.JobId})");
                 Publish(job, JobStatus.Failed, exception.Message);
                 return JobStatus.Failed;
+            }
+            finally
+            {
+                lock (_processLock)
+                {
+                    _currentJobId = null;
+                }
             }
         }
 
@@ -209,7 +221,7 @@ namespace QuantConnect.Services.BacktestWorker
             return startInfo;
         }
 
-        private int RunProcess(string jobId, ProcessStartInfo startInfo, string logPath)
+        private int RunProcess(ProcessStartInfo startInfo, string logPath)
         {
             startInfo.RedirectStandardOutput = true;
             startInfo.RedirectStandardError = true;
@@ -220,8 +232,10 @@ namespace QuantConnect.Services.BacktestWorker
             process.ErrorDataReceived += (_, args) => { if (args.Data != null) { lock (log) { log.WriteLine(args.Data); } } };
             lock (_processLock)
             {
-                _cancelRequested = false;
-                _currentJobId = jobId;
+                if (_cancelRequested)
+                {
+                    return -1;
+                }
                 _currentProcess = process;
                 process.Start();
             }
@@ -230,7 +244,6 @@ namespace QuantConnect.Services.BacktestWorker
             process.WaitForExit();
             lock (_processLock)
             {
-                _currentJobId = null;
                 _currentProcess = null;
             }
             return process.ExitCode;
@@ -240,11 +253,11 @@ namespace QuantConnect.Services.BacktestWorker
         {
             lock (_processLock)
             {
-                if (_currentJobId == jobId && _currentProcess != null)
+                if (_currentJobId == jobId)
                 {
                     Log.Trace($"BacktestWorker.Cancel(): stopping {jobId}");
                     _cancelRequested = true;
-                    _currentProcess.Kill(true);
+                    _currentProcess?.Kill(true);
                 }
             }
         }
