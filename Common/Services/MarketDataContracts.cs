@@ -187,10 +187,10 @@ namespace QuantConnect.Services
     /// </summary>
     public class DataDownloadResponse
     {
-        /// <summary>Number of data points written</summary>
+        /// <summary>Number of data points returned by the downloader, before the pipeline filters them by date range and type</summary>
         public long DataPoints { get; set; }
 
-        /// <summary>Per symbol data point count</summary>
+        /// <summary>Per symbol count of data points returned by the downloader</summary>
         public Dictionary<string, long> DataPointsBySymbol { get; set; } = new();
 
         /// <summary>Messages for symbols the downloader could not serve</summary>
