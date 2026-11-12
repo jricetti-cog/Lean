@@ -177,6 +177,24 @@ dotnet QuantConnect.Lean.Launcher.dll
 - Build the solution by clicking Build Menu -> Build Solution (this should trigger the NuGet package restore)
 - Press `F5` to run
 
+### Running LEAN as services (Phase 1)
+
+LEAN can also run as separate services: a message broker, a Market Data Service that owns `Data/`, an API Gateway
+(REST/WebSocket, auth, job submission) and a backtest worker that runs each job in its own LEAN engine process.
+Service boundaries and message contracts are described in [Documentation/microservices-phase1.md](Documentation/microservices-phase1.md).
+
+```bash
+dotnet build QuantConnect.Lean.sln -c Release                          # the containers run the host build
+export LEAN_API_ACCESS_TOKEN=change-me                                 # gateway credential for user id 0
+docker compose up -d                                                   # broker, market-data, api-gateway, backtest-worker
+curl http://localhost:5000/health                                      # all services and workers
+python3 Services/smoke_test.py BasicTemplateAlgorithm                  # submit a backtest, wait, print statistics
+```
+
+Open http://localhost:5000 for the dashboard (user id `0`, the token above). Job output is kept in the `worker-data`
+volume under `/worker-data/results/{jobId}`. Stop the services with `docker compose down`.
+The default `Launcher` configuration is unchanged, so running LEAN in a single process works as before.
+
 ### Python Support
 
 A full explanation of the Python installation process can be found in the [Algorithm.Python](https://github.com/QuantConnect/Lean/tree/master/Algorithm.Python#quantconnect-python-algorithm-project) project.
