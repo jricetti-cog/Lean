@@ -105,7 +105,9 @@ namespace QuantConnect.Tests.Services
         [Test]
         public void BacktestWorkerProcessProducesIdenticalBacktest()
         {
-            var launcher = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Launcher", "bin", "Release"));
+            // the launcher builds to Launcher/bin/{Configuration}, matching this test assembly's Tests/bin/{Configuration}
+            var configuration = new DirectoryInfo(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)).Name;
+            var launcher = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Launcher", "bin", configuration));
             if (!File.Exists(Path.Combine(launcher, "QuantConnect.Lean.Launcher.dll")))
             {
                 Assert.Ignore($"Launcher build not found in {launcher}");
