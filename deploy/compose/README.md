@@ -72,3 +72,17 @@ Adding a service (later phases): give it a profile, `environment: *lean-service-
 `LEAN_DATA_FOLDER`) plus its own `ConnectionStrings__<Database>`, `depends_on: infra-ready: condition: service_healthy`,
 and mount `lean-data:/Lean/Data:ro` (read-write only for market-data and its one-shot `toolbox` jobs). Source mounts and debug ports go in
 `docker-compose.override.yml`. Reseed market data with `docker volume rm lean_lean-data`.
+
+## API gateway (plan step s4.5)
+
+`api-gateway` (profile `gateway`) is the only public entry point, on `127.0.0.1:${GATEWAY_PORT:-5080}`. It authenticates
+with the API key from `GATEWAY_API_KEY` (`X-Api-Key: <key>` or `Authorization: Bearer <key>`), or with a JWT once
+`GATEWAY_JWT_AUTHORITY` / `GATEWAY_JWT_SIGNING_KEY` is set, rate-limits per key (`GATEWAY_RATE_LIMIT` requests per
+`GATEWAY_RATE_WINDOW_SECONDS`), echoes and forwards `X-Request-ID`, and proxies `/api/v1/...` to the internal services.
+An upstream that is not running (report, optimizer) answers `503 application/problem+json`. The merged OpenAPI document
+is at `/openapi`. See `Services/QuantConnect.Services.Gateway/README.md` for the routes.
+
+```bash
+docker compose --profile orchestrator --profile results --profile gateway up -d --build --wait
+deploy/compose/verify-gateway.sh   # backtest through the gateway -> orchestrator, result through the gateway <- results
+```
