@@ -10,6 +10,13 @@ sh deploy/compose/verify-infra.sh                 # smoke test: health, ports, c
 docker compose --profile infra down               # keep data; add -v to delete the named volumes
 ```
 
+End-to-end smoke test (plan step s2.4, also run by `.github/workflows/services.yml`): with the infra profile up and
+the images built (`docker buildx bake -f Services/docker-bake.hcl`), `sh deploy/compose/smoke-backtest.sh` submits
+`BasicTemplateAlgorithm` as a `jobs.v1.BacktestRequested` to the stock Launcher in the `backtest-worker` image (bus
+handlers selected by config) and asserts that it completes with its expected statistics, publishes its events and final
+`PacketRef` on `lean.events`, and stores its result file in `lean-results`. `SMOKE_IMAGE` / `REGISTRY` + `TAG` pick
+the image.
+
 | Service | What | Host port (127.0.0.1 only) | Files |
 |---|---|---|---|
 | `rabbitmq` | RabbitMQ 3.13 + management UI, v1 topology from `docs/architecture/contracts/topology/` | 5672, UI 15672 | `rabbitmq/entrypoint.sh` adds the compose user to the topology definitions |
