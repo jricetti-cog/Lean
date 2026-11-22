@@ -28,6 +28,7 @@ public enum JobKind
 public enum JobStatus
 {
     [JsonStringEnumMemberName("queued")] Queued,
+    [JsonStringEnumMemberName("dispatched")] Dispatched,
     [JsonStringEnumMemberName("running")] Running,
     [JsonStringEnumMemberName("completed")] Completed,
     [JsonStringEnumMemberName("failed")] Failed,

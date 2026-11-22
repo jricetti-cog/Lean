@@ -168,6 +168,29 @@ services:
       test: ["CMD", "true"]
     network_mode: none
 
+  # Job orchestrator (plan step s4.1): jobs API, job state machine in the `jobs` database, outbox to lean.jobs,
+  # lean.events consumer, heartbeat retries and queue-depth metrics (GET /internal/v1/queues, /metrics).
+  job-orchestrator:
+    image: ${LEAN_IMAGE_REGISTRY:-lean}/job-orchestrator:${LEAN_IMAGE_TAG:-dev}
+    build:
+      context: .
+      dockerfile: Services/Dockerfile
+      target: job-orchestrator
+    profiles: [orchestrator]
+    restart: unless-stopped
+    environment:
+      <<: *lean-service-env
+      ConnectionStrings__Jobs: Host=postgres;Port=5432;Database=jobs;Username=jobs;Password=${POSTGRES_JOBS_PASSWORD:-lean-dev-jobs}
+      RabbitMQ__ManagementUri: http://rabbitmq:15672/
+      Orchestrator__MaxAttempts: ${ORCHESTRATOR_MAX_ATTEMPTS:-3}
+      Orchestrator__HeartbeatTimeoutSeconds: ${ORCHESTRATOR_HEARTBEAT_TIMEOUT_SECONDS:-90}
+    ports:
+      - 127.0.0.1:${ORCHESTRATOR_PORT:-5081}:8080
+    depends_on:
+      infra-ready:
+        condition: service_healthy
+    networks: [lean]
+
 volumes:
   rabbitmq-data:
   postgres-data:

@@ -76,7 +76,7 @@ Durable quorum queues, `x-delivery-limit: 5`, dead-lettered to `lean.jobs.dlx` (
 | Queue | Bindings | Consumer |
 |---|---|---|
 | `results.packets` | `job.*.*.result.v1`, `job.*.*.order.v1`, `job.*.*.log.v1`, `job.*.*.error.v1`, `job.*.*.status.v1` | results |
-| `orchestrator.status` | `job.*.*.status.v1`, `job.*.*.heartbeat.v1` | job-orchestrator |
+| `orchestrator.status` | `job.*.*.status.v1`, `job.*.*.heartbeat.v1`, `job.*.*.progress.v1` | job-orchestrator |
 | `optimizer.children` | `job.backtest.*.status.v1` (filters on `parent-job-id` header) | optimizer |
 | server-named, exclusive, auto-delete (`sse.<gatewayInstance>.<uuid>`) | `job.*.<jobId>.#` | api-gateway, one per open `GET /api/v1/jobs/{id}/events` |
 

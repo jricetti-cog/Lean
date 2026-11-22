@@ -3,11 +3,11 @@ info:
   title: job-orchestrator internal API
   version: 1.0.0
   description: |
-    Sole owner of the job lifecycle (ADR 0001): `queued → running → completed | failed | cancelled`, plus
+    Sole owner of the job lifecycle (ADR 0001): `queued → dispatched → running → completed | failed | cancelled`, plus
     `stale` for live deployments that lost their heartbeat. Creating a job writes the `jobs` row and an outbox
     row in one transaction; the relay publishes `job.submitted` / `optimization.requested` /
     `report.requested` to `lean.jobs` with publisher confirms (ADR 0002, topology.md). Status changes are
-    driven by `lean.events` (`job.*.*.status.v1`, `job.*.*.heartbeat.v1`); these endpoints are called by
+    driven by `lean.events` (`job.*.*.status.v1`, `job.*.*.heartbeat.v1`, `job.*.*.progress.v1`); these endpoints are called by
     api-gateway (on behalf of users), optimizer (child backtests) and the workers (attempts, leases).
     Private network only.
   contact:
@@ -32,9 +32,15 @@ paths:
       tags: [jobs]
       operationId: createJob
       summary: Create a job
-      description: Validates the spec, inserts the job (`queued`, attempt 1) and its outbox row. For `report` it resolves the source result from results (`GET /internal/v1/results/{jobId}`) and rejects with 409 when the source is not `completed`.
+      description: Validates the spec, inserts the job (`queued`, attempt 1) and its outbox row. For `report` it resolves the source result (the `result` of the source job's `job.completed`) and rejects with 409 when the source is not `completed`.
       parameters:
         - $ref: 'common.yaml#/components/parameters/IdempotencyKey'
+        - name: X-Lean-User
+          in: header
+          required: false
+          description: User the job is submitted on behalf of (set by api-gateway; `anonymous` when absent).
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -153,6 +159,10 @@ paths:
                   type: integer
                   minimum: 0
                   description: '`x-delivery-count` of the dispatch (0 on first delivery).'
+                attempt:
+                  type: integer
+                  minimum: 1
+                  description: Attempt carried by the dispatch; a dispatch of a superseded attempt gets 409.
       responses:
         '201':
           description: Attempt granted.
@@ -194,12 +204,42 @@ paths:
           $ref: 'common.yaml#/components/responses/NotFound'
         '409':
           $ref: 'common.yaml#/components/responses/Conflict'
+  /internal/v1/algorithms:
+    post:
+      tags: [jobs]
+      operationId: uploadAlgorithm
+      summary: Store an algorithm source/package
+      description: Stores the body in `lean-algorithms` at `sha256/<hash>/<fileName>` (content addressed, idempotent) and returns the `ObjectRef` to use in an `upload` algorithm reference.
+      parameters:
+        - name: fileName
+          in: query
+          required: true
+          description: File name of the source/package (last segment of the object key).
+          schema:
+            type: string
+            pattern: '^[A-Za-z0-9._-]{1,200}$'
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '201':
+          description: Stored.
+          content:
+            application/json:
+              schema:
+                $ref: '../messages/v1/defs.schema.json#/$defs/ObjectRef'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
   /internal/v1/queues:
     get:
       tags: [ops]
       operationId: getQueueHints
       summary: Queue-depth scaling hints
-      description: Ready/unacked counts per dispatch queue and the suggested worker replicas (used by Helm/KEDA and the console).
+      description: Ready/unacked counts per dispatch queue and the suggested worker replicas (used by Helm/KEDA and the console). The same values are exported as Prometheus gauges on `GET /metrics` (`lean_queue_ready`, `lean_queue_unacked`, `lean_queue_dead`, `lean_queue_suggested_replicas`, plus `lean_jobs` and `lean_outbox_unsent`).
       responses:
         '200':
           description: Hints.
