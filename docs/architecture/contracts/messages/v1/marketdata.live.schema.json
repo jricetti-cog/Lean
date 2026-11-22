@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.lean.local/messages/v1/marketdata.live.schema.json",
+  "title": "marketdata.live (v1)",
+  "description": "A batch of live data points for one symbol, fanned out by market-data on `lean.marketdata.live` with routing key `md.<securityType>.<market>.<ticker>.v1` (lower-case), AMQP type `marketdata.v1.LiveData`, transient (ADR 0004). The envelope's `job-id`/`correlationId` is the market-data feed id (one per feed process) and `job-kind` is `marketdata`. Points are in publish order; `sequence` increases per feed and symbol so consumers can detect gaps. Published without `mandatory`: no live worker bound means the batch is dropped.",
+  "type": "object",
+  "required": ["feedId", "symbol", "sequence", "points"],
+  "additionalProperties": false,
+  "properties": {
+    "feedId": { "$ref": "defs.schema.json#/$defs/JobId", "description": "Market-data feed id (same as the envelope `job-id`)." },
+    "symbol": { "$ref": "#/$defs/LiveSymbol" },
+    "sequence": { "type": "integer", "minimum": 0 },
+    "points": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/LiveDataPoint" } }
+  },
+  "$defs": {
+    "LiveSymbol": {
+      "type": "object",
+      "required": ["securityType", "market", "ticker", "id"],
+      "additionalProperties": false,
+      "properties": {
+        "securityType": { "enum": ["Equity", "Option", "Forex", "Cfd", "Future", "FutureOption", "Crypto", "CryptoFuture", "Index", "IndexOption"] },
+        "market": { "type": "string", "minLength": 1 },
+        "ticker": { "type": "string", "minLength": 1 },
+        "id": { "type": "string", "minLength": 1, "description": "LEAN `SecurityIdentifier` string, e.g. `SPY R735QTJ8XC9X`." }
+      }
+    },
+    "LiveDataPoint": {
+      "type": "object",
+      "required": ["dataType", "time", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "dataType": { "enum": ["Tick", "TradeBar", "QuoteBar"] },
+        "tickType": { "enum": ["Trade", "Quote", "OpenInterest"] },
+        "time": { "$ref": "defs.schema.json#/$defs/Timestamp", "description": "Start of the point (UTC)." },
+        "endTime": { "$ref": "defs.schema.json#/$defs/Timestamp", "description": "End of a bar (UTC)." },
+        "value": { "type": "number" },
+        "open": { "type": "number" },
+        "high": { "type": "number" },
+        "low": { "type": "number" },
+        "close": { "type": "number" },
+        "volume": { "type": "number" },
+        "bidPrice": { "type": "number" },
+        "askPrice": { "type": "number" },
+        "bidSize": { "type": "number" },
+        "askSize": { "type": "number" }
+      }
+    }
+  }
+}

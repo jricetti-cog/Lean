@@ -39,6 +39,7 @@ const catalogue = {
   'jobs.v1.OptimizationRequested': ['optimization.requested.schema.json', /^jobs\.optimization\.v1$/],
   'jobs.v1.ReportRequested': ['report.requested.schema.json', /^jobs\.report\.v1$/],
   'jobs.v1.MarketDataFetchRequested': ['marketdata.fetch.requested.schema.json', /^marketdata\.fetch\.v1$/],
+  'marketdata.v1.LiveData': ['marketdata.live.schema.json', /^md\.[a-z0-9_-]+\.[a-z0-9_-]+\.[a-z0-9_-]+\.v1$/],
   'events.v1.JobStarted': ['job.started.schema.json', ev('status')],
   'events.v1.JobHeartbeat': ['job.heartbeat.schema.json', ev('heartbeat')],
   'events.v1.JobProgress': ['job.progress.schema.json', ev('progress')],

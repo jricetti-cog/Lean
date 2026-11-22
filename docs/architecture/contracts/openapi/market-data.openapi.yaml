@@ -27,6 +27,46 @@ tags:
   - name: ops
     description: Health.
 paths:
+  /internal/v1/data/catalog:
+    get:
+      tags: [catalog]
+      operationId: listCatalog
+      summary: List available data
+      description: Symbols with price data on `lean-data`, read from the volume layout (`<securityType>/<market>/<resolution>/...`). Filters are optional; results are ordered by securityType, market, resolution, ticker.
+      parameters:
+        - name: securityType
+          in: query
+          required: false
+          description: LEAN `SecurityType` filter.
+          schema:
+            type: string
+            enum: [Equity, Option, Forex, Cfd, Future, FutureOption, Crypto, CryptoFuture, Index, IndexOption]
+        - name: market
+          in: query
+          required: false
+          description: LEAN market filter, e.g. `usa`.
+          schema:
+            type: string
+            pattern: '^[a-z0-9]+$'
+        - name: resolution
+          in: query
+          required: false
+          description: LEAN `Resolution` filter.
+          schema:
+            type: string
+            enum: [Tick, Second, Minute, Hour, Daily]
+      responses:
+        '200':
+          description: Available data, at most 5000 entries.
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 5000
+                items:
+                  $ref: '#/components/schemas/CatalogEntry'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
   /internal/v1/data/coverage:
     get:
       tags: [catalog]
@@ -219,6 +259,31 @@ components:
       schema:
         $ref: '../messages/v1/defs.schema.json#/$defs/Date'
   schemas:
+    CatalogEntry:
+      type: object
+      required: [securityType, market, ticker, resolution, tickTypes, files]
+      properties:
+        securityType:
+          type: string
+        market:
+          type: string
+        ticker:
+          type: string
+        resolution:
+          type: string
+        tickTypes:
+          type: array
+          items:
+            type: string
+            enum: [Trade, Quote, OpenInterest]
+        files:
+          type: integer
+          minimum: 0
+          description: Zip files on the volume for this symbol and resolution.
+        start:
+          $ref: '../messages/v1/defs.schema.json#/$defs/Date'
+        end:
+          $ref: '../messages/v1/defs.schema.json#/$defs/Date'
     Coverage:
       type: object
       required: [securityType, market, ticker, resolution, ranges, missing]

@@ -83,6 +83,13 @@ namespace QuantConnect.Tests.Services.Contracts
             {
                 Assert.AreEqual(routingKey, RoutingKeys.DispatchFor(envelope.Type));
             }
+            else if (exchange == Exchanges.MarketDataLive)
+            {
+                var symbol = example.GetProperty("body").GetProperty("symbol");
+                Assert.AreEqual(MessageTypes.LiveData, envelope.Type);
+                Assert.AreEqual(routingKey, RoutingKeys.MarketData(symbol.GetProperty("securityType").GetString(),
+                    symbol.GetProperty("market").GetString(), symbol.GetProperty("ticker").GetString()));
+            }
             else
             {
                 Assert.AreEqual(Exchanges.Events, exchange);
@@ -172,6 +179,19 @@ namespace QuantConnect.Tests.Services.Contracts
                     EndDate = new DateOnly(2013, 10, 11), Paths = new() { "equity/usa/minute/spy/20131007_trade.zip" }, Downloader = "YahooDataDownloader",
                 },
             }, "marketdata");
+            yield return Case("marketdata.live.schema.json", new LiveDataBatch
+            {
+                FeedId = JobId, Sequence = 7,
+                Symbol = new LiveDataSymbol { SecurityType = ContractSecurityType.Equity, Market = "usa", Ticker = "SYNA", Id = "SYNA 2T" },
+                Points = new()
+                {
+                    new LiveDataPoint
+                    {
+                        DataType = LiveDataType.QuoteBar, TickType = ContractTickType.Quote, Time = At, EndTime = At.AddMinutes(1), Value = 10.5m,
+                        Open = 10m, High = 11m, Low = 9.5m, Close = 10.5m, Volume = 100m, BidPrice = 10.4m, AskPrice = 10.6m, BidSize = 3m, AskSize = 4m,
+                    },
+                },
+            });
             yield return Case("job.started.schema.json", new JobStarted
             {
                 JobId = JobId, Kind = JobKind.Live, Attempt = 2, ParentJobId = ChildId, StartedAt = At, WorkerId = "worker-1",
