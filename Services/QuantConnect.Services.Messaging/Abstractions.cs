@@ -58,6 +58,13 @@ public sealed record ConsumerOptions
 {
     /// <summary>Unacked deliveries per consumer (<c>basic.qos</c>). One for job dispatch queues.</summary>
     public ushort Prefetch { get; init; } = 1;
+    /// <summary>
+    /// Deliveries handled concurrently (1: one at a time). Deliveries with the same <see cref="PartitionKey"/> are still
+    /// handled one at a time in delivery order; <see cref="Prefetch"/> should exceed it.
+    /// </summary>
+    public int Partitions { get; init; } = 1;
+    /// <summary>Key of a delivery's partition (e.g. its job id); null keys share one partition.</summary>
+    public Func<MessageEnvelope, object?>? PartitionKey { get; init; }
 }
 
 /// <summary>A v1 message to publish: destination, AMQP properties and the serialized body.</summary>

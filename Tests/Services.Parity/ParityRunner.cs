@@ -16,6 +16,8 @@ public sealed record PlatformRun
     public double? WallSeconds { get; init; }
     /// <summary>Submit to terminal status as seen by the harness (includes queueing behind other cases).</summary>
     public double LatencySeconds { get; init; }
+    /// <summary>Terminal job to terminal result in the results service.</summary>
+    public double? ResultLagSeconds { get; init; }
     public IReadOnlyList<string>? PythonModules { get; init; }
 }
 
@@ -29,6 +31,7 @@ public sealed class ParityRunner
     private readonly GatewayClient _gateway;
     private readonly ConcurrentDictionary<string, TaskCompletionSource<PlatformRun>> _runs = new();
     private readonly Stopwatch _suite = new();
+    private static readonly TimeSpan ResultIndexingTimeout = TimeSpan.FromMinutes(15);
 
     public ParityRunner(GatewayClient gateway) => _gateway = gateway;
 
@@ -98,15 +101,30 @@ public sealed class ParityRunner
         var latency = submitted.Elapsed.TotalSeconds;
         var status = job["status"]!.GetValue<string>();
 
-        // The results service ingests the final packet asynchronously; wait for its statistics.
+        // The results service indexes the final result asynchronously (behind every partial packet of the job): the job
+        // can be terminal in the orchestrator before its result is. Wait until the result reports the same terminal status.
         var statistics = new Dictionary<string, string>();
-        for (var attempt = 0; attempt < 30; attempt++)
+        var indexed = Stopwatch.StartNew();
+        string? resultStatus = null;
+        while (true)
         {
             var result = await _gateway.GetResultAsync(id, ct);
-            if (result?["statistics"] is JsonObject stats && stats.Count > 0)
+            resultStatus = result?["status"]?.GetValue<string>();
+            if (resultStatus == status)
             {
-                statistics = stats.ToDictionary(p => p.Key, p => p.Value?.GetValue<string>() ?? "");
-                if (statistics.ContainsKey("OrderListHash") || status != "completed") break;
+                if (result?["statistics"] is JsonObject stats)
+                {
+                    statistics = stats.ToDictionary(p => p.Key, p => p.Value?.GetValue<string>() ?? "");
+                }
+                break;
+            }
+            if (indexed.Elapsed > ResultIndexingTimeout)
+            {
+                return new PlatformRun
+                {
+                    JobId = id, Status = "harness-timeout", PythonModules = modules, LatencySeconds = latency,
+                    Error = $"job {status} but its result still {resultStatus ?? "absent"} after {ResultIndexingTimeout}",
+                };
             }
             await Task.Delay(TimeSpan.FromSeconds(1), ct);
         }
@@ -120,6 +138,7 @@ public sealed class ParityRunner
             Statistics = statistics,
             WallSeconds = Seconds(job["startedAt"], job["finishedAt"]),
             LatencySeconds = latency,
+            ResultLagSeconds = indexed.Elapsed.TotalSeconds,
             PythonModules = modules,
         };
     }

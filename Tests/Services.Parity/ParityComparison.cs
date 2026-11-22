@@ -11,10 +11,13 @@ public static class ParityComparison
 {
     public const string OrderListHash = "OrderListHash";
 
-    /// <summary>The job status the platform reports for an engine that ends in <paramref name="status"/>.</summary>
+    /// <summary>
+    /// The job status the platform reports for an engine that ends in <paramref name="status"/>. LEAN's suite expects
+    /// <c>Running</c> when <c>Initialize</c> throws (the engine never starts the algorithm): a failed job there.
+    /// </summary>
     public static string ExpectedJobStatus(AlgorithmStatus status) => status switch
     {
-        AlgorithmStatus.RuntimeError => "failed",
+        AlgorithmStatus.RuntimeError or AlgorithmStatus.Running => "failed",
         _ => "completed",
     };
 

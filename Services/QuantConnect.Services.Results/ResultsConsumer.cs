@@ -14,7 +14,12 @@ public sealed class ResultsConsumer(IMessageConsumer consumer, ResultsIngestor i
             try
             {
                 await using var subscription = await consumer.ConsumeAsync(Queues.ResultsPackets, ingestor.HandleAsync,
-                    new ConsumerOptions { Prefetch = settings.Prefetch }, stoppingToken).ConfigureAwait(false);
+                    new ConsumerOptions
+                    {
+                        Prefetch = settings.Prefetch,
+                        Partitions = settings.Partitions,
+                        PartitionKey = envelope => envelope.Headers.JobId,
+                    }, stoppingToken).ConfigureAwait(false);
                 logger.LogInformation("Consuming {Queue}", Queues.ResultsPackets);
                 await Task.Delay(Timeout.Infinite, stoppingToken).ConfigureAwait(false);
             }

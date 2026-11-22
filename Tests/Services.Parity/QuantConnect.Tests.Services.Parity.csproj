@@ -21,6 +21,11 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <!-- Fixtures/ is its own project: the engine plugin the parity stack's workers load. -->
+    <Compile Remove="Fixtures\**" />
+    <None Remove="Fixtures\**" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\Algorithm.CSharp\QuantConnect.Algorithm.CSharp.csproj" />
   </ItemGroup>
 </Project>

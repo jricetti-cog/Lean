@@ -256,6 +256,33 @@ namespace QuantConnect.Tests.Services.EngineHandlers
         }
 
         [Test]
+        public void DisposeKeepsDrainingAnOutboxLongerThanTheShutdownTimeoutWhileItMakesProgress()
+        {
+            var bus = new DisposableBus { PublishDelay = TimeSpan.FromMilliseconds(100) };
+            EngineBus.Use(bus, new FileSystemArtifactStore(Path.Combine(_root, "minio")), ownsBus: true);
+            EngineBus.Job = Context();
+            Config.Set(BusSettings.ShutdownTimeoutSeconds, "1");
+            try
+            {
+                var handler = new BusMessagingHandler();
+                handler.SetAuthentication(new BacktestNodePacket { BacktestId = "algo" });
+                for (var i = 0; i < 25; i++)
+                {
+                    handler.Send(new DebugPacket(0, "algo", "", $"line {i}"));
+                }
+                handler.Dispose();
+            }
+            finally
+            {
+                Config.Set(BusSettings.ShutdownTimeoutSeconds, "30");
+            }
+
+            var debug = bus.Inner.Published.Where(m => m.Envelope.Type == MessageTypes.PacketPrefix + "Debug")
+                .Select(m => JsonConvert.DeserializeObject<DebugPacket>(Encoding.UTF8.GetString(m.Body.Span)).Message).ToList();
+            CollectionAssert.AreEqual(Enumerable.Range(0, 25).Select(i => $"line {i}"), debug, "every packet is published, in order");
+        }
+
+        [Test]
         public void PublishFailuresNeverReachTheEngine()
         {
             var bus = new InMemoryMessageBus { NackWhen = _ => true };
@@ -305,8 +332,17 @@ namespace QuantConnect.Tests.Services.EngineHandlers
             public InMemoryMessageBus Inner { get; } = new();
             public bool Disposed { get; private set; }
 
-            public Task PublishAsync(OutgoingMessage message, CancellationToken cancellationToken = default) =>
-                Disposed ? throw new ObjectDisposedException(nameof(DisposableBus)) : Inner.PublishAsync(message, cancellationToken);
+            public TimeSpan PublishDelay { get; init; }
+
+            public async Task PublishAsync(OutgoingMessage message, CancellationToken cancellationToken = default)
+            {
+                if (PublishDelay > TimeSpan.Zero)
+                {
+                    await Task.Delay(PublishDelay, cancellationToken);
+                }
+                if (Disposed) throw new ObjectDisposedException(nameof(DisposableBus));
+                await Inner.PublishAsync(message, cancellationToken);
+            }
 
             public Task<IAsyncDisposable> ConsumeAsync(string queue, MessageHandler handler, ConsumerOptions options = null, CancellationToken cancellationToken = default) =>
                 Inner.ConsumeAsync(queue, handler, options, cancellationToken);

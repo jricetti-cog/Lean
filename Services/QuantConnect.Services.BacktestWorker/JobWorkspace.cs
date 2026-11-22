@@ -80,7 +80,17 @@ public sealed class JobWorkspace
         return config.ToJsonString(ConfigWriteOptions);
     }
 
-    public IReadOnlyDictionary<string, JsonNode?> ConfigOverrides(WorkerOptions options, string workerId) => new Dictionary<string, JsonNode?>
+    public IReadOnlyDictionary<string, JsonNode?> ConfigOverrides(WorkerOptions options, string workerId)
+    {
+        var overrides = options.EngineConfig.ToDictionary(e => e.Key, e => (JsonNode?)JsonValue.Create(e.Value), StringComparer.Ordinal);
+        foreach (var (key, value) in BusOverrides(options, workerId))
+        {
+            overrides[key] = value;
+        }
+        return overrides;
+    }
+
+    private Dictionary<string, JsonNode?> BusOverrides(WorkerOptions options, string workerId) => new()
     {
         ["environment"] = "backtesting",
         ["job-queue-handler"] = JobQueueHandler,

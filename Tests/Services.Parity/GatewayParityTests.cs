@@ -53,6 +53,7 @@ public class GatewayParityTests
             Algorithm = parityCase.Algorithm, Language = parityCase.Language.ToString(), Result = problems.Count == 0 ? "match" : "mismatch",
             PlatformMatch = problems.Count == 0 ? "yes" : "no", OrderListHashMatch = hash switch { true => "yes", false => "no", null => null },
             PlatformSeconds = run.WallSeconds is { } s ? Math.Round(s, 2) : null, PlatformLatencySeconds = Math.Round(run.LatencySeconds, 2),
+            ResultLagSeconds = run.ResultLagSeconds is { } lag ? Math.Round(lag, 2) : null,
             JobId = run.JobId, Detail = problems.Count == 0 ? null : string.Join("; ", problems),
         });
         TestContext.Out.WriteLine($"{parityCase.Name}: job {run.JobId} {run.Status} in {run.WallSeconds:0.0} s, OrderListHash {(hash == true ? "match" : "MISMATCH")}");

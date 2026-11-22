@@ -21,6 +21,8 @@ public sealed record ParityRow
     public double? MonolithSeconds { get; set; }
     public double? PlatformSeconds { get; init; }
     public double? PlatformLatencySeconds { get; init; }
+    /// <summary>Terminal job to terminal result in the results service.</summary>
+    public double? ResultLagSeconds { get; init; }
     public Guid? JobId { get; init; }
     public string? Detail { get; init; }
 }
@@ -71,11 +73,11 @@ public static class ParityReport
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "parity.json"), JsonSerializer.Serialize(new { summary, rows }, Json) + "\n");
 
-        var csv = new StringBuilder("algorithm,language,result,monolith_match,platform_match,order_list_hash_match,monolith_seconds,platform_seconds,platform_latency_seconds,job_id,detail\n");
+        var csv = new StringBuilder("algorithm,language,result,monolith_match,platform_match,order_list_hash_match,monolith_seconds,platform_seconds,platform_latency_seconds,result_lag_seconds,job_id,detail\n");
         foreach (var r in rows)
         {
             csv.AppendLine(string.Join(",", r.Algorithm, r.Language, r.Result, r.MonolithMatch, r.PlatformMatch, r.OrderListHashMatch,
-                Fmt(r.MonolithSeconds), Fmt(r.PlatformSeconds), Fmt(r.PlatformLatencySeconds), r.JobId?.ToString("D"), Csv(r.Detail)));
+                Fmt(r.MonolithSeconds), Fmt(r.PlatformSeconds), Fmt(r.PlatformLatencySeconds), Fmt(r.ResultLagSeconds), r.JobId?.ToString("D"), Csv(r.Detail)));
         }
         File.WriteAllText(Path.Combine(folder, "parity.csv"), csv.ToString());
 

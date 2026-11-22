@@ -139,9 +139,18 @@ public sealed class RabbitMqMessageBus : IMessageBus, ITransientSubscriber, IAsy
         await channel.BasicQosAsync(0, options.Prefetch, false, cancellationToken).ConfigureAwait(false);
         var stopping = new CancellationTokenSource();
         var consumer = new AsyncEventingBasicConsumer(channel);
-        consumer.ReceivedAsync += (_, delivery) => OnReceivedAsync(channel, queue, handler, delivery, stopping.Token);
+        PartitionedDispatch? partitions = null;
+        if (options.Partitions > 1)
+        {
+            partitions = new PartitionedDispatch(this, channel, queue, handler, options, stopping.Token);
+            consumer.ReceivedAsync += (_, delivery) => partitions.EnqueueAsync(delivery);
+        }
+        else
+        {
+            consumer.ReceivedAsync += (_, delivery) => OnReceivedAsync(channel, queue, handler, delivery, stopping.Token);
+        }
         var tag = await channel.BasicConsumeAsync(queue, autoAck: false, consumer, cancellationToken).ConfigureAwait(false);
-        return new Subscription(channel, tag, stopping);
+        return new Subscription(channel, tag, stopping, partitions);
     }
 
     public async Task<IAsyncDisposable> SubscribeTransientAsync(string exchange, IReadOnlyCollection<string> bindingKeys, MessageHandler handler,
@@ -195,7 +204,8 @@ public sealed class RabbitMqMessageBus : IMessageBus, ITransientSubscriber, IAsy
         }
     }
 
-    private async Task OnReceivedAsync(IChannel channel, string queue, MessageHandler handler, BasicDeliverEventArgs delivery, CancellationToken stopping)
+    private async Task OnReceivedAsync(IChannel channel, string queue, MessageHandler handler, BasicDeliverEventArgs delivery, CancellationToken stopping,
+        SemaphoreSlim? ackLock = null)
     {
         MessageDisposition disposition;
         ReceivedMessage? message = null;
@@ -238,6 +248,22 @@ public sealed class RabbitMqMessageBus : IMessageBus, ITransientSubscriber, IAsy
             MessagingTelemetry.RecordProcessed(activity, queue, message.Envelope.Type, disposition, Stopwatch.GetElapsedTime(started));
         }
 
+        if (ackLock != null)
+        {
+            await ackLock.WaitAsync(CancellationToken.None).ConfigureAwait(false);
+        }
+        try
+        {
+            await SettleAsync(channel, delivery, disposition).ConfigureAwait(false);
+        }
+        finally
+        {
+            ackLock?.Release();
+        }
+    }
+
+    private static async Task SettleAsync(IChannel channel, BasicDeliverEventArgs delivery, MessageDisposition disposition)
+    {
         switch (disposition)
         {
             case MessageDisposition.Ack:
@@ -428,17 +454,106 @@ public sealed class RabbitMqMessageBus : IMessageBus, ITransientSubscriber, IAsy
         }
     }
 
+    /// <summary>
+    /// <see cref="ConsumerOptions.Partitions"/> &gt; 1: the consumer callback (in delivery order) only routes each delivery to the
+    /// sequential worker of its <see cref="ConsumerOptions.PartitionKey"/>, so keys are handled concurrently and each key in order.
+    /// Deliveries are acked individually as their handlers finish, one settle at a time on the shared channel.
+    /// </summary>
+    private sealed class PartitionedDispatch : IAsyncDisposable
+    {
+        private readonly RabbitMqMessageBus _bus;
+        private readonly IChannel _channel;
+        private readonly string _queue;
+        private readonly MessageHandler _handler;
+        private readonly Func<MessageEnvelope, object?>? _key;
+        private readonly CancellationToken _stopping;
+        private readonly SemaphoreSlim _ackLock = new(1, 1);
+        private readonly System.Threading.Channels.Channel<BasicDeliverEventArgs>[] _partitions;
+        private readonly Task[] _workers;
+
+        public PartitionedDispatch(RabbitMqMessageBus bus, IChannel channel, string queue, MessageHandler handler, ConsumerOptions options,
+            CancellationToken stopping)
+        {
+            _bus = bus;
+            _channel = channel;
+            _queue = queue;
+            _handler = handler;
+            _key = options.PartitionKey;
+            _stopping = stopping;
+            _partitions = Enumerable.Range(0, options.Partitions)
+                .Select(_ => System.Threading.Channels.Channel.CreateUnbounded<BasicDeliverEventArgs>(
+                    new System.Threading.Channels.UnboundedChannelOptions { SingleReader = true, SingleWriter = true }))
+                .ToArray();
+            _workers = _partitions.Select(partition => Task.Run(() => RunAsync(partition))).ToArray();
+        }
+
+        public Task EnqueueAsync(BasicDeliverEventArgs delivery)
+        {
+            // The client reuses the delivery's body buffer once the callback returns.
+            var copy = new BasicDeliverEventArgs(delivery.ConsumerTag, delivery.DeliveryTag, delivery.Redelivered, delivery.Exchange,
+                delivery.RoutingKey, delivery.BasicProperties, delivery.Body.ToArray(), delivery.CancellationToken);
+            _partitions[PartitionOf(copy)].Writer.TryWrite(copy);
+            return Task.CompletedTask;
+        }
+
+        private int PartitionOf(BasicDeliverEventArgs delivery)
+        {
+            object? key = null;
+            try
+            {
+                key = _key?.Invoke(ToEnvelope(delivery.BasicProperties));
+            }
+            catch (Exception e) when (e is FormatException or ArgumentException or NotSupportedException or System.Text.Json.JsonException)
+            {
+                // An invalid envelope is dead-lettered by its handler run; any partition will do.
+            }
+            return key == null ? 0 : (int)((uint)key.GetHashCode() % (uint)_partitions.Length);
+        }
+
+        private async Task RunAsync(System.Threading.Channels.Channel<BasicDeliverEventArgs> partition)
+        {
+            await foreach (var delivery in partition.Reader.ReadAllAsync(CancellationToken.None).ConfigureAwait(false))
+            {
+                if (_stopping.IsCancellationRequested)
+                {
+                    // Unsettled deliveries go back to the queue when the channel closes.
+                    continue;
+                }
+                try
+                {
+                    await _bus.OnReceivedAsync(_channel, _queue, _handler, delivery, _stopping, _ackLock).ConfigureAwait(false);
+                }
+                catch (Exception e)
+                {
+                    _bus._logger.LogWarning(e, "Could not settle delivery {DeliveryTag} on {Queue}; the broker redelivers it", delivery.DeliveryTag, _queue);
+                }
+            }
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            foreach (var partition in _partitions)
+            {
+                partition.Writer.TryComplete();
+            }
+            await Task.WhenAll(_workers).ConfigureAwait(false);
+            _ackLock.Dispose();
+        }
+    }
+
     private sealed class Subscription : IAsyncDisposable
     {
         private readonly IChannel _channel;
         private readonly string _tag;
         private readonly CancellationTokenSource _stopping;
+        private readonly PartitionedDispatch? _partitions;
 
-        public Subscription(IChannel channel, string tag, CancellationTokenSource stopping)
+        public Subscription(IChannel channel, string tag, CancellationTokenSource stopping, PartitionedDispatch? partitions = null)
         {
             _channel = channel;
             _tag = tag;
             _stopping = stopping;
+            _partitions = partitions;
         }
 
         public async ValueTask DisposeAsync()
@@ -448,6 +563,10 @@ public sealed class RabbitMqMessageBus : IMessageBus, ITransientSubscriber, IAsy
                 await _channel.BasicCancelAsync(_tag).ConfigureAwait(false);
             }
             _stopping.Cancel();
+            if (_partitions != null)
+            {
+                await _partitions.DisposeAsync().ConfigureAwait(false);
+            }
             if (_channel.IsOpen)
             {
                 await _channel.CloseAsync().ConfigureAwait(false);

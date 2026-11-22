@@ -17,8 +17,19 @@ not in the repo's `Data/` folder; they stay in the table as **skipped with the r
 * Python cases are uploaded as a project zip: the algorithm as `main.py` plus every `Algorithm.Python` module it
   imports (transitively), as they sit in one folder in the monolith.
 
-Each job must end in the status LEAN's suite expects (`Completed`/`Running` -> `completed`, `RuntimeError` -> `failed`
-with `runtime-error`) and every expected statistic must be equal (`-0` = `0`, as in `AlgorithmRunner.AssertAlgorithmState`).
+Each job must end in the status LEAN's suite expects (`Completed` -> `completed`; `RuntimeError` -> `failed`;
+`Running`, which the suite expects when `Initialize` throws and the algorithm never starts -> `failed`) and every expected statistic must be equal (`-0` = `0`, as in `AlgorithmRunner.AssertAlgorithmState`).
+
+## Engine configuration
+
+`Tests/AlgorithmRunner.cs` runs the suite with `TestFundamentalDataProvider` (deterministic fundamentals), so the
+parity stack's backtest workers must too. `docker-compose.parity.yml` adds it on top of `docker-compose.yml`: it mounts
+`Fixtures/` (a plugin assembly built from `Tests/Common/Data/Fundamental/TestFundamentalDataProvider.cs`) and sets
+`Worker__EngineConfig__fundamental-data-provider`. `Worker:EngineConfig` entries are added to every attempt's engine
+config, but never replace the worker's bus handlers or paths; the default stack and `Launcher/config.json` are unchanged.
+
+Definition `CustomConfigurations` are not sent: of the local set only `OptionChainConsistencyRegressionAlgorithm` has
+them (symbol limits it never reaches), and it matches without them.
 
 ## Running
 
@@ -34,6 +45,9 @@ By hand against any stack:
 
 ```bash
 dotnet build Tests/Services.Parity -c Release
+dotnet build Tests/Services.Parity/Fixtures -c Release
+docker compose -f docker-compose.yml -f Tests/Services.Parity/docker-compose.parity.yml --profile infra --profile orchestrator \
+  --profile results --profile report --profile workers --profile gateway up -d --build --wait
 PARITY_GATEWAY_URL=http://127.0.0.1:5080 PARITY_CONCURRENCY=6 \
 PARITY_MONOLITH_TRX=$PWD/Tests/bin/Release/monolith-regression.trx \
 dotnet test Tests/Services.Parity/bin/Release/net10.0/QuantConnect.Tests.Services.Parity.dll --filter TestCategory=ServicesParity

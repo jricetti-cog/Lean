@@ -455,10 +455,25 @@ public sealed class ResultsIngestor(ResultsDatabase database, IResultObjectStore
             INSERT INTO logs (job_id, attempt, sequence, type, message, stack_trace, time) VALUES (@job, @attempt, @sequence, @type, @message, @stack, @time)
             """, c => c.With("sequence", session.Context.Sequence).With("type", line.Type).With("message", line.Message)
                 .With("stack", line.StackTrace).With("time", session.Context.Time.UtcDateTime)).ConfigureAwait(false);
-        await session.Execute("""
-            DELETE FROM logs WHERE job_id = @job AND attempt = @attempt AND id <= (
-                SELECT id FROM logs WHERE job_id = @job AND attempt = @attempt ORDER BY id DESC OFFSET @cap LIMIT 1)
-            """, c => c.With("cap", settings.MaxLogsPerAttempt)).ConfigureAwait(false);
+        // The attempt's row is locked by this transaction (IngestAsync), so log_count is exact: trim the oldest lines only
+        // past the cap, through the (job_id, attempt, id) index, instead of scanning the newest cap lines on every insert.
+        long count;
+        await using (var counted = session.Connection.Command(session.Transaction,
+            "UPDATE results SET log_count = log_count + 1 WHERE job_id = @job AND attempt = @attempt RETURNING log_count")
+            .With("job", session.Context.JobId).With("attempt", session.Context.Attempt))
+        {
+            count = await counted.ExecuteScalarAsync(session.CancellationToken).ConfigureAwait(false) is long n ? n : 0;
+        }
+        if (count > settings.MaxLogsPerAttempt)
+        {
+            await session.Execute("""
+                WITH trimmed AS (
+                    DELETE FROM logs WHERE id IN (
+                        SELECT id FROM logs WHERE job_id = @job AND attempt = @attempt ORDER BY id LIMIT @excess)
+                    RETURNING 1)
+                UPDATE results SET log_count = log_count - (SELECT count(*) FROM trimmed) WHERE job_id = @job AND attempt = @attempt
+                """, c => c.With("excess", count - settings.MaxLogsPerAttempt)).ConfigureAwait(false);
+        }
     }
 
     private static Task SetStatus(Session session, JobStatus status, object error) => session.Execute("""

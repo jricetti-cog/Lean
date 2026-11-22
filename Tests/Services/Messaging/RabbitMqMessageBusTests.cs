@@ -103,6 +103,59 @@ namespace QuantConnect.Tests.Services.Messaging
         }
 
         [Test]
+        public async Task PartitionedConsumerHandlesKeysConcurrentlyAndEachKeyInOrder()
+        {
+            var jobs = Enumerable.Range(0, 4).Select(_ => Guid.NewGuid()).ToArray();
+            var published = jobs.ToDictionary(j => j, _ => new System.Collections.Generic.List<Guid>());
+            var handled = new ConcurrentDictionary<Guid, ConcurrentQueue<Guid>>();
+            var inFlight = 0;
+            var maxInFlight = 0;
+            var total = 0;
+            var done = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var options = new ConsumerOptions { Prefetch = 32, Partitions = 4, PartitionKey = e => e.Headers.JobId };
+            await using (await _bus.ConsumeAsync(Queues.Backtest, async (m, ct) =>
+            {
+                var now = Interlocked.Increment(ref inFlight);
+                InterlockedMax(ref maxInFlight, now);
+                await Task.Delay(20, ct);
+                handled.GetOrAdd(m.Envelope.Headers.JobId, _ => new ConcurrentQueue<Guid>()).Enqueue(m.Envelope.MessageId);
+                Interlocked.Decrement(ref inFlight);
+                if (Interlocked.Increment(ref total) == 40)
+                {
+                    done.TrySetResult(true);
+                }
+                return MessageDisposition.Ack;
+            }, options))
+            {
+                for (var i = 0; i < 10; i++)
+                {
+                    foreach (var job in jobs)
+                    {
+                        var message = InMemoryMessageBusTests.Dispatch(job);
+                        published[job].Add(message.Envelope.MessageId);
+                        await _bus.PublishAsync(message);
+                    }
+                }
+                await Within(done.Task);
+            }
+            foreach (var job in jobs)
+            {
+                CollectionAssert.AreEqual(published[job], handled[job].ToArray(), "one job's messages are handled in delivery order");
+            }
+            Assert.Greater(maxInFlight, 1, "different jobs are handled concurrently");
+            await Task.Delay(200);
+            Assert.AreEqual(0u, await MessageCount(Queues.Backtest), "every delivery is acked");
+        }
+
+        private static void InterlockedMax(ref int target, int value)
+        {
+            int current;
+            while ((current = Volatile.Read(ref target)) < value && Interlocked.CompareExchange(ref target, value, current) != current)
+            {
+            }
+        }
+
+        [Test]
         public async Task RetryIsRedeliveredThenDeadLetteredAtDeliveryLimit()
         {
             var deliveries = new ConcurrentQueue<(long Count, bool Redelivered)>();
