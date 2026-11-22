@@ -17,6 +17,12 @@ handlers selected by config) and asserts that it completes with its expected sta
 `PacketRef` on `lean.events`, and stores its result file in `lean-results`. `SMOKE_IMAGE` / `REGISTRY` + `TAG` pick
 the image.
 
+Job orchestrator (plan step s4.1): `docker compose --profile infra --profile orchestrator up -d --wait --build` adds
+`job-orchestrator` on 127.0.0.1:5081 (`ORCHESTRATOR_PORT`). `sh deploy/compose/verify-orchestrator.sh` plays the worker
+side over HTTP and the RabbitMQ management API: upload to MinIO, validation, idempotency, queued → dispatched → running →
+completed, cancellation, heartbeat-timeout retries up to max attempts, and queue depth. Start the stack with
+`ORCHESTRATOR_MAX_ATTEMPTS=2 ORCHESTRATOR_HEARTBEAT_TIMEOUT_SECONDS=10` (and pass the same to the script) to keep it short.
+
 | Service | What | Host port (127.0.0.1 only) | Files |
 |---|---|---|---|
 | `rabbitmq` | RabbitMQ 3.13 + management UI, v1 topology from `docs/architecture/contracts/topology/` | 5672, UI 15672 | `rabbitmq/entrypoint.sh` adds the compose user to the topology definitions |
