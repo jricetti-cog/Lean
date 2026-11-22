@@ -44,7 +44,10 @@ namespace QuantConnect.Tests.Services.LiveWorker
         {
             _runtime = new FakeRuntime();
             var options = new LiveDeploymentOptions { Mode = "docker", Network = "lean_lean", DataVolume = "lean_lean-data", ContainerPrefix = "lean-live-", MaxRestarts = 3 };
-            var env = new Dictionary<string, string> { ["RabbitMQ__Uri"] = "amqp://u:p@rabbitmq:5672/lean", ["S3__ServiceUrl"] = "http://minio:9000" };
+            var env = new Dictionary<string, string>
+            {
+                ["RabbitMQ__Uri"] = "amqp://u:p@rabbitmq:5672/lean", ["S3__ServiceUrl"] = "http://minio:9000", ["OTEL_EXPORTER_OTLP_ENDPOINT"] = "http://otel-collector:4317",
+            };
             _deployer = new LiveDeployer(new InMemoryMessageBus(), _runtime, null, options, NullLogger<LiveDeployer>.Instance, k => env.GetValueOrDefault(k));
         }
 
@@ -73,6 +76,7 @@ namespace QuantConnect.Tests.Services.LiveWorker
             var env = spec["Env"]!.AsArray().Select(e => (string)e).ToList();
             CollectionAssert.Contains(env, "RabbitMQ__Uri=amqp://u:p@rabbitmq:5672/lean");
             CollectionAssert.Contains(env, $"LiveWorker__WorkerId={name}");
+            CollectionAssert.Contains(env, "OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317");
             Assert.AreEqual(job.JobId, LiveWorker_Dispatch(env).JobId);
             Assert.AreEqual("lean_lean", (string)spec["HostConfig"]!["NetworkMode"]);
             Assert.AreEqual("lean_lean-data:/Lean/Data:ro", (string)spec["HostConfig"]!["Binds"]![0]);

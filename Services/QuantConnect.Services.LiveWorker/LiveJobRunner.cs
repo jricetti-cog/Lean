@@ -115,6 +115,7 @@ public sealed class LiveJobRunner
         var job = dispatch with { Attempt = lease.Attempt, Results = lease.Results ?? ResultsPrefix.For(dispatch.JobId, lease.Attempt) };
         var heartbeat = TimeSpan.FromSeconds(Math.Max(1, lease.HeartbeatIntervalSeconds > 0 ? Math.Min(lease.HeartbeatIntervalSeconds, _options.HeartbeatIntervalSeconds) : _options.HeartbeatIntervalSeconds));
 
+        using var activity = LiveWorkerTelemetry.StartRun(job, WorkerId, lease.LeaseEpoch);
         LiveState? restored = null;
         if (_options.RestoreState)
         {
@@ -138,7 +139,15 @@ public sealed class LiveJobRunner
         try
         {
             await _publisher.PublishAsync(Started(job, lease.LeaseEpoch, _time.GetUtcNow()), cancellationToken).ConfigureAwait(false);
-            return await SuperviseAsync(job, lease.LeaseEpoch, workspace, control, heartbeat, cancellationToken).ConfigureAwait(false);
+            var exitCode = await SuperviseAsync(job, lease.LeaseEpoch, workspace, control, heartbeat, cancellationToken).ConfigureAwait(false);
+            LiveWorkerTelemetry.EndRun(activity, exitCode);
+            return exitCode;
+        }
+        catch (Exception e)
+        {
+            activity?.AddException(e);
+            LiveWorkerTelemetry.EndRun(activity, null);
+            throw;
         }
         finally
         {

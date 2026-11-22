@@ -50,9 +50,10 @@ public sealed class LiveDeploymentOptions
     /// <summary>Orchestrator and results base URLs as seen from the container.</summary>
     public string OrchestratorUri { get; set; } = "http://job-orchestrator:8080/";
     public string ResultsUri { get; set; } = "http://results:8080/";
-    /// <summary>Comma-separated variables of this process copied into each container (broker and MinIO settings).</summary>
+    /// <summary>Comma-separated variables of this process copied into each container (broker, MinIO and OTLP export settings).</summary>
     public string ForwardEnvironment { get; set; } =
-        "RabbitMQ__Uri,S3__ServiceUrl,S3__ForcePathStyle,S3__AccessKey,S3__SecretKey,S3__AlgorithmsBucket,S3__ResultsBucket,S3__ReportsBucket,LEAN_DATA_FOLDER";
+        "RabbitMQ__Uri,S3__ServiceUrl,S3__ForcePathStyle,S3__AccessKey,S3__SecretKey,S3__AlgorithmsBucket,S3__ResultsBucket,S3__ReportsBucket,LEAN_DATA_FOLDER," +
+        "OTEL_EXPORTER_OTLP_ENDPOINT,OTEL_EXPORTER_OTLP_PROTOCOL,OTEL_METRIC_EXPORT_INTERVAL";
     /// <summary>Docker restarts a crashed live-worker this many times; it restores the portfolio from results on every start.</summary>
     public int MaxRestarts { get; set; } = 5;
 

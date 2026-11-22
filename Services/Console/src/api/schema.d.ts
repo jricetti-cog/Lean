@@ -64,6 +64,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/live/{id}/liquidate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Liquidate a running live deployment
+         * @description Forwards to job-orchestrator, which publishes `control.v1.LiquidateJob` (`job.<jobId>.liquidate.v1`) to the live-worker holding the lease; the worker hands LEAN a `LiquidateCommand` and the algorithm keeps running.
+         */
+        post: operations["liquidateLive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/live/{id}/state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Last portfolio of a live deployment
+         * @description Holdings and cash of the latest `LiveResult` (what a restarted live-worker restores), from results.
+         */
+        get: operations["getLiveState"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/live/{id}/stop": {
         parameters: {
             query?: never;
@@ -78,7 +118,7 @@ export interface paths {
         put?: never;
         /**
          * Stop a live deployment
-         * @description Same as `POST /api/v1/jobs/{id}/cancel` for a live job; the live worker stops the engine and the job turns `cancelled`.
+         * @description Same as `POST /api/v1/jobs/{id}/cancel` for a live job; the live worker stops the engine and the job turns `cancelled`. With `liquidate: true` the live-worker liquidates the portfolio, waits for the fills, then quits the algorithm.
          */
         post: operations["stopLive"];
         delete?: never;
@@ -841,6 +881,20 @@ export interface components {
             error?: components["schemas"]["ErrorInfo"] | null;
             spec?: components["schemas"]["JobRequest"];
         };
+        LiveState: {
+            jobId: components["schemas"]["Uuid"];
+            attempt: components["schemas"]["Attempt"];
+            /** @description Invested LEAN `Holding` objects, in the engine's own JSON form (as `live-holdings` expects them). */
+            holdings: {
+                [key: string]: unknown;
+            }[];
+            /** @description Cash book amounts. */
+            cash: {
+                currency: string;
+                amount: number;
+            }[];
+            updatedAt?: components["schemas"]["Timestamp"];
+        };
         /** @description LEAN statistics map (`Result.Statistics` / `RuntimeStatistics`): display name to formatted string, exactly as the engine produces them. */
         Statistics: {
             [key: string]: string;
@@ -1367,7 +1421,7 @@ export interface operations {
             503: components["responses"]["Unavailable"];
         };
     };
-    stopLive: {
+    liquidateLive: {
         parameters: {
             query?: never;
             header?: never;
@@ -1378,6 +1432,67 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Liquidation sent to the worker. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    getLiveState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Job id (UUID, owned by job-orchestrator). */
+                id: components["parameters"]["JobIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Latest live portfolio. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiveState"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    stopLive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Job id (UUID, owned by job-orchestrator). */
+                id: components["parameters"]["JobIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    reason?: string;
+                    /** @description Liquidate all holdings before stopping. */
+                    liquidate?: boolean;
+                };
+            };
+        };
         responses: {
             /** @description Stop accepted. */
             202: {

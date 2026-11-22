@@ -100,6 +100,7 @@ public sealed class LiveWorkspace
             ["bus-work-folder"] = AlgorithmPath,
             ["bus-builtin-algorithm-location"] = options.BuiltinAlgorithmLocation,
             ["bus-lease-epoch"] = leaseEpoch.ToString(),
+            ["bus-traceparent"] = System.Diagnostics.Activity.Current?.Id ?? "",
             ["live-holdings"] = HoldingsConfig(restored),
             ["live-cash-balance"] = CashConfig(restored),
         };
