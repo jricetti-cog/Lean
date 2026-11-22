@@ -39,6 +39,9 @@ def sh(cmd, **kw):
 
 
 def setup():
+    for project, target in [("EngineHost", "engine"), ("MarketData", "market-data")]:
+        sh(["dotnet", "publish", os.path.join(HERE, project), "-c", "Release", "-o", os.path.join(OUT, target)],
+           stdout=subprocess.DEVNULL)
     ctx = os.path.join(OUT, "image-context")
     shutil.rmtree(ctx, ignore_errors=True)
     shutil.copytree(os.path.join(REPO, "Launcher/bin/Release"), os.path.join(ctx, "Launcher/bin/Release"))
