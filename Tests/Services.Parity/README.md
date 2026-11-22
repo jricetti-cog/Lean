@@ -4,6 +4,44 @@ Runs LEAN's backtest regression suite through the **gateway of a running stack**
 algorithm's own `ExpectedStatistics` (including `OrderListHash`), the same source of truth as
 `Tests/RegressionTests.cs`. A mismatch is a platform bug: fix the services, never the expectation.
 
+## Monolith versus platform
+
+The same regression definition runs both ways; only the path to its statistics differs.
+
+```mermaid
+flowchart LR
+  subgraph OLD["Monolith: LEAN's regression suite (one process)"]
+    direction TB
+    RT["Tests/RegressionTests.cs<br/>AlgorithmStatisticsRegression"] --> AR["AlgorithmRunner<br/>(TestFundamentalDataProvider)"]
+    AR --> EN1["LEAN Engine in-process<br/>default Launcher/config.json handlers"]
+    D1[("Data/ folder")] --> EN1
+    EN1 --> RH1["BacktestingResultHandler<br/>statistics + OrderListHash in memory"]
+    RH1 --> CMP1{{"== ExpectedStatistics"}}
+  end
+
+  subgraph NEW["Platform: Docker Compose services"]
+    direction TB
+    H["Tests/Services.Parity<br/>(this harness)"] -->|"POST /api/v1/backtests<br/>built-in C# ref or Python zip"| GW["api-gateway :5080"]
+    GW --> MD["market-data<br/>(coverage)"]
+    GW --> OR["job-orchestrator"]
+    OR --> PG[("PostgreSQL<br/>jobs, outbox, results")]
+    OR -->|"lean.jobs / jobs.backtest"| MQ[["RabbitMQ"]]
+    MQ --> BW["backtest-worker x N"]
+    BW -->|"spawns per attempt"| L["Launcher child<br/>bus job-queue + messaging handlers"]
+    LD[("lean-data volume<br/>read-only Data/")] --> L
+    L -->|"lean.events result / order / log packets"| MQ
+    MQ --> RS["results service"]
+    RS --> PG
+    BW -->|"result folder"| S3[("MinIO<br/>lean-results/job/attempt")]
+    H -->|"GET /api/v1/jobs/{id}/result"| GW
+    GW --> RS
+    H --> CMP2{{"== ExpectedStatistics<br/>+ OrderListHash"}}
+  end
+
+  DEF["IRegressionAlgorithmDefinition<br/>ExpectedStatistics"] -.-> CMP1
+  DEF -.-> CMP2
+```
+
 ## The set
 
 `ParityCatalog` discovers cases exactly like `RegressionTests.GetRegressionTestParameters`: every non-abstract
