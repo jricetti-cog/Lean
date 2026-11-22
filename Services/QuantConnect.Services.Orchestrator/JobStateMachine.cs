@@ -81,6 +81,7 @@ public static class JobStateMachine
             if (spec.StartDate != null && spec.EndDate != null && spec.StartDate > spec.EndDate) Add(field + ".endDate", "must not be before startDate");
             if (spec.Cash is <= 0) Add(field + ".cash", "must be positive");
             if (spec.MaxRuntimeSeconds is <= 0) Add(field + ".maxRuntimeSeconds", "must be positive");
+            if (spec.MaxRamMb is < 256 or > 65536) Add(field + ".maxRamMb", "must be between 256 and 65536");
         }
         void CheckAlgorithm(AlgorithmRef? algorithm, string field)
         {

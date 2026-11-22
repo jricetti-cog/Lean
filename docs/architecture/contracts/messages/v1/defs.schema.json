@@ -199,6 +199,12 @@
           "maximum": 21600,
           "default": 3600,
           "description": "Deadline enforced by job-orchestrator through heartbeats; capped at 6 h so it stays below the broker consumer_timeout (7 h)."
+        },
+        "maxRamMb": {
+          "type": "integer",
+          "minimum": 256,
+          "maximum": 65536,
+          "description": "Engine RAM limit in MB (LEAN isolator RamAllocation). backtest-worker applies its Worker:DefaultRamMb when absent and kills the child engine when its RSS exceeds the limit plus Worker:MemoryHeadroomMb."
         }
       }
     },
