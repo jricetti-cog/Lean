@@ -353,6 +353,39 @@ services:
       test: ["CMD", "lean-healthcheck", "8080", "/readyz"]
     networks: [lean]
 
+  # Optimizer (plan step s4.6): consumes jobs.optimization, runs LEAN's optimization strategies (grid, Euler search) and
+  # submits every parameter set as a child backtest through job-orchestrator, so the backtest-worker pool runs them (scale
+  # the workers, not the optimizer, to speed optimizations up). Folds child job.completed from optimizer.children and
+  # publishes job.progress / the terminal event; serves /internal/v1/optimizations (the gateway's `optimizer` upstream).
+  # One replica: the children's events reach the replica that runs their optimization only while there is one consumer.
+  #   docker compose --profile infra --profile orchestrator --profile workers --profile optimizer up -d --wait --scale backtest-worker=3
+  optimizer:
+    image: ${LEAN_IMAGE_REGISTRY:-lean}/optimizer:${LEAN_IMAGE_TAG:-dev}
+    build:
+      context: .
+      dockerfile: Services/Dockerfile
+      target: optimizer
+    profiles: [optimizer]
+    restart: unless-stopped
+    stop_grace_period: 30s
+    environment:
+      <<: *lean-service-env
+      Optimizer__OrchestratorUri: http://job-orchestrator:8080/
+      Optimizer__MaxConcurrentBacktests: ${OPTIMIZER_MAX_CONCURRENT_BACKTESTS:-16}
+      Optimizer__MaxConcurrentOptimizations: ${OPTIMIZER_MAX_CONCURRENT_OPTIMIZATIONS:-2}
+      Optimizer__HeartbeatIntervalSeconds: ${OPTIMIZER_HEARTBEAT_SECONDS:-30}
+    ports:
+      - 127.0.0.1:${OPTIMIZER_PORT:-5085}:8080
+    depends_on:
+      infra-ready:
+        condition: service_healthy
+      job-orchestrator:
+        condition: service_started
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "lean-healthcheck", "8080", "/readyz"]
+    networks: [lean]
+
   # Public API gateway (plan step s4.5): the only public entry point. API keys from GATEWAY_API_KEY (JWT bearer
   # validation turns on with GATEWAY_JWT_AUTHORITY or GATEWAY_JWT_SIGNING_KEY), per-key rate limiting, YARP proxy
   # to the internal services; an upstream that is not running answers 503 problem+json.
