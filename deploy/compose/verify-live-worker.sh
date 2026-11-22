@@ -46,6 +46,7 @@ echo "   job $id"
 container="${PREFIX}${id}"
 until_true "container $container running" container_running
 docker ps --filter "name=$container" --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Labels}}'
+docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' "$container" | grep -E '^(OTEL_EXPORTER_OTLP_ENDPOINT|LiveWorker__(WorkerId|OrchestratorUri|ResultsUri))=' | sed 's/^/   env /'
 pass "orchestrator started $container ($(docker inspect -f '{{.Config.Image}}, restart {{.HostConfig.RestartPolicy.Name}}:{{.HostConfig.RestartPolicy.MaximumRetryCount}}, network {{.HostConfig.NetworkMode}}' "$container"))"
 until_true "job running" sh -c "curl -fsS $ORCH/jobs/$id | jq -e '.status == \"running\"'"
 job | jq -c '{status, kind, attempt, leaseEpoch, workerId, lastHeartbeatAt}'
