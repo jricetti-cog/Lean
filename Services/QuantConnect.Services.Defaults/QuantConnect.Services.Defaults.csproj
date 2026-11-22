@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>QuantConnect.Services.Defaults</AssemblyName>
+    <RootNamespace>QuantConnect.Services.Defaults</RootNamespace>
+    <Description>QuantConnect LEAN services: AddLeanServiceDefaults() shared by every service host</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.12.0" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.12.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.12.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.12.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.12.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Configuration\QuantConnect.Configuration.csproj" />
+    <ProjectReference Include="..\QuantConnect.Services.Contracts\QuantConnect.Services.Contracts.csproj" />
+  </ItemGroup>
+</Project>

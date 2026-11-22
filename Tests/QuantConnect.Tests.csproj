@@ -48,6 +48,9 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="protobuf-net" Version="3.1.33" />
+    <PackageReference Include="JsonSchema.Net" Version="7.3.4" />
+    <PackageReference Include="OpenTelemetry.Exporter.InMemory" Version="1.12.0" />
+    <PackageReference Include="YamlDotNet" Version="16.3.0" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="NUnit.Framework.Legacy.ClassicAssert" Alias="Assert" />
@@ -58,6 +61,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\Common\Properties\SharedAssemblyInfo.cs" Link="Properties\SharedAssemblyInfo.cs" />
+    <None Include="..\docs\architecture\contracts\messages\**\*.json" LinkBase="Services\contracts\messages">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\docs\architecture\contracts\openapi\*.yaml" LinkBase="Services\contracts\openapi">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <Content Include="Research\RegressionScripts\Test_QuantBookIndicator.py">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -415,6 +424,9 @@
     <ProjectReference Include="..\Api\QuantConnect.Api.csproj" />
     <ProjectReference Include="..\Brokerages\QuantConnect.Brokerages.csproj" />
     <ProjectReference Include="..\Common\QuantConnect.csproj" />
+    <ProjectReference Include="..\Services\QuantConnect.Services.Contracts\QuantConnect.Services.Contracts.csproj" />
+    <ProjectReference Include="..\Services\QuantConnect.Services.Defaults\QuantConnect.Services.Defaults.csproj" />
+    <ProjectReference Include="..\Services\QuantConnect.Services.Messaging\QuantConnect.Services.Messaging.csproj" />
     <ProjectReference Include="..\Compression\QuantConnect.Compression.csproj" />
     <ProjectReference Include="..\Configuration\QuantConnect.Configuration.csproj" />
     <ProjectReference Include="..\DownloaderDataProvider\QuantConnect.DownloaderDataProvider.Launcher.csproj" />
