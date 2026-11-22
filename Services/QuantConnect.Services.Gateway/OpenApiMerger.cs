@@ -5,8 +5,9 @@ using Microsoft.OpenApi;
 namespace QuantConnect.Services.Gateway;
 
 /// <summary>
-/// Builds <c>/openapi</c>: the gateway's own operations plus each proxied service's live OpenAPI document with its
-/// <c>/internal/v1</c> paths rewritten to the public routes (only the proxied methods). Unreachable services are
+/// Builds <c>/openapi</c>: the gateway's own operations plus each proxied service's OpenAPI document (its live
+/// <c>/openapi/v1.json</c>, else its contract under <c>docs/architecture/contracts/openapi/</c>) with the
+/// <c>/internal/v1</c> paths rewritten to the public routes (only the proxied methods). The source of each service is
 /// listed under <c>x-lean-upstreams</c> and the document is cached briefly.
 /// </summary>
 public sealed class OpenApiMerger
@@ -65,20 +66,29 @@ public sealed class OpenApiMerger
         merged["security"] = new JsonArray(new JsonObject { ["bearer"] = new JsonArray() }, new JsonObject { ["apiKey"] = new JsonArray() });
 
         var upstreams = new JsonObject();
+        var usedContracts = false;
         foreach (var cluster in GatewayProxy.Routes.Select(r => r.Cluster).Distinct())
         {
             JsonObject document;
+            string source;
             try
             {
                 using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
                 timeout.CancelAfter(TimeSpan.FromSeconds(3));
                 var text = await _clients.CreateClient(cluster).GetStringAsync("openapi/v1.json", timeout.Token);
                 document = JsonNode.Parse(text)!.AsObject();
+                source = "live document";
             }
             catch (Exception e) when (e is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
             {
-                upstreams[cluster] = $"unavailable: {e.Message}";
-                continue;
+                if (ContractDocuments.For(cluster) is not { } contract)
+                {
+                    upstreams[cluster] = $"unavailable: {e.Message}";
+                    continue;
+                }
+                document = contract;
+                source = $"contract {ContractDocuments.ClusterContracts[cluster]} (live document unavailable: {e.Message})";
+                usedContracts = true;
             }
             var count = 0;
             foreach (var (internalPath, item) in document["paths"] as JsonObject ?? new JsonObject())
@@ -103,7 +113,18 @@ public sealed class OpenApiMerger
             {
                 if (!schemas.ContainsKey(name)) schemas[name] = schema!.DeepClone();
             }
-            upstreams[cluster] = $"merged {count} operations";
+            upstreams[cluster] = $"merged {count} operations from the {source}";
+        }
+        if (usedContracts)
+        {
+            foreach (var (kind, entries) in ContractDocuments.Components)
+            {
+                if (components[kind] is not JsonObject target) components[kind] = target = new JsonObject();
+                foreach (var (name, value) in entries!.AsObject())
+                {
+                    if (!target.ContainsKey(name)) target[name] = value?.DeepClone();
+                }
+            }
         }
         merged["x-lean-upstreams"] = upstreams;
         return merged;

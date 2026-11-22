@@ -380,8 +380,18 @@ namespace QuantConnect.Tests.Services.Gateway
             Assert.IsFalse(paths.Any(p => p.Key.StartsWith("/internal/")));
             Assert.IsTrue(document["components"]!["schemas"]!.AsObject().ContainsKey("ResultSummary"));
             Assert.IsNotNull(document["components"]!["securitySchemes"]!["bearer"]);
-            StringAssert.StartsWith("unavailable", (string)document["x-lean-upstreams"]!["report"]);
-            StringAssert.StartsWith("merged", (string)document["x-lean-upstreams"]!["results"]);
+            StringAssert.Contains("from the contract report.openapi.yaml", (string)document["x-lean-upstreams"]!["report"]);
+            StringAssert.Contains("from the live document", (string)document["x-lean-upstreams"]!["results"]);
+            Assert.IsNotNull(paths["/api/v1/reports/{id}"]?["get"], "report operations come from its contract while it is down");
+            Assert.IsNotNull(paths["/api/v1/optimizations/{id}"]?["get"], "optimizer operations come from its contract");
+            var json = document.ToJsonString();
+            foreach (System.Text.RegularExpressions.Match reference in System.Text.RegularExpressions.Regex.Matches(json, "\"\\$ref\":\"([^\"]+)\""))
+            {
+                var target = reference.Groups[1].Value;
+                StringAssert.StartsWith("#/components/", target);
+                var parts = target[2..].Split('/');
+                Assert.IsNotNull(document[parts[0]]?[parts[1]]?[parts[2]], $"unresolved {target}");
+            }
         }
 
         [TestCase("/internal/v1/data/history", "market-data", "/api/v1/data/history")]

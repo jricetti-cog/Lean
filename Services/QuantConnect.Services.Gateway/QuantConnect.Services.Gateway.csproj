@@ -12,7 +12,12 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1" />
     <PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
+    <PackageReference Include="YamlDotNet" Version="16.3.0" />
     <ProjectReference Include="..\QuantConnect.Services.Contracts\QuantConnect.Services.Contracts.csproj" />
     <ProjectReference Include="..\QuantConnect.Services.Defaults\QuantConnect.Services.Defaults.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\docs\architecture\contracts\openapi\*.yaml" LogicalName="contracts/openapi/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\..\docs\architecture\contracts\messages\v1\*.schema.json" LogicalName="contracts/messages/%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>
