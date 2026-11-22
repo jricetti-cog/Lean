@@ -353,6 +353,40 @@ services:
       test: ["CMD", "lean-healthcheck", "8080", "/readyz"]
     networks: [lean]
 
+  # Public API gateway (plan step s4.5): the only public entry point. API keys from GATEWAY_API_KEY (JWT bearer
+  # validation turns on with GATEWAY_JWT_AUTHORITY or GATEWAY_JWT_SIGNING_KEY), per-key rate limiting, YARP proxy
+  # to the internal services; an upstream that is not running answers 503 problem+json.
+  api-gateway:
+    image: ${LEAN_IMAGE_REGISTRY:-lean}/api-gateway:${LEAN_IMAGE_TAG:-dev}
+    build:
+      context: .
+      dockerfile: Services/Dockerfile
+      target: api-gateway
+    profiles: [gateway]
+    restart: unless-stopped
+    environment:
+      <<: *lean-service-env
+      Gateway__Upstreams__Orchestrator: http://job-orchestrator:8080
+      Gateway__Upstreams__Results: http://results:8080
+      Gateway__Upstreams__MarketData: http://market-data:8080
+      Gateway__Upstreams__Report: http://report:8080
+      Gateway__Upstreams__Optimizer: http://optimizer:8080
+      Gateway__ApiKeys__0__Key: ${GATEWAY_API_KEY:-lean-dev-api-key}
+      Gateway__ApiKeys__0__User: ${GATEWAY_API_KEY_USER:-dev}
+      Gateway__ApiKeys__0__Admin: "true"
+      Gateway__Jwt__Authority: ${GATEWAY_JWT_AUTHORITY:-}
+      Gateway__Jwt__Audience: ${GATEWAY_JWT_AUDIENCE:-}
+      Gateway__Jwt__SigningKey: ${GATEWAY_JWT_SIGNING_KEY:-}
+      Gateway__RateLimit__PermitLimit: ${GATEWAY_RATE_LIMIT:-120}
+      Gateway__RateLimit__WindowSeconds: ${GATEWAY_RATE_WINDOW_SECONDS:-60}
+      Gateway__PublicS3Url: http://127.0.0.1:${MINIO_API_PORT:-9000}
+    ports:
+      - 127.0.0.1:${GATEWAY_PORT:-5080}:8080
+    depends_on:
+      infra-ready:
+        condition: service_healthy
+    networks: [lean]
+
 volumes:
   rabbitmq-data:
   postgres-data:
