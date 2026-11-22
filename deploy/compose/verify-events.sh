@@ -104,6 +104,22 @@ curl -sS -N --max-time 20 "$UI/api/v1/jobs/$JOB/events" > "$OUT/sse.done.txt"
 pass "a completed job's stream is its snapshot only"
 echo "JOB=$JOB"
 
+# Cancelling a running backtest (POST /api/v1/jobs/{id}/cancel) ends its stream with the terminal job.cancelled.
+ui POST /api/v1/backtests -H 'content-type: application/json' --data "{\"name\":\"cancelled stream\",\"algorithm\":$algorithm,\"fetchMissingData\":false,\"maxRuntimeSeconds\":$TIMEOUT}" | grep -q "^20[12]$" \
+  || fail "submit: $(cat "$OUT/body")"
+CANCEL_JOB=$(js "d['id']")
+curl -sS -N --max-time "$TIMEOUT" "$UI/api/v1/jobs/$CANCEL_JOB/events" > "$OUT/cancel.txt" &
+stream=$!
+deadline=$(( $(date +%s) + TIMEOUT ))
+until grep -q '^event: progress' "$OUT/cancel.txt"; do
+  [ "$(date +%s)" -lt "$deadline" ] || fail "cancel job never progressed"; sleep 2
+done
+ui POST "/api/v1/jobs/$CANCEL_JOB/cancel" | grep -q "^20[02]$" || fail "cancel: $(cat "$OUT/body")"
+wait "$stream" || fail "cancelled job's stream did not end"
+last=$(grep '^data: ' "$OUT/cancel.txt" | tail -1 | python3 -c "import json,sys; e=json.loads(sys.stdin.read()[6:]); print(e['event'], e['type'])")
+[ "$last" = "status events.v1.JobCancelled" ] || fail "cancelled stream ended with: $last"
+pass "cancelled backtest $CANCEL_JOB: stream ended by the gateway with status events.v1.JobCancelled"
+
 [ "${LIVE:-1}" = 1 ] || exit 0
 spec='{"name":"live-events","algorithm":{"source":"builtin","typeName":"LiveWorkerDemoAlgorithm"},"brokerage":"PaperBrokerage","dataQueueHandlers":["bus"]}'
 ui POST /api/v1/live -H 'content-type: application/json' --data "$spec" | grep -q "^20[12]$" || fail "live deploy: $(cat "$OUT/body")"

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router';
 import { api, ok, TERMINAL } from '../api/client';
-import { useJobEvents, usePolling } from '../components/hooks';
+import { useFinalRefresh, useJobEvents, usePolling } from '../components/hooks';
 import { ChartPanel, fetchOrders, LogsPanel, OrdersTable, pollWhile, StreamBadge } from '../components/ResultPanels';
 import { Card, ErrorBox, StatGrid } from '../components/ui';
 import { positionsFromOrders } from '../lean';
@@ -15,8 +15,9 @@ export default function LiveDetail() {
   const streaming = events.state === 'live';
   const job = usePolling(async () => ok(await api.GET('/api/v1/jobs/{id}', { params: { path: { id } } })), [id, streaming], 3000, (j) => (!j || !TERMINAL.has(j.status)) && !streaming);
   useEffect(() => setLive(!job.data || !TERMINAL.has(job.data.status)), [job.data]);
-  const result = usePolling(() => fetchResult(id), [id, streaming], 5000, () => pollWhile(live, events));
-  const orders = usePolling(() => fetchOrders(id), [id, streaming], 5000, () => pollWhile(live, events));
+  const final = useFinalRefresh(job.data?.status, !!job.data && TERMINAL.has(job.data.status));
+  const result = usePolling(() => fetchResult(id), [id, streaming, final], 5000, () => pollWhile(live, events));
+  const orders = usePolling(() => fetchOrders(id), [id, streaming, final], 5000, () => pollWhile(live, events));
   useLiveUpdates(events, job, result, orders);
   const positions = useMemo(() => positionsFromOrders(orders.data ?? []), [orders.data]);
   const [error, setError] = useState<Error>();
@@ -51,6 +52,11 @@ export default function LiveDetail() {
       <StreamBadge events={events} />
       <ErrorBox error={job.error} />
       <ErrorBox error={error} />
+      {(job.data.status === 'queued' || job.data.status === 'dispatched') && !result.data && (
+        <p className="muted pending" data-testid="pending">
+          {job.data.status === 'queued' ? 'Queued — waiting for a worker.' : 'Starting on a worker…'} Results appear here as soon as the job runs.
+        </p>
+      )}
       {spec && (
         <p className="muted small">
           Brokerage {spec.brokerage}
@@ -94,9 +100,9 @@ export default function LiveDetail() {
           <p className="muted small">Net of filled orders from /api/v1/jobs/{'{id}'}/orders.</p>
         </Card>
       </div>
-      <ChartPanel id={id} chart="Strategy Equity" title="Equity" live={live} events={events} />
+      <ChartPanel id={id} chart="Strategy Equity" title="Equity" live={live} events={events} refresh={final} />
       <OrdersTable orders={orders.data} error={orders.error} />
-      <LogsPanel id={id} live={live} events={events} />
+      <LogsPanel id={id} live={live} events={events} refresh={final} />
     </div>
   );
 }

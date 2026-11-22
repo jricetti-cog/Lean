@@ -146,6 +146,26 @@ namespace QuantConnect.Tests.Services.Gateway
             await _source.WaitDisposedAsync();
         }
 
+        [TestCase(MessageTypes.JobCancelled, "cancelled")]
+        [TestCase(MessageTypes.JobFailed, "failed")]
+        public async Task CancelledOrFailedStatusEndsTheStream(string type, string status)
+        {
+            using var response = await Open($"/api/v1/jobs/{RunningJob}/events", AliceKey);
+            var reader = new SseReader(await response.Content.ReadAsStreamAsync());
+            await _source.WaitSubscribedAsync();
+            await _source.PublishAsync(MessageTypes.JobProgress, "progress", null, "{\"progress\":0.5}");
+            await _source.PublishAsync(type, "status", null, $"{{\"status\":\"{status}\"}}");
+            await _source.PublishAsync(MessageTypes.JobProgress, "progress", null, "{\"progress\":0.6}");
+
+            var frames = await reader.ReadToEndAsync();
+            Assert.AreEqual("snapshot", frames[0].Event);
+            Assert.AreEqual(type, frames[^1].Data.GetProperty("type").GetString(), "the stream ends with the terminal status");
+            Assert.AreEqual(1, frames.Count(f => f.Event == "status"));
+            Assert.IsFalse(frames.Any(f => f.Event == "progress" && f.Data.GetProperty("body").GetProperty("progress").GetDouble() > 0.5),
+                "nothing published after the terminal status is relayed, even when latest-wins moved it into the same batch");
+            await _source.WaitDisposedAsync();
+        }
+
         [Test]
         public async Task EventsFilterSelectsTheRelayedEvents()
         {

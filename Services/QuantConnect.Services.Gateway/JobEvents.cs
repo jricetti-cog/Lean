@@ -307,7 +307,8 @@ public static class JobEventsEndpoint
                     foreach (var frame in frames)
                     {
                         await WriteAsync(writer, frame, cancellation);
-                        terminal |= TerminalTypes.Contains(frame.Type);
+                        // A latest-wins frame published after the terminal status may sit behind it in the batch.
+                        if (terminal = TerminalTypes.Contains(frame.Type)) break;
                     }
                     await writer.FlushAsync(cancellation);
                     if (terminal) break;

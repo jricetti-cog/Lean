@@ -45,6 +45,23 @@ export function usePolling<T>(load: () => Promise<T>, deps: unknown[], intervalM
   return { ...state, reload, mutate };
 }
 
+/**
+ * Ticks when a job seen active reaches a terminal status, and twice more shortly after: the results service
+ * may store the final packet after the terminal event, so the final statistics, charts and orders are refetched.
+ */
+export function useFinalRefresh(status?: string, terminal?: boolean): number {
+  const [tick, setTick] = useState(0);
+  const active = useRef(false);
+  useEffect(() => {
+    if (status && !terminal) active.current = true;
+    if (!terminal || !active.current) return;
+    setTick((t) => t + 1);
+    const timers = [2000, 6000].map((ms) => setTimeout(() => setTick((t) => t + 1), ms));
+    return () => timers.forEach(clearTimeout);
+  }, [status, terminal]);
+  return tick;
+}
+
 /** Subscribes to a job's live events while `enabled`; `state` is 'live' only while frames can arrive. */
 export function useJobEvents(id: string, enabled: boolean): JobEvents {
   const [stream, setStream] = useState<JobEventStream>();

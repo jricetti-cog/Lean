@@ -7,10 +7,13 @@ import { TimeChart } from './TimeChart';
 
 export async function fetchOrders(id: string): Promise<OrderRow[]> {
   const items = await allPages<LeanObject>(async (cursor) =>
-    ok(await api.GET('/api/v1/jobs/{id}/orders', { params: { path: { id }, query: { cursor, limit: 500 } } })),
+    pending(await api.GET('/api/v1/jobs/{id}/orders', { params: { path: { id }, query: { cursor, limit: 500 } } })),
   );
   return items.map(orderRow);
 }
+
+/** A job without results yet (queued, or its first packet not stored) has no pages rather than an error. */
+const pending = <T,>(r: { data?: { items?: T[]; next?: string | null }; error?: unknown; response: Response }) => (r.response.status === 404 ? {} : ok(r));
 
 async function fetchChart(id: string, chart: string) {
   const r = await api.GET('/api/v1/jobs/{id}/charts/{chart}', { params: { path: { id, chart } } });
@@ -20,9 +23,9 @@ async function fetchChart(id: string, chart: string) {
 /** Polls only while the event stream is not delivering (initial load, reconnects, gateway without a bus). */
 export const pollWhile = (live: boolean, events?: JobEvents) => live && events?.state !== 'live';
 
-export function ChartPanel({ id, chart, title, negative, live, events }: { id: string; chart: string; title: string; negative?: boolean; live: boolean; events?: JobEvents }) {
+export function ChartPanel({ id, chart, title, negative, live, events, refresh }: { id: string; chart: string; title: string; negative?: boolean; live: boolean; events?: JobEvents; refresh?: number }) {
   const streaming = events?.state === 'live';
-  const data = usePolling(() => fetchChart(id, chart), [id, chart, streaming], 5000, () => pollWhile(live, events));
+  const data = usePolling(() => fetchChart(id, chart), [id, chart, streaming, refresh], 5000, () => pollWhile(live, events));
   // Partial result packets carry only the new points: append them, or reload when the gateway dropped some
   // (`dropped`, latest-wins backpressure) or the packet went by reference.
   useJobEvent(events, ['result', 'status'], (e) => {
@@ -101,11 +104,11 @@ export function OrdersTable({ orders, error }: { orders?: OrderRow[]; error?: Er
   );
 }
 
-export function LogsPanel({ id, live, events }: { id: string; live: boolean; events?: JobEvents }) {
+export function LogsPanel({ id, live, events, refresh }: { id: string; live: boolean; events?: JobEvents; refresh?: number }) {
   const streaming = events?.state === 'live';
   const logs = usePolling(
-    async () => allPages<LogLine>(async (cursor) => ok(await api.GET('/api/v1/jobs/{id}/logs', { params: { path: { id }, query: { cursor, limit: 1000 } } }))),
-    [id, streaming],
+    async () => allPages<LogLine>(async (cursor) => pending(await api.GET('/api/v1/jobs/{id}/logs', { params: { path: { id }, query: { cursor, limit: 1000 } } }))),
+    [id, streaming, refresh],
     5000,
     () => pollWhile(live, events),
   );

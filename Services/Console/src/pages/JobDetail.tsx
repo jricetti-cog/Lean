@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { api, ok, reportDownloadUrl, resultDownloadUrl, TERMINAL, type Job, type ResultSummary } from '../api/client';
-import { useJobEvent, useJobEvents, usePolling, type JobEvents, type Loadable } from '../components/hooks';
+import { useFinalRefresh, useJobEvent, useJobEvents, usePolling, type JobEvents, type Loadable } from '../components/hooks';
 import { packetSummary, type OrderRow } from '../lean';
 import { ChartPanel, fetchOrders, LogsPanel, OrdersTable, pollWhile, StreamBadge } from '../components/ResultPanels';
 import { Card, duration, ErrorBox, fmtTime, KeyValues, Progress, StatGrid, StatusBadge } from '../components/ui';
@@ -135,8 +135,9 @@ export default function JobDetail() {
   const streaming = events.state === 'live';
   const job = usePolling(async () => ok(await api.GET('/api/v1/jobs/{id}', { params: { path: { id } } })), [id, streaming], 2000, (j) => (!j || !TERMINAL.has(j.status)) && !streaming);
   useEffect(() => setLive(!job.data || !TERMINAL.has(job.data.status)), [job.data]);
-  const result = usePolling(() => fetchResult(id), [id, streaming], 3000, () => pollWhile(live, events));
-  const orders = usePolling(() => fetchOrders(id), [id, streaming], 5000, () => pollWhile(live, events));
+  const final = useFinalRefresh(job.data?.status, !!job.data && TERMINAL.has(job.data.status));
+  const result = usePolling(() => fetchResult(id), [id, streaming, final], 3000, () => pollWhile(live, events));
+  const orders = usePolling(() => fetchOrders(id), [id, streaming, final], 5000, () => pollWhile(live, events));
   useLiveUpdates(events, job, result, orders);
 
   // Keep the last job on screen while the gateway is unreachable; the stream and polling recover it.
@@ -168,6 +169,11 @@ export default function JobDetail() {
       />
       <StreamBadge events={events} />
       <ErrorBox error={job.error} />
+      {(j.status === 'queued' || j.status === 'dispatched') && !result.data && (
+        <p className="muted pending" data-testid="pending">
+          {j.status === 'queued' ? 'Queued — waiting for a worker.' : 'Starting on a worker…'} Results appear here as soon as the job runs.
+        </p>
+      )}
       {!TERMINAL.has(j.status) && <Progress value={result.data?.progress ?? j.progress} />}
       {j.spec?.backtest?.parameters && Object.keys(j.spec.backtest.parameters).length > 0 && (
         <p>
@@ -182,10 +188,10 @@ export default function JobDetail() {
           <StatGrid stats={runtime} />
         </Card>
       </div>
-      <ChartPanel id={id} chart="Strategy Equity" title="Equity" live={live} events={events} />
-      <ChartPanel id={id} chart="Drawdown" title="Drawdown" negative live={live} events={events} />
+      <ChartPanel id={id} chart="Strategy Equity" title="Equity" live={live} events={events} refresh={final} />
+      <ChartPanel id={id} chart="Drawdown" title="Drawdown" negative live={live} events={events} refresh={final} />
       <OrdersTable orders={orders.data} error={orders.error} />
-      <LogsPanel id={id} live={live} events={events} />
+      <LogsPanel id={id} live={live} events={events} refresh={final} />
     </div>
   );
 }
