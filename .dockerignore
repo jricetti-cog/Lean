@@ -1,6 +1,27 @@
 packages/*
-.git/*
-.github/*
-.vs/*
-.nuget/*
-Tests/*
+.git/
+.github/
+.vs/
+.nuget/
+.idea/
+.vscode/
+
+# build output (every project, any depth) and backtest results (root Results/, never Engine/Results sources)
+**/bin/
+**/obj/
+/Results/
+**/bin/**/Results/
+**/TestResults/
+**/*.trx
+
+# test projects and test output: images build the engine and Services/*, not the test assembly
+Tests/
+**/coverage-results/
+
+# not part of any image: market data comes from the lean-data volume (ADR 0004)
+Data/
+docs/
+!docs/architecture/contracts/
+Documentation/
+Spikes/
+**/node_modules/

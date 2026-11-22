@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <AssemblyName>QuantConnect.Services.Placeholder</AssemblyName>
+    <!-- Services/Dockerfile publishes this host under a missing service's assembly name. -->
+    <AssemblyName Condition="'$(PlaceholderAssemblyName)' != ''">$(PlaceholderAssemblyName)</AssemblyName>
+    <RootNamespace>QuantConnect.Services.Placeholder</RootNamespace>
+    <Description>QuantConnect LEAN services: stand-in host packaged into a service image until that service's own project exists</Description>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <UseAppHost>false</UseAppHost>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\QuantConnect.Services.Defaults\QuantConnect.Services.Defaults.csproj" />
+  </ItemGroup>
+</Project>
