@@ -8,7 +8,10 @@ set -euo pipefail
 API="http://127.0.0.1:${ORCHESTRATOR_PORT:-5081}/internal/v1"
 WORKERS="${WORKERS:-3}"
 TIMEOUT="${TIMEOUT:-900}"
+# Heartbeats every 2 s (default 30 s) so the short regression backtests show worker heartbeats.
+export BACKTEST_WORKER_HEARTBEAT_SECONDS="${BACKTEST_WORKER_HEARTBEAT_SECONDS:-2}"
 compose() { docker compose --profile infra --profile orchestrator --profile workers "$@"; }
+rmq() { compose exec -T rabbitmq rabbitmqadmin -u "${RABBITMQ_USER:-lean}" -p "${RABBITMQ_PASSWORD:-lean-dev-rabbitmq}" -V "${RABBITMQ_VHOST:-lean}" "$@"; }
 pass() { echo "PASS: $*"; }
 fail() { echo "FAIL: $*"; exit 1; }
 field() { python3 -c "import json,sys; print(json.load(sys.stdin)$1)"; }
@@ -43,6 +46,11 @@ class CrashingAlgorithm(QCAlgorithm):
         os.kill(os.getpid(), signal.SIGKILL)
 PY
 py_crash=$(upload "$crash_file")
+
+echo "== tap job heartbeats (temporary queue bound to lean.events job.backtest.*.heartbeat.v1)"
+rmq delete queue name=verify.heartbeats >/dev/null 2>&1 || true
+rmq declare queue name=verify.heartbeats durable=false >/dev/null
+rmq declare binding source=lean.events destination=verify.heartbeats routing_key='job.backtest.*.heartbeat.v1' >/dev/null
 
 echo "== submit 10 concurrent jobs"
 requests=(
@@ -88,6 +96,22 @@ pass "10/10 jobs completed"
 for worker in "${!by_worker[@]}"; do echo "   ${worker}: ${by_worker[$worker]} jobs"; done
 [ "${#by_worker[@]}" -eq "$WORKERS" ] || fail "jobs ran on ${#by_worker[@]}/${WORKERS} workers"
 pass "work spread over all ${WORKERS} workers"
+
+echo "== heartbeats received while the 10 jobs ran"
+rmq get queue=verify.heartbeats ackmode=ack_requeue_false count=100000 --format=raw_json > "${ids_file}.hb"
+rmq delete queue name=verify.heartbeats >/dev/null
+python3 - "${ids_file}.hb" "${ids[@]}" <<'PY' || fail "a job had no backtest-worker heartbeat"
+import collections, json, sys
+messages, ids = json.load(open(sys.argv[1])), set(sys.argv[2:])
+worker = collections.Counter(); engine = collections.Counter()
+for m in messages:
+    body = json.loads(m["payload"])
+    if body["jobId"] in ids:
+        (worker if m["properties"].get("app_id") == "backtest-worker" else engine)[body["jobId"]] += 1
+print(f"   backtest-worker heartbeats: {sum(worker.values())} for {len(worker)}/10 jobs; engine heartbeats: {sum(engine.values())}")
+sys.exit(0 if len(worker) == len(ids) else 1)
+PY
+pass "every job reported backtest-worker heartbeats"
 
 echo "== worker log evidence (prefetch 1, starts, completions)"
 compose logs --no-log-prefix backtest-worker 2>/dev/null | grep -E "consuming jobs.backtest|starting on|completed on" | sed 's/^/   /' | head -40
