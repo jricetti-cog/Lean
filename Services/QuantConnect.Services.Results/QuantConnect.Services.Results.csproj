@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <AssemblyName>QuantConnect.Services.Results</AssemblyName>
+    <RootNamespace>QuantConnect.Services.Results</RootNamespace>
+    <Description>QuantConnect LEAN services: results service (consumes result.packet / job.* messages, PostgreSQL + MinIO, results API)</Description>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <UseAppHost>false</UseAppHost>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Storage\Migrations\*.sql" LogicalName="QuantConnect.Services.Results.Migrations.%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" Version="3.7.511.8" />
+    <PackageReference Include="Npgsql" Version="9.0.4" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\QuantConnect.Services.Contracts\QuantConnect.Services.Contracts.csproj" />
+    <ProjectReference Include="..\QuantConnect.Services.Defaults\QuantConnect.Services.Defaults.csproj" />
+    <ProjectReference Include="..\QuantConnect.Services.Messaging\QuantConnect.Services.Messaging.csproj" />
+  </ItemGroup>
+</Project>
