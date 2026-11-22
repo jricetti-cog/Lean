@@ -23,6 +23,12 @@ side over HTTP and the RabbitMQ management API: upload to MinIO, validation, ide
 completed, cancellation, heartbeat-timeout retries up to max attempts, and queue depth. Start the stack with
 `ORCHESTRATOR_MAX_ATTEMPTS=2 ORCHESTRATOR_HEARTBEAT_TIMEOUT_SECONDS=10` (and pass the same to the script) to keep it short.
 
+Market data (plan step s3.1): `docker compose --profile infra --profile market-data up -d --wait --build` adds
+`market-data` on 127.0.0.1:5082 (`MARKET_DATA_PORT`), the only service mounting `lean-data` read-write. It serves the
+catalog, coverage, history and fetch-task API, runs fetch tasks from `marketdata.fetch`, and publishes LEAN's simulated
+`FakeDataQueue` feed for `MARKET_DATA_LIVE_SYMBOLS` on `lean.marketdata.live`. `bash deploy/compose/verify-market-data.sh`
+checks all of it, including that synthetic data is refused for real tickers.
+
 | Service | What | Host port (127.0.0.1 only) | Files |
 |---|---|---|---|
 | `rabbitmq` | RabbitMQ 3.13 + management UI, v1 topology from `docs/architecture/contracts/topology/` | 5672, UI 15672 | `rabbitmq/entrypoint.sh` adds the compose user to the topology definitions |
