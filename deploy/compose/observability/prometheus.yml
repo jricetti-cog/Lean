@@ -1,0 +1,34 @@
+# Prometheus (plan step s5.3). Service metrics arrive through the OpenTelemetry Collector (honor_labels keeps
+# job = service name); job-orchestrator's /metrics adds jobs per state and queue depth; RabbitMQ and PostgreSQL
+# health come from the rabbitmq_prometheus plugin and postgres-exporter. Tempo remote-writes span metrics.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: lean-services
+    honor_labels: true
+    static_configs:
+      - targets: ["otel-collector:8889"]
+
+  - job_name: lean-platform
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["job-orchestrator:8080"]
+
+  - job_name: rabbitmq
+    metrics_path: /metrics/per-object
+    static_configs:
+      - targets: ["rabbitmq:15692"]
+
+  - job_name: postgres
+    static_configs:
+      - targets: ["postgres-exporter:9187"]
+
+  - job_name: otel-collector
+    static_configs:
+      - targets: ["otel-collector:8888"]
+
+  - job_name: observability
+    static_configs:
+      - targets: ["prometheus:9090", "tempo:3200", "loki:3100", "grafana:3000"]

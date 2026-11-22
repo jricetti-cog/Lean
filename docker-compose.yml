@@ -22,6 +22,10 @@ x-lean-service-env: &lean-service-env
   S3__ResultsBucket: ${MINIO_BUCKET_RESULTS:-lean-results}
   S3__ReportsBucket: ${MINIO_BUCKET_REPORTS:-lean-reports}
   LEAN_DATA_FOLDER: /Lean/Data/
+  # Traces, metrics and logs (shared defaults) go to the `observability` profile's collector; without that profile
+  # running the export fails quietly and the services are unaffected. Set it empty to turn export off.
+  OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT-http://otel-collector:4317}
+  OTEL_METRIC_EXPORT_INTERVAL: ${OTEL_METRIC_EXPORT_INTERVAL:-15000}
 
 # Fast first probe on start (start_interval), then a slower steady-state probe.
 x-healthcheck: &healthcheck
@@ -437,12 +441,132 @@ services:
       - 127.0.0.1:${CONSOLE_PORT:-5090}:8080
     networks: [lean]
 
+  # ---- Observability (plan step s5.3), all provisioned from deploy/compose/observability/:
+  #   docker compose --profile infra --profile observability up -d --wait   (plus the service profiles to watch)
+  # Grafana on GRAFANA_PORT (anonymous viewer; admin login from GRAFANA_ADMIN_USER/GRAFANA_ADMIN_PASSWORD).
+  otel-collector:
+    image: ${OTEL_COLLECTOR_IMAGE:-otel/opentelemetry-collector-contrib:0.120.0}
+    profiles: [observability]
+    restart: unless-stopped
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./deploy/compose/observability/otel-collector.yaml:/etc/otelcol/config.yaml:ro
+    ports:
+      - 127.0.0.1:${OTEL_GRPC_PORT:-4317}:4317
+      - 127.0.0.1:${OTEL_HTTP_PORT:-4318}:4318
+    depends_on:
+      tempo:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+    # Distroless image (no shell for a healthcheck): its health is the `otel-collector` scrape target in Prometheus.
+    networks: [lean]
+
+  tempo:
+    image: ${TEMPO_IMAGE:-grafana/tempo:2.7.1}
+    profiles: [observability]
+    restart: unless-stopped
+    user: "0"
+    command: ["-config.file=/etc/tempo/tempo.yaml"]
+    volumes:
+      - ./deploy/compose/observability/tempo.yaml:/etc/tempo/tempo.yaml:ro
+      - tempo-data:/var/tempo
+    ports:
+      - 127.0.0.1:${TEMPO_PORT:-3200}:3200
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://127.0.0.1:3200/ready"]
+    networks: [lean]
+
+  loki:
+    image: ${LOKI_IMAGE:-grafana/loki:3.4.2}
+    profiles: [observability]
+    restart: unless-stopped
+    command: ["-config.file=/etc/loki/loki.yaml"]
+    volumes:
+      - ./deploy/compose/observability/loki.yaml:/etc/loki/loki.yaml:ro
+      - loki-data:/loki
+    ports:
+      - 127.0.0.1:${LOKI_PORT:-3100}:3100
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://127.0.0.1:3100/ready"]
+    networks: [lean]
+
+  postgres-exporter:
+    image: ${POSTGRES_EXPORTER_IMAGE:-prometheuscommunity/postgres-exporter:v0.17.1}
+    profiles: [observability]
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_URI: postgres:5432/postgres?sslmode=disable
+      DATA_SOURCE_USER: ${POSTGRES_USER:-postgres}
+      DATA_SOURCE_PASS: ${POSTGRES_PASSWORD:-lean-dev-postgres}
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://127.0.0.1:9187/metrics"]
+    networks: [lean]
+
+  prometheus:
+    image: ${PROMETHEUS_IMAGE:-prom/prometheus:v3.2.1}
+    profiles: [observability]
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-7d}
+      - --web.enable-remote-write-receiver
+      - --enable-feature=exemplar-storage
+    volumes:
+      - ./deploy/compose/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - 127.0.0.1:${PROMETHEUS_PORT:-9090}:9090
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://127.0.0.1:9090/-/ready"]
+    networks: [lean]
+
+  grafana:
+    image: ${GRAFANA_IMAGE:-grafana/grafana:11.5.2}
+    profiles: [observability]
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-lean-dev-grafana}
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/platform-overview.json
+    volumes:
+      - ./deploy/compose/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/compose/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - 127.0.0.1:${GRAFANA_PORT:-3000}:3000
+    depends_on:
+      prometheus:
+        condition: service_healthy
+      tempo:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://127.0.0.1:3000/api/health"]
+    networks: [lean]
+
 volumes:
   rabbitmq-data:
   postgres-data:
   minio-data:
   lean-data:
   research-notebooks:
+  tempo-data:
+  loki-data:
+  prometheus-data:
+  grafana-data:
 
 networks:
   lean:

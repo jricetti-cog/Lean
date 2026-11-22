@@ -21,6 +21,8 @@ public static class BusSettings
     public const string OutboxLimit = "bus-outbox-limit";
     public const string ShutdownTimeoutSeconds = "bus-shutdown-timeout-seconds";
     public const string RabbitMqUri = "bus-rabbitmq-uri";
+    /// <summary>W3C <c>traceparent</c> of the worker span running this engine; stamped on every message the engine publishes.</summary>
+    public const string TraceParent = "bus-traceparent";
     /// <summary><c>s3</c> (MinIO, default) or <c>filesystem</c>.</summary>
     public const string ArtifactStore = "bus-artifact-store";
     public const string ArtifactRoot = "bus-artifact-root";

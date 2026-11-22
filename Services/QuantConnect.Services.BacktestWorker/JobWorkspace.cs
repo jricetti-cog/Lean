@@ -94,6 +94,7 @@ public sealed class JobWorkspace
         ["bus-worker-id"] = workerId,
         ["bus-work-folder"] = AlgorithmPath,
         ["bus-builtin-algorithm-location"] = options.BuiltinAlgorithmLocation,
+        ["bus-traceparent"] = System.Diagnostics.Activity.Current?.Id ?? "",
     };
 
     public void Delete()

@@ -101,6 +101,15 @@
           "minimum": 0,
           "description": "Per job attempt and publisher, monotonically increasing. Consumers order by it (with packet time/progress), never by arrival (ADR 0002)."
         },
+        "traceparent": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{2}-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$",
+          "description": "Optional W3C Trace Context `traceparent` of the publishing span, so one trace follows a job across api-gateway, job-orchestrator, workers and results."
+        },
+        "tracestate": {
+          "type": "string",
+          "description": "Optional W3C Trace Context `tracestate` accompanying `traceparent`."
+        },
         "x-delivery-count": {
           "type": "integer",
           "minimum": 0,

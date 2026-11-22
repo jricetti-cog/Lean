@@ -102,3 +102,30 @@ event, with `optimization-result.json` in `lean-results`. Its API (`/internal/v1
 docker compose --profile infra --profile orchestrator --profile workers --profile optimizer --profile gateway build
 deploy/compose/verify-optimizer.sh   # 3x3 grid through the gateway on 3 workers, then on 1 for comparison
 ```
+
+## Observability (plan step s5.3)
+
+Profile `observability` adds an OpenTelemetry Collector, Prometheus, Grafana, Tempo, Loki and a PostgreSQL exporter, all
+configured from `deploy/compose/observability/`. Every service built on `QuantConnect.Services.Defaults` exports traces,
+metrics and logs over OTLP to `otel-collector:4317` (`OTEL_EXPORTER_OTLP_ENDPOINT`; set it to empty to turn export off).
+The collector forwards traces to Tempo, logs to Loki and metrics to a Prometheus exporter. Prometheus also scrapes the
+orchestrator `/metrics` (queue depth, jobs per state), RabbitMQ `/metrics/per-object` and postgres-exporter.
+
+The RabbitMQ envelope carries W3C `traceparent`/`tracestate` headers, so one backtest is a single trace:
+gateway request -> orchestrator dispatch -> worker `backtest run` -> engine packets -> results.
+`X-Request-ID` on the gateway response is the trace id (paste it into Grafana Explore > Tempo).
+
+| UI | Address |
+|---|---|
+| Grafana (anonymous viewer, admin `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD`) | `http://127.0.0.1:${GRAFANA_PORT:-3000}` |
+| Prometheus | `http://127.0.0.1:${PROMETHEUS_PORT:-9090}` |
+| Tempo / Loki APIs | `http://127.0.0.1:${TEMPO_PORT:-3200}` / `http://127.0.0.1:${LOKI_PORT:-3100}` |
+
+The provisioned dashboards (folder LEAN) are Platform overview (jobs per state, queue depth, worker count and utilisation,
+job duration p50/p95), Service RED, RabbitMQ health and PostgreSQL health.
+
+```bash
+docker compose --profile infra --profile orchestrator --profile market-data --profile results --profile report \
+  --profile workers --profile gateway --profile observability up -d --build --wait
+deploy/compose/verify-observability.sh   # one backtest; checks the trace, metrics, logs and every dashboard query
+```

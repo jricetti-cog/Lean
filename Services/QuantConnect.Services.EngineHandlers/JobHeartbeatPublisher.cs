@@ -31,7 +31,7 @@ public sealed class JobHeartbeatPublisher : IDisposable
     public OutgoingMessage Create(DateTimeOffset now)
     {
         var envelope = MessageEnvelope.Create(MessageTypes.JobHeartbeat, _job.JobId, _job.Attempt, "lean-engine", _job.Kind,
-            _job.ParentJobId, _job.LeaseEpoch, now: now);
+            _job.ParentJobId, _job.LeaseEpoch, now: now).WithTraceParent(_job.TraceParent);
         var heartbeat = new JobHeartbeat
         {
             JobId = _job.JobId,
