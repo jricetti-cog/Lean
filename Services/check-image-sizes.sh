@@ -36,7 +36,7 @@ check() {
 for service in api-gateway job-orchestrator results optimizer; do
     check "$service" aspnet "$aspnet_base" "$ASPNET_BUDGET_MB"
 done
-for service in backtest-worker live-worker market-data report; do
+for service in backtest-worker live-worker market-data report toolbox; do
     check "$service" foundation "$foundation_base" "$ENGINE_BUDGET_MB"
 done
 check research foundation "$foundation_base" "$RESEARCH_BUDGET_MB"

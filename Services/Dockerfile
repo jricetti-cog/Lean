@@ -152,6 +152,17 @@ COPY --from=build /out/services/report/ /app/
 ENV Service__Name=report OTEL_SERVICE_NAME=report
 ENTRYPOINT ["dotnet", "/app/QuantConnect.Services.Report.dll"]
 
+# toolbox: ToolBox converters and generators as one-shot jobs (`docker compose run --rm toolbox <app> ...`, plan step
+# s3.4). lean-toolbox stages every write on the lean-data volume and renames finished files into place (ADR 0004).
+FROM engine-runtime AS toolbox
+COPY --from=build /src/ToolBox/bin/Release/ /Lean/ToolBox/bin/Release/
+COPY --chmod=755 Services/toolbox/lean-toolbox.sh /usr/local/bin/lean-toolbox
+ENV Service__Name=toolbox \
+    TOOLBOX_DIR=/Lean/ToolBox/bin/Release
+HEALTHCHECK NONE
+ENTRYPOINT ["lean-toolbox"]
+CMD ["help"]
+
 # research: JupyterLab + QuantBook on the same engine build (DockerfileJupyter, as the non-root user).
 FROM engine-runtime AS research
 USER root
@@ -180,13 +191,20 @@ fi
 cd "${NOTEBOOKS}"
 exec jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --ServerApp.token='' --notebook-dir="${NOTEBOOKS}" "$@"
 EOF
+# Base URLs of the platform services for notebooks (compose service names; docker-compose.yml overrides them).
 ENV NOTEBOOKS=/home/app/Notebooks \
     HEALTHCHECK_PORT=8888 \
     HEALTHCHECK_PATH=/api \
-    Service__Name=research
+    Service__Name=research \
+    LEAN_MARKET_DATA_URL=http://market-data:8080 \
+    LEAN_RESULTS_URL=http://results:8080 \
+    LEAN_ORCHESTRATOR_URL=http://job-orchestrator:8080 \
+    LEAN_REPORT_URL=http://report:8080
 USER app
-RUN mkdir -p /home/app/.ipython/profile_default/startup /home/app/Notebooks \
+RUN mkdir -p /home/app/.ipython/profile_default/startup /home/app/Notebooks/work \
     && ln -s /Lean/Launcher/bin/Release/start.py /home/app/.ipython/profile_default/startup/start.py
+# The sample notebook ships with the image; compose persists user notebooks under work/ (research-notebooks volume).
+COPY --chown=app:app Research/ServicesQuantBookTemplate.ipynb /home/app/Notebooks/
 WORKDIR /home/app/Notebooks
 EXPOSE 8888
 ENTRYPOINT ["/usr/local/bin/tini", "--"]

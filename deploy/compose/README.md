@@ -42,6 +42,23 @@ result JSON from `lean-results` against its `ObjectRef`, runs LEAN's `QuantConne
 `/internal/v1/reports`. `sh deploy/compose/verify-report.sh` renders the stored fixture
 `Tests/TestData/test_report_data.json` through the bus (no backtest) and checks a tampered `ObjectRef` fails.
 
+Research and ToolBox (plan step s3.4), both opt-in profiles so the default stack stays small:
+
+- `docker compose --profile infra --profile market-data --profile results --profile research up -d --wait` adds `research`: JupyterLab +
+  QuantBook (`Services/Dockerfile` target `research`, from `DockerfileJupyter`) on http://127.0.0.1:8888/lab
+  (`RESEARCH_PORT`), `lean-data` mounted read-only, the services' base URLs in `LEAN_MARKET_DATA_URL`,
+  `LEAN_RESULTS_URL`, `LEAN_ORCHESTRATOR_URL`, `LEAN_REPORT_URL`. `ServicesQuantBookTemplate.ipynb` compares QuantBook
+  history with the market-data history API and loads a finished backtest from the results API. Notebooks saved under
+  `work/` persist in the `research-notebooks` volume.
+- `docker compose --profile toolbox run --rm toolbox <app> [--option=value ...]` runs one ToolBox converter or generator
+  (`rdg`, `cug`, `kdc`, `asfc`; `help` lists them) as a one-shot job on the market-data volume. `Services/toolbox/lean-toolbox.sh`
+  runs the app against a staging copy (`.toolbox-staging/`, `TOOLBOX_SEED`) and renames the new/changed files into place,
+  so readers never see partial files; generators may only add files (a run that would overwrite data, e.g. `rdg
+  --tickers=SPY`, publishes nothing and exits 3) and `TOOLBOX_DRY_RUN=1` only lists them. Converter inputs come from
+  `TOOLBOX_INPUT_DIR` (default `deploy/compose/toolbox-input/`), mounted read-only at `/input`. Example:
+  `docker compose --profile toolbox run --rm toolbox rdg --tickers=SYNA --start=20240102 --end=20240131 --resolution=Daily --include-coarse=false`.
+- `bash deploy/compose/verify-research-toolbox.sh` checks both (it needs the `results` profile and a finished backtest from `smoke-backtest.sh`).
+
 | Service | What | Host port (127.0.0.1 only) | Files |
 |---|---|---|---|
 | `rabbitmq` | RabbitMQ 3.13 + management UI, v1 topology from `docs/architecture/contracts/topology/` | 5672, UI 15672 | `rabbitmq/entrypoint.sh` adds the compose user to the topology definitions |
@@ -53,5 +70,5 @@ result JSON from `lean-results` against its `ObjectRef`, runs LEAN's `QuantConne
 
 Adding a service (later phases): give it a profile, `environment: *lean-service-env` (RabbitMQ URI, S3 settings,
 `LEAN_DATA_FOLDER`) plus its own `ConnectionStrings__<Database>`, `depends_on: infra-ready: condition: service_healthy`,
-and mount `lean-data:/Lean/Data:ro` (read-write only for market-data). Source mounts and debug ports go in
+and mount `lean-data:/Lean/Data:ro` (read-write only for market-data and its one-shot `toolbox` jobs). Source mounts and debug ports go in
 `docker-compose.override.yml`. Reseed market data with `docker volume rm lean_lean-data`.

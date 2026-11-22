@@ -265,11 +265,68 @@ services:
         condition: service_healthy
     networks: [lean]
 
+  # Research (plan step s3.4): JupyterLab + QuantBook (Services/Dockerfile `research`, from DockerfileJupyter) over the
+  # lean-data volume, read-only (ADR 0004). Notebooks reach the services through the injected base URLs; the sample
+  # ServicesQuantBookTemplate.ipynb pulls history from market-data and a finished backtest from results. Notebooks saved
+  # under work/ persist in the research-notebooks volume.
+  #   docker compose --profile infra --profile market-data --profile results --profile research up -d --wait
+  #   open http://127.0.0.1:${RESEARCH_PORT:-8888}/lab
+  research:
+    image: ${LEAN_IMAGE_REGISTRY:-lean}/research:${LEAN_IMAGE_TAG:-dev}
+    build:
+      context: .
+      dockerfile: Services/Dockerfile
+      target: research
+    profiles: [research]
+    restart: unless-stopped
+    depends_on:
+      infra-ready:
+        condition: service_healthy
+    environment:
+      LEAN_DATA_FOLDER: /Lean/Data/
+      LEAN_MARKET_DATA_URL: ${LEAN_MARKET_DATA_URL:-http://market-data:8080}
+      LEAN_RESULTS_URL: ${LEAN_RESULTS_URL:-http://results:8080}
+      LEAN_ORCHESTRATOR_URL: ${LEAN_ORCHESTRATOR_URL:-http://job-orchestrator:8080}
+      LEAN_REPORT_URL: ${LEAN_REPORT_URL:-http://report:8080}
+    volumes:
+      - lean-data:/Lean/Data:ro
+      - research-notebooks:/home/app/Notebooks/work
+    ports:
+      - 127.0.0.1:${RESEARCH_PORT:-8888}:8888
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "lean-healthcheck", "8888", "/api"]
+    networks: [lean]
+
+  # ToolBox (plan step s3.4): converters and generators as one-shot jobs on the market-data volume. lean-toolbox runs
+  # the app against a staging copy and renames finished files into place, like market-data's fetch tasks (ADR 0004);
+  # generators only add files (a run that would overwrite existing data publishes nothing). Converter inputs are
+  # read from TOOLBOX_INPUT_DIR, mounted read-only at /input.
+  #   docker compose --profile toolbox run --rm toolbox help
+  #   docker compose --profile toolbox run --rm toolbox rdg --tickers=SYNA --start=20240101 --end=20240131 ...
+  toolbox:
+    image: ${LEAN_IMAGE_REGISTRY:-lean}/toolbox:${LEAN_IMAGE_TAG:-dev}
+    build:
+      context: .
+      dockerfile: Services/Dockerfile
+      target: toolbox
+    profiles: [toolbox]
+    restart: "no"
+    environment:
+      LEAN_DATA_FOLDER: /Lean/Data/
+      TOOLBOX_SEED: ${TOOLBOX_SEED:-all}
+      TOOLBOX_DRY_RUN: ${TOOLBOX_DRY_RUN:-0}
+    volumes:
+      - lean-data:/Lean/Data
+      - ${TOOLBOX_INPUT_DIR:-./deploy/compose/toolbox-input}:/input:ro
+    network_mode: none
+
 volumes:
   rabbitmq-data:
   postgres-data:
   minio-data:
   lean-data:
+  research-notebooks:
 
 networks:
   lean:
