@@ -48,6 +48,10 @@ for entry in api-gateway:Gateway job-orchestrator:Orchestrator results:Results o
     fi
 done
 EOF
+# Engine-hosting images run the stock Launcher with the bus handlers selected by config only
+# (job-queue-handler / messaging-handler, ADR 0001): lay the adapter and its dependencies next to
+# QuantConnect.Lean.Launcher.dll. Its newer Microsoft.Extensions.* overwrite the Launcher's (backward compatible).
+RUN cp -f Services/QuantConnect.Services.EngineHandlers/bin/Release/*.dll Launcher/bin/Release/
 
 # ---------------------------------------------------------------------------------------------------
 # Health probe shared by every runtime image: bash /dev/tcp, so the slim image needs no curl/wget

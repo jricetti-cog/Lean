@@ -1,0 +1,111 @@
+# LEAN platform services CI (plan step s2.4).
+#   images: build every Services/Dockerfile image (docker-bake.hcl), gate their size, run the compose smoke test
+#           (infra profile up, BasicTemplateAlgorithm submitted and completed), then push to GHCR on master.
+#   tests:  Tests/Services, then the existing unit suite, inside quantconnect/lean:foundation.
+# Every step is a plain command, so the same commands verify a change locally (see deploy/compose/README.md).
+name: Services
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  LEAN_FOUNDATION: quantconnect/lean:foundation
+  TAG: ${{ github.sha }}
+
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # quantconnect/lean:foundation is ~14 GB compressed: make room for it, the engine images and the build stage.
+      - name: Free disk space
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          docker system prune -af
+          df -h /
+
+      - name: Image registry
+        run: echo "REGISTRY=ghcr.io/$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/lean" >> "$GITHUB_ENV"
+
+      # The default `docker` buildx driver loads every image into the engine with shared layers (no tarball export).
+      - name: Build every service image
+        run: |
+          docker pull "$LEAN_FOUNDATION"
+          docker pull mcr.microsoft.com/dotnet/aspnet:10.0
+          docker buildx bake -f Services/docker-bake.hcl
+          docker image ls "$REGISTRY/*"
+
+      - name: Image size gate
+        run: bash Services/check-image-sizes.sh
+
+      - name: Compose up (infra profile)
+        run: docker compose --profile infra up -d --wait
+
+      - name: Infra smoke test
+        run: sh deploy/compose/verify-infra.sh
+
+      - name: Compose smoke test (submit BasicTemplateAlgorithm, assert it completes)
+        run: sh deploy/compose/smoke-backtest.sh
+
+      - name: Compose logs
+        if: failure()
+        run: docker compose --profile infra logs --no-color --tail 200
+
+      - name: Compose down
+        if: always()
+        run: docker compose --profile infra down -v
+
+      - name: Push images to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          for svc in api-gateway job-orchestrator results optimizer backtest-worker live-worker market-data report research; do
+            docker push "$REGISTRY/$svc:$TAG"
+          done
+
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          docker system prune -af
+          docker pull "$LEAN_FOUNDATION"
+
+      # The repo is mounted at its own path: pythonnet and coverlet need the build path inside the container.
+      - name: Build
+        run: docker run --rm -v "$PWD:$PWD" -w "$PWD" "$LEAN_FOUNDATION" dotnet build QuantConnect.Lean.sln -c Release /v:quiet /p:WarningLevel=1
+
+      - name: Tests/Services
+        run: >-
+          docker run --rm -v "$PWD:$PWD" -w "$PWD/Tests/bin/Release" "$LEAN_FOUNDATION"
+          dotnet test QuantConnect.Tests.dll --filter "FullyQualifiedName~QuantConnect.Tests.Services"
+
+      - name: Unit suite
+        run: >-
+          docker run --rm -v "$PWD:$PWD" -w "$PWD/Tests/bin/Release" "$LEAN_FOUNDATION"
+          dotnet test QuantConnect.Tests.dll --blame-hang-timeout 300seconds --blame-crash
+          --filter "TestCategory!=TravisExclude&TestCategory!=ResearchRegressionTests"
+          -- TestRunParameters.Parameter\(name=\"log-handler\",\ value=\"ConsoleErrorLogHandler\"\)
