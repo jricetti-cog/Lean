@@ -118,6 +118,27 @@ paths:
           $ref: 'common.yaml#/components/responses/Unauthorized'
         '503':
           $ref: 'common.yaml#/components/responses/Unavailable'
+  /api/v1/live/{id}/stop:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+    post:
+      tags: [jobs]
+      operationId: stopLive
+      summary: Stop a live deployment
+      description: Same as `POST /api/v1/jobs/{id}/cancel` for a live job; the live worker stops the engine and the job turns `cancelled`.
+      responses:
+        '202':
+          description: Stop accepted.
+          content:
+            application/json:
+              schema:
+                $ref: 'common.yaml#/components/schemas/Job'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '409':
+          $ref: 'common.yaml#/components/responses/Conflict'
   /api/v1/optimizations:
     post:
       tags: [jobs]
@@ -184,6 +205,36 @@ paths:
             application/json:
               schema:
                 $ref: 'optimizer.openapi.yaml#/components/schemas/OptimizationState'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+  /api/v1/optimizations/{id}/children:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+    get:
+      tags: [jobs]
+      operationId: listOptimizationChildren
+      summary: Optimization child backtests
+      description: Forwards to optimizer. Parameter set, child job id, status, objective and statistics of each child backtest.
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/StatusFilter'
+        - $ref: 'common.yaml#/components/parameters/Cursor'
+        - $ref: 'common.yaml#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of children.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          $ref: 'optimizer.openapi.yaml#/components/schemas/ChildBacktest'
         '401':
           $ref: 'common.yaml#/components/responses/Unauthorized'
         '404':

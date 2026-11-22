@@ -25,3 +25,5 @@ docs/
 Documentation/
 Spikes/
 **/node_modules/
+Services/Console/dist/
+Services/Console/public/samples/

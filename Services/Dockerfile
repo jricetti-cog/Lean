@@ -17,6 +17,8 @@
 
 ARG LEAN_FOUNDATION=quantconnect/lean:foundation
 ARG ASPNET_BASE=mcr.microsoft.com/dotnet/aspnet:10.0
+ARG NODE_BASE=node:22-alpine
+ARG NGINX_BASE=nginxinc/nginx-unprivileged:1.27-alpine
 
 # ---------------------------------------------------------------------------------------------------
 # build: restore + build the engine and every service project once, publish each service to /out
@@ -24,7 +26,7 @@ ARG ASPNET_BASE=mcr.microsoft.com/dotnet/aspnet:10.0
 FROM ${LEAN_FOUNDATION} AS build
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1
 WORKDIR /src
-COPY . .
+COPY --exclude=Services/Console . .
 RUN --mount=type=cache,id=lean-nuget,target=/root/.nuget/packages <<'EOF'
 set -eu
 dotnet new sln --name images --output /tmp/images
@@ -209,3 +211,24 @@ WORKDIR /home/app/Notebooks
 EXPOSE 8888
 ENTRYPOINT ["/usr/local/bin/tini", "--"]
 CMD ["lean-research"]
+
+# console (plan step s5.1): React + Vite + TypeScript SPA, built with node and served by unprivileged nginx on 8080.
+# The typed client is checked against the gateway contract; samples come from Algorithm.CSharp / Algorithm.Python.
+FROM ${NODE_BASE} AS console-build
+WORKDIR /src/Services/Console
+COPY Services/Console/package.json Services/Console/package-lock.json ./
+RUN --mount=type=cache,id=lean-npm,target=/root/.npm npm ci --no-audit --no-fund
+COPY docs/architecture/contracts/ /src/docs/architecture/contracts/
+COPY Algorithm.CSharp/ /src/Algorithm.CSharp/
+COPY Algorithm.Python/ /src/Algorithm.Python/
+COPY Services/Console/ ./
+RUN npm run check:api && npm test && npm run build
+
+FROM ${NGINX_BASE} AS console
+COPY Services/Console/nginx/default.conf.template /etc/nginx/templates/default.conf.template
+COPY --from=console-build /src/Services/Console/dist/ /usr/share/nginx/html/
+ENV LEAN_GATEWAY_URL=http://api-gateway:8080 \
+    LEAN_API_KEY= \
+    NGINX_RESOLVER=127.0.0.11
+EXPOSE 8080
+HEALTHCHECK --interval=10s --timeout=3s --retries=3 CMD wget -qO- http://127.0.0.1:8080/healthz || exit 1

@@ -98,6 +98,26 @@ namespace QuantConnect.Tests.Services.Gateway
         }
 
         [Test]
+        public async Task UploadedAlgorithmRefCanBeSubmittedAsJson()
+        {
+            using var form = new MultipartFormDataContent
+            {
+                { new ByteArrayContent(Encoding.UTF8.GetBytes("class Algo(QCAlgorithm): pass")), "file", "main.py" },
+                { new StringContent("Python"), "language" },
+            };
+            using var upload = await Send(HttpMethod.Post, "/api/v1/algorithms", AliceKey, form, x => x.Headers.Add("X-Api-Key", AliceKey));
+            var algorithm = await upload.Content.ReadAsStringAsync();
+            Assert.AreEqual(HttpStatusCode.Created, upload.StatusCode, algorithm);
+            StringAssert.StartsWith("{\"source\":\"upload\"", algorithm, "the upload response is an AlgorithmRef with its discriminator");
+
+            using var body = new StringContent($"{{\"algorithm\":{algorithm},\"fetchMissingData\":false,\"maxRuntimeSeconds\":60}}", Encoding.UTF8, "application/json");
+            using var response = await Send(HttpMethod.Post, "/api/v1/backtests", AliceKey, body, x => x.Headers.Add("X-Api-Key", AliceKey));
+            Assert.AreEqual(HttpStatusCode.Created, response.StatusCode, await response.Content.ReadAsStringAsync());
+            var job = _captured.Single(c => c.PathAndQuery == "/internal/v1/jobs" && c.Method == "POST");
+            Assert.IsInstanceOf<UploadedAlgorithmRef>(ContractJson.Deserialize<JobRequest>(job.Body).Backtest.Algorithm);
+        }
+
+        [Test]
         public async Task SubmitsPythonSourceBacktestThroughTheOrchestrator()
         {
             using var form = new MultipartFormDataContent
