@@ -16,6 +16,26 @@ public interface IMessageConsumer
     Task<IAsyncDisposable> ConsumeAsync(string queue, MessageHandler handler, ConsumerOptions? options = null, CancellationToken cancellationToken = default);
 }
 
+/// <summary>
+/// Per-process subscriptions that are not part of the durable topology: a server-named, exclusive, auto-delete queue bound
+/// to <paramref name="exchange"/> with <paramref name="bindingKeys"/>, removed when the subscription is disposed or the
+/// connection closes (control commands of one running job, live market data of one engine).
+/// </summary>
+public interface ITransientSubscriber
+{
+    Task<IAsyncDisposable> SubscribeTransientAsync(string exchange, IReadOnlyCollection<string> bindingKeys, MessageHandler handler,
+        TransientQueueOptions? options = null, CancellationToken cancellationToken = default);
+}
+
+public sealed record TransientQueueOptions
+{
+    public ushort Prefetch { get; init; } = 50;
+    /// <summary>Queue name (e.g. <c>control.&lt;workerId&gt;.&lt;jobId&gt;</c>); null lets the broker name it.</summary>
+    public string? QueueName { get; init; }
+    /// <summary><c>x-message-ttl</c> of the queue; null keeps messages until consumed.</summary>
+    public TimeSpan? MessageTtl { get; init; }
+}
+
 public interface IMessageBus : IMessagePublisher, IMessageConsumer
 {
 }

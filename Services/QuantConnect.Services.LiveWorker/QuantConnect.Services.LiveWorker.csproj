@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <AssemblyName>QuantConnect.Services.LiveWorker</AssemblyName>
+    <RootNamespace>QuantConnect.Services.LiveWorker</RootNamespace>
+    <Description>QuantConnect LEAN services: live-worker, runs one live deployment in a child Launcher process in live mode (plan step s4.4)</Description>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <UseAppHost>false</UseAppHost>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- The child-engine plumbing (process supervision, config derivation, MinIO store) is backtest-worker's. -->
+    <ProjectReference Include="..\QuantConnect.Services.BacktestWorker\QuantConnect.Services.BacktestWorker.csproj" />
+    <ProjectReference Include="..\QuantConnect.Services.Contracts\QuantConnect.Services.Contracts.csproj" />
+    <ProjectReference Include="..\QuantConnect.Services.Defaults\QuantConnect.Services.Defaults.csproj" />
+    <ProjectReference Include="..\QuantConnect.Services.Messaging\QuantConnect.Services.Messaging.csproj" />
+  </ItemGroup>
+</Project>

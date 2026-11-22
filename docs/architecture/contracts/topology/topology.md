@@ -33,7 +33,7 @@ packet before publishing; above the limit it uploads the same JSON to
 | `lean.jobs` | direct | yes | Work dispatch to competing consumers |
 | `lean.jobs.dlx` | direct | yes | Dead letters after the delivery limit (and poison messages of the event consumers) |
 | `lean.events` | topic | yes | Status, heartbeat, progress, result, log, order and error streams per job |
-| `lean.control` | topic | yes | Commands to a running job (cancel) |
+| `lean.control` | topic | yes | Commands to a running job (cancel, liquidate) |
 | `lean.marketdata.live` | topic | no | Live data fan-out (ADR 0004) |
 
 ## Dispatch queues (`lean.jobs`)
@@ -90,6 +90,7 @@ browser drops old progress rather than growing the broker.
 | Routing key | AMQP type | Body schema | Queue |
 |---|---|---|---|
 | `job.<jobId>.cancel.v1` | `control.v1.CancelJob` | `job.cancel` | `control.<workerId>.<jobId>`: classic, exclusive, auto-delete, declared by the worker for each running job |
+| `job.<jobId>.liquidate.v1` | `control.v1.LiquidateJob` | `job.liquidate` | same queue (live deployments only) |
 
 ## Live market data (`lean.marketdata.live`)
 
@@ -149,6 +150,7 @@ AMQP basic properties, schema [`envelope.schema.json`](../messages/v1/envelope.s
 | `job.heartbeat` | [job.heartbeat](../messages/v1/job.heartbeat.schema.json) | `events.v1.JobHeartbeat` | `lean.events` / `job.<kind>.<jobId>.heartbeat.v1` |
 | `job.cancelled` | [job.cancelled](../messages/v1/job.cancelled.schema.json) | `events.v1.JobCancelled` | `lean.events` / `job.<kind>.<jobId>.status.v1` |
 | `job.cancel` | [job.cancel](../messages/v1/job.cancel.schema.json) | `control.v1.CancelJob` | `lean.control` / `job.<jobId>.cancel.v1` |
+| `job.liquidate` | [job.liquidate](../messages/v1/job.liquidate.schema.json) | `control.v1.LiquidateJob` | `lean.control` / `job.<jobId>.liquidate.v1` |
 | `marketdata.fetch.requested` | [marketdata.fetch.requested](../messages/v1/marketdata.fetch.requested.schema.json) | `jobs.v1.MarketDataFetchRequested` | `lean.jobs` / `marketdata.fetch.v1` |
 | `marketdata.live` | [marketdata.live](../messages/v1/marketdata.live.schema.json) | `marketdata.v1.LiveData` | `lean.marketdata.live` / `md.<securityType>.<market>.<ticker>.v1` |
 

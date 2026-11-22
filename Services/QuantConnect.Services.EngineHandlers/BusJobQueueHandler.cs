@@ -62,7 +62,8 @@ public class BusJobQueueHandler : IJobQueueHandler
             Config.Set("live-mode-brokerage", live.Brokerage);
             if (live.DataQueueHandlers is { Count: > 0 } handlers)
             {
-                Config.Set("data-queue-handler", JsonConvert.SerializeObject(handlers));
+                Config.Set("data-queue-handler", JsonConvert.SerializeObject(handlers
+                    .Select(h => string.Equals(h, BusDataQueueHandler.Alias, StringComparison.OrdinalIgnoreCase) ? typeof(BusDataQueueHandler).FullName! : h).ToList()));
             }
         }
 

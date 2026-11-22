@@ -125,9 +125,31 @@ paths:
                 reason:
                   type: string
                   maxLength: 500
+                liquidate:
+                  type: boolean
+                  description: Live only. The live-worker liquidates every holding before it stops the algorithm.
       responses:
         '202':
           description: Cancellation accepted.
+          content:
+            application/json:
+              schema:
+                $ref: 'common.yaml#/components/schemas/Job'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '409':
+          $ref: 'common.yaml#/components/responses/Conflict'
+  /internal/v1/jobs/{id}/liquidate:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+    post:
+      tags: [jobs]
+      operationId: liquidateJob
+      summary: Liquidate a live deployment
+      description: Live jobs only. Publishes `job.<jobId>.liquidate.v1` on `lean.control`; the live-worker holding the lease runs LEAN's `LiquidateCommand` and the algorithm keeps running. 409 when the job is not a running live deployment.
+      responses:
+        '202':
+          description: Liquidation sent to the live-worker.
           content:
             application/json:
               schema:

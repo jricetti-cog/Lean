@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.lean.local/messages/v1/job.liquidate.schema.json",
+  "title": "job.liquidate (v1)",
+  "description": "Command to the live-worker running a deployment: liquidate every holding (LEAN `LiquidateCommand`, delivered to the engine through its command handler) and keep the algorithm running. Published by job-orchestrator to `lean.control` with routing key `job.<jobId>.liquidate.v1`, AMQP type `control.v1.LiquidateJob`, persistent. A worker whose `leaseEpoch` is newer than the one named ignores it.",
+  "type": "object",
+  "required": [
+    "jobId",
+    "requestedAt"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "jobId": {
+      "$ref": "defs.schema.json#/$defs/JobId"
+    },
+    "attempt": {
+      "$ref": "defs.schema.json#/$defs/Attempt",
+      "description": "Attempt holding the lease when the command was sent."
+    },
+    "requestedAt": {
+      "$ref": "defs.schema.json#/$defs/Timestamp"
+    },
+    "requestedBy": {
+      "type": "string"
+    },
+    "leaseEpoch": {
+      "$ref": "defs.schema.json#/$defs/LeaseEpoch"
+    }
+  }
+}

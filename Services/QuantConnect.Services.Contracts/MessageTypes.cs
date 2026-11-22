@@ -17,6 +17,7 @@ public static class MessageTypes
     public const string JobFailed = "events.v1.JobFailed";
     public const string JobCancelled = "events.v1.JobCancelled";
     public const string CancelJob = "control.v1.CancelJob";
+    public const string LiquidateJob = "control.v1.LiquidateJob";
     public const string PacketPrefix = "packets.v1.";
     public const string PacketRef = PacketPrefix + "PacketRef";
 
@@ -41,6 +42,7 @@ public static class MessageTypes
         [JobFailed] = (typeof(Contracts.JobFailed), "job.failed.schema.json"),
         [JobCancelled] = (typeof(Contracts.JobCancelled), "job.cancelled.schema.json"),
         [CancelJob] = (typeof(Contracts.CancelJob), "job.cancel.schema.json"),
+        [LiquidateJob] = (typeof(Contracts.LiquidateJob), "job.liquidate.schema.json"),
         [PacketRef] = (typeof(Contracts.PacketRef), "result.packet.schema.json"),
     };
 

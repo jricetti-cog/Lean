@@ -244,6 +244,23 @@ paths:
                   $ref: '../messages/v1/defs.schema.json#/$defs/ObjectRef'
         '404':
           $ref: 'common.yaml#/components/responses/NotFound'
+  /internal/v1/results/{id}/live-state:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+    get:
+      tags: [results]
+      operationId: getLiveState
+      summary: Latest live portfolio state
+      description: Holdings and cash of the newest `LiveResult` packet that carried them, across every attempt of a live deployment. A restarted live-worker seeds its brokerage with them (`live-holdings` / `live-cash-balance`), so the deployment resumes where it stopped.
+      responses:
+        '200':
+          description: The latest state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiveState'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
   /healthz:
     get:
       tags: [ops]
@@ -300,6 +317,33 @@ components:
             - $ref: '../messages/v1/defs.schema.json#/$defs/ObjectRef'
             - type: 'null'
           description: Full result JSON in MinIO once the attempt completed.
+        updatedAt:
+          $ref: '../messages/v1/defs.schema.json#/$defs/Timestamp'
+    LiveState:
+      type: object
+      required: [jobId, attempt, holdings, cash]
+      properties:
+        jobId:
+          $ref: '../messages/v1/defs.schema.json#/$defs/JobId'
+        attempt:
+          $ref: '../messages/v1/defs.schema.json#/$defs/Attempt'
+        holdings:
+          type: array
+          description: Invested LEAN `Holding` objects, in the engine's own JSON form (as `live-holdings` expects them).
+          items:
+            type: object
+            additionalProperties: true
+        cash:
+          type: array
+          description: Cash book amounts.
+          items:
+            type: object
+            required: [currency, amount]
+            properties:
+              currency:
+                type: string
+              amount:
+                type: number
         updatedAt:
           $ref: '../messages/v1/defs.schema.json#/$defs/Timestamp'
     LeanObjectPage:

@@ -23,7 +23,7 @@ public sealed class RabbitMqOptions
 /// broker acks it; nacks and mandatory returns throw), one channel per consumer with manual acks
 /// (<see cref="MessageDisposition"/> → ack / nack-requeue / reject-to-DLX). Connects lazily with automatic recovery.
 /// </summary>
-public sealed class RabbitMqMessageBus : IMessageBus, IAsyncDisposable
+public sealed class RabbitMqMessageBus : IMessageBus, ITransientSubscriber, IAsyncDisposable
 {
     private readonly RabbitMqOptions _options;
     private readonly ILogger _logger;
@@ -133,6 +133,31 @@ public sealed class RabbitMqMessageBus : IMessageBus, IAsyncDisposable
         var consumer = new AsyncEventingBasicConsumer(channel);
         consumer.ReceivedAsync += (_, delivery) => OnReceivedAsync(channel, queue, handler, delivery, stopping.Token);
         var tag = await channel.BasicConsumeAsync(queue, autoAck: false, consumer, cancellationToken).ConfigureAwait(false);
+        return new Subscription(channel, tag, stopping);
+    }
+
+    public async Task<IAsyncDisposable> SubscribeTransientAsync(string exchange, IReadOnlyCollection<string> bindingKeys, MessageHandler handler,
+        TransientQueueOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        options ??= new TransientQueueOptions();
+        var connection = await EnsureConnectedAsync(cancellationToken).ConfigureAwait(false);
+        var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+        var arguments = new Dictionary<string, object?>();
+        if (options.MessageTtl is { } ttl)
+        {
+            arguments["x-message-ttl"] = (int)ttl.TotalMilliseconds;
+        }
+        var declared = await channel.QueueDeclareAsync(options.QueueName ?? string.Empty, durable: false, exclusive: true, autoDelete: true, arguments: arguments,
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+        foreach (var key in bindingKeys)
+        {
+            await channel.QueueBindAsync(declared.QueueName, exchange, key, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+        await channel.BasicQosAsync(0, options.Prefetch, false, cancellationToken).ConfigureAwait(false);
+        var stopping = new CancellationTokenSource();
+        var consumer = new AsyncEventingBasicConsumer(channel);
+        consumer.ReceivedAsync += (_, delivery) => OnReceivedAsync(channel, declared.QueueName, handler, delivery, stopping.Token);
+        var tag = await channel.BasicConsumeAsync(declared.QueueName, autoAck: false, consumer, cancellationToken).ConfigureAwait(false);
         return new Subscription(channel, tag, stopping);
     }
 

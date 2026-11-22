@@ -70,6 +70,9 @@ public static class RoutingKeys
     /// <summary><c>job.&lt;jobId&gt;.cancel.v1</c> on <c>lean.control</c>.</summary>
     public static string Cancel(Guid jobId) => $"job.{jobId:D}.cancel.v1";
 
+    /// <summary><c>job.&lt;jobId&gt;.liquidate.v1</c> on <c>lean.control</c> (live deployments).</summary>
+    public static string Liquidate(Guid jobId) => $"job.{jobId:D}.liquidate.v1";
+
     /// <summary><c>md.&lt;securityType&gt;.&lt;market&gt;.&lt;ticker&gt;.v1</c> on <c>lean.marketdata.live</c>, lower-case.</summary>
     public static string MarketData(string securityType, string market, string ticker) =>
         $"md.{Word(securityType)}.{Word(market)}.{Word(ticker)}.v1".ToLowerInvariant();

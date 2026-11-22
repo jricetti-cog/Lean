@@ -118,6 +118,52 @@ paths:
           $ref: 'common.yaml#/components/responses/Unauthorized'
         '503':
           $ref: 'common.yaml#/components/responses/Unavailable'
+  /api/v1/live/{id}/liquidate:
+    post:
+      tags: [jobs]
+      operationId: liquidateLive
+      summary: Liquidate a running live deployment
+      description: >-
+        Forwards to job-orchestrator, which publishes `control.v1.LiquidateJob` (`job.<jobId>.liquidate.v1`) to the
+        live-worker holding the lease; the worker hands LEAN a `LiquidateCommand` and the algorithm keeps running.
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/JobIdPath'
+      responses:
+        '202':
+          description: Liquidation sent to the worker.
+          content:
+            application/json:
+              schema:
+                $ref: 'common.yaml#/components/schemas/Job'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '409':
+          $ref: 'common.yaml#/components/responses/Conflict'
+        '503':
+          $ref: 'common.yaml#/components/responses/Unavailable'
+  /api/v1/live/{id}/state:
+    get:
+      tags: [results]
+      operationId: getLiveState
+      summary: Last portfolio of a live deployment
+      description: Holdings and cash of the latest `LiveResult` (what a restarted live-worker restores), from results.
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/JobIdPath'
+      responses:
+        '200':
+          description: Latest live portfolio.
+          content:
+            application/json:
+              schema:
+                $ref: 'results.openapi.yaml#/components/schemas/LiveState'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '503':
+          $ref: 'common.yaml#/components/responses/Unavailable'
   /api/v1/live/{id}/stop:
     parameters:
       - $ref: 'common.yaml#/components/parameters/JobIdPath'
@@ -125,7 +171,20 @@ paths:
       tags: [jobs]
       operationId: stopLive
       summary: Stop a live deployment
-      description: Same as `POST /api/v1/jobs/{id}/cancel` for a live job; the live worker stops the engine and the job turns `cancelled`.
+      description: >-
+        Same as `POST /api/v1/jobs/{id}/cancel` for a live job; the live worker stops the engine and the job turns
+        `cancelled`. With `liquidate: true` the live-worker liquidates the portfolio, waits for the fills, then quits the
+        algorithm.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                reason: { type: string, maxLength: 500 }
+                liquidate: { type: boolean, description: Liquidate all holdings before stopping. }
       responses:
         '202':
           description: Stop accepted.

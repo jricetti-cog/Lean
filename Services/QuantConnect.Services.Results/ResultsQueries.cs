@@ -185,6 +185,30 @@ public sealed class ResultsQueries(ResultsDatabase database, IResultObjectStore 
         return chart;
     }
 
+    /// <summary>The newest stored live portfolio of a live deployment across its attempts; null when none was received.</summary>
+    public async Task<LiveState?> LiveStateAsync(Guid jobId, CancellationToken cancellationToken = default)
+    {
+        await using var command = Db.CreateCommand($"""
+            SELECT attempt, state -> '{ResultsIngestor.LiveStateKey}' FROM results
+            WHERE job_id = @job AND state ? '{ResultsIngestor.LiveStateKey}'
+            ORDER BY attempt DESC LIMIT 1
+            """).With("job", jobId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false) || reader.Json<JsonObject>(1) is not { } live)
+        {
+            return null;
+        }
+        return new LiveState
+        {
+            JobId = jobId,
+            Attempt = reader.GetInt32(0),
+            Holdings = live.GetArray("holdings")?.OfType<JsonObject>().Select(h => (JsonObject)h.DeepClone()).ToList() ?? [],
+            Cash = live.GetArray("cash")?.OfType<JsonObject>()
+                .Select(c => new LiveCashAmount { Currency = c.GetString("currency") ?? "", Amount = (decimal)(c.GetDouble("amount") ?? 0) }).ToList() ?? [],
+            UpdatedAt = LeanJson.AsTime(live.Get("at")),
+        };
+    }
+
     public async Task<List<ObjectRef>> ArtifactsAsync(Guid jobId, int attempt, CancellationToken cancellationToken = default)
     {
         await using var command = Db.CreateCommand("SELECT results_prefix, result_ref, artifacts FROM results WHERE job_id = @job AND attempt = @attempt")

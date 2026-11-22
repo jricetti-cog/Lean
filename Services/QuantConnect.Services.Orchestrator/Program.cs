@@ -65,6 +65,12 @@ namespace QuantConnect.Services.Orchestrator
             builder.Services.AddHostedService(sp => sp.GetRequiredService<OutboxRelay>());
             builder.Services.AddHostedService<StatusConsumer>();
             builder.Services.AddHostedService<HeartbeatMonitor>();
+            builder.Services.Configure<LiveDeploymentOptions>(builder.Configuration.GetSection(LiveDeploymentOptions.Section));
+            if (builder.Configuration.GetSection(LiveDeploymentOptions.Section).Get<LiveDeploymentOptions>() is { Enabled: true })
+            {
+                builder.Services.AddSingleton<ILiveContainerRuntime, DockerLiveContainerRuntime>();
+                builder.Services.AddHostedService<LiveDeployer>();
+            }
 
             var app = builder.Build();
             await MigrateWithRetryAsync(app.Services.GetRequiredService<JobStore>(), app.Lifetime.ApplicationStopping);
@@ -135,9 +141,15 @@ namespace QuantConnect.Services.Orchestrator
             {
                 var body = await ReadOptional<CancelRequest>(http, ct);
                 if (body is { Reason.Length: > 500 }) return Problems.BadRequest(http, "reason is longer than 500 characters");
-                var result = await store.CancelAsync(id, body?.Reason, http.Headers["X-Lean-User"].FirstOrDefault(), ct);
+                var result = await store.CancelAsync(id, body?.Reason, http.Headers["X-Lean-User"].FirstOrDefault(), ct, body?.Liquidate == true);
                 return result.Outcome == StoreOutcome.Ok ? Contract(result.Value!, StatusCodes.Status202Accepted) : Problems.From(http, result.Outcome, result.Detail);
             }).WithName("cancelJob");
+
+            jobs.MapPost("/{id:guid}/liquidate", async Task<IResult> (HttpRequest http, Guid id, JobStore store, CancellationToken ct) =>
+            {
+                var result = await store.LiquidateAsync(id, http.Headers["X-Lean-User"].FirstOrDefault(), ct);
+                return result.Outcome == StoreOutcome.Ok ? Contract(result.Value!, StatusCodes.Status202Accepted) : Problems.From(http, result.Outcome, result.Detail);
+            }).WithName("liquidateJob");
 
             jobs.MapPost("/{id:guid}/attempts", async Task<IResult> (HttpRequest http, Guid id, JobStore store, CancellationToken ct) =>
             {
@@ -220,7 +232,7 @@ namespace QuantConnect.Services.Orchestrator
 
 namespace QuantConnect.Services.Orchestrator
 {
-    public sealed record CancelRequest(string? Reason);
+    public sealed record CancelRequest(string? Reason, bool? Liquidate = null);
 
     /// <summary><c>startAttempt</c> body; <c>attempt</c> is the attempt in the dispatch being taken (drops superseded dispatches).</summary>
     public sealed record StartAttemptRequest(string WorkerId, long DeliveryCount, int? Attempt);

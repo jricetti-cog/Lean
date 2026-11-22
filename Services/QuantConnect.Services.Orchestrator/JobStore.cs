@@ -266,7 +266,7 @@ public sealed class JobStore
     /// Cancels a job (idempotent). A job no worker holds yet is cancelled directly; a held one gets <c>control.v1.CancelJob</c>
     /// and becomes <c>cancelled</c> when the worker reports <c>job.cancelled</c>. Children of an optimization are cancelled too.
     /// </summary>
-    public async Task<StoreResult<Job>> CancelAsync(Guid id, string? reason, string? requestedBy, CancellationToken ct)
+    public async Task<StoreResult<Job>> CancelAsync(Guid id, string? reason, string? requestedBy, CancellationToken ct, bool liquidate = false)
     {
         var now = Now;
         reason = string.IsNullOrWhiteSpace(reason) ? "cancelled by request" : reason;
@@ -276,7 +276,7 @@ public sealed class JobStore
             if (row == null) return StoreResult<Job>.NotFound();
             if (row.Status == JobStatus.Cancelled) return StoreResult<Job>.Ok(row.ToJob());
             if (JobStateMachine.IsTerminal(row.Status)) return StoreResult<Job>.Conflict($"job is already {JobStateMachine.ToWire(row.Status)}");
-            await CancelLocked(conn, tx, row, reason, requestedBy, now, ct);
+            await CancelLocked(conn, tx, row, reason, requestedBy, now, ct, liquidate);
             if (row.Kind == JobKind.Optimization)
             {
                 await using var children = new NpgsqlCommand(
@@ -293,7 +293,8 @@ public sealed class JobStore
         }, ct);
     }
 
-    private async Task CancelLocked(NpgsqlConnection conn, NpgsqlTransaction tx, JobRow row, string reason, string? requestedBy, DateTimeOffset now, CancellationToken ct)
+    private async Task CancelLocked(NpgsqlConnection conn, NpgsqlTransaction tx, JobRow row, string reason, string? requestedBy, DateTimeOffset now, CancellationToken ct,
+        bool liquidate = false)
     {
         if (row.WorkerId == null)
         {
@@ -304,8 +305,27 @@ public sealed class JobStore
         }
         if (row.CancelRequestedAt != null) return;
         await Update(conn, tx, row.Id, "cancel_requested_at = @now, cancel_reason = @reason", now, ct, ("reason", reason));
-        await Enqueue(conn, tx, row.Id, JobStateMachine.Cancel(row.Id, row.Kind, row.Attempt, row.LeaseEpoch, reason, requestedBy, now), ct);
+        await Enqueue(conn, tx, row.Id, JobStateMachine.Cancel(row.Id, row.Kind, row.Attempt, row.LeaseEpoch, reason, requestedBy, now, liquidate), ct);
         _logger.LogInformation("Job {JobId} attempt {Attempt}: cancellation sent to worker {WorkerId}", row.Id, row.Attempt, row.WorkerId);
+    }
+
+    /// <summary>Live deployments: sends <c>control.v1.LiquidateJob</c> to the worker holding the lease; the algorithm keeps running.</summary>
+    public async Task<StoreResult<Job>> LiquidateAsync(Guid id, string? requestedBy, CancellationToken ct)
+    {
+        var now = Now;
+        return await InTransaction(async (conn, tx) =>
+        {
+            var row = await Lock(conn, tx, id, ct);
+            if (row == null) return StoreResult<Job>.NotFound();
+            if (row.Kind != JobKind.Live) return StoreResult<Job>.Conflict("only live deployments can be liquidated");
+            if (row.Status is not (JobStatus.Running or JobStatus.Stale) || row.WorkerId == null || row.CancelRequestedAt != null)
+            {
+                return StoreResult<Job>.Conflict($"live deployment is {JobStateMachine.ToWire(row.Status)}{(row.CancelRequestedAt != null ? " (stopping)" : "")}");
+            }
+            await Enqueue(conn, tx, row.Id, JobStateMachine.Liquidate(row.Id, row.Attempt, row.LeaseEpoch, requestedBy, now), ct);
+            _logger.LogInformation("Job {JobId} attempt {Attempt}: liquidation sent to live-worker {WorkerId}", row.Id, row.Attempt, row.WorkerId);
+            return StoreResult<Job>.Ok(row.ToJob());
+        }, ct);
     }
 
     // ---------------------------------------------------------------- worker API
