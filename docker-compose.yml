@@ -219,6 +219,28 @@ services:
       test: ["CMD", "lean-healthcheck", "8080", "/readyz"]
     networks: [lean]
 
+  # Results service (plan step s3.2): consumes `results.packets`, owns the PostgreSQL `results` database, reads and
+  # writes result JSON in MinIO `lean-results`, serves the results API (internal: the gateway fronts it).
+  results:
+    image: ${LEAN_IMAGE_REGISTRY:-lean}/results:${LEAN_IMAGE_TAG:-dev}
+    build:
+      context: .
+      dockerfile: Services/Dockerfile
+      target: results
+    profiles: [results]
+    restart: unless-stopped
+    environment:
+      <<: *lean-service-env
+      ConnectionStrings__Results: Host=postgres;Port=5432;Database=results;Username=results;Password=${POSTGRES_RESULTS_PASSWORD:-lean-dev-results}
+    volumes:
+      - lean-data:/Lean/Data:ro
+    ports:
+      - 127.0.0.1:${RESULTS_PORT:-5083}:8080
+    depends_on:
+      infra-ready:
+        condition: service_healthy
+    networks: [lean]
+
 volumes:
   rabbitmq-data:
   postgres-data:

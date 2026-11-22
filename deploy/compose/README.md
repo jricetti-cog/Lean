@@ -29,6 +29,11 @@ catalog, coverage, history and fetch-task API, runs fetch tasks from `marketdata
 `FakeDataQueue` feed for `MARKET_DATA_LIVE_SYMBOLS` on `lean.marketdata.live`. `bash deploy/compose/verify-market-data.sh`
 checks all of it, including that synthetic data is refused for real tickers.
 
+Results (plan step s3.2): `docker compose --profile infra --profile results up -d --wait --build` adds `results` on
+127.0.0.1:5083 (`RESULTS_PORT`). It consumes `results.packets` into the PostgreSQL `results` database, reads final result
+JSON from MinIO `lean-results` and serves the results API (`/internal/v1/results/...`); see
+[`Services/QuantConnect.Services.Results/README.md`](../../Services/QuantConnect.Services.Results/README.md).
+
 | Service | What | Host port (127.0.0.1 only) | Files |
 |---|---|---|---|
 | `rabbitmq` | RabbitMQ 3.13 + management UI, v1 topology from `docs/architecture/contracts/topology/` | 5672, UI 15672 | `rabbitmq/entrypoint.sh` adds the compose user to the topology definitions |

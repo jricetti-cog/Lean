@@ -130,6 +130,12 @@ namespace QuantConnect.Tests.Services.EngineHandlers
             CollectionAssert.AreEquivalent(defaultStatistics.Where(kvp => kvp.Key != "OrderListHash"), fileStatistics,
                 "the engine's result file, uploaded unchanged; OrderListHash is only added to the packet");
 
+            // The result file has no order events; the engine's separate order-events file is uploaded next to it.
+            Assert.IsNull(resultFile.GetValue("orderEvents", StringComparison.OrdinalIgnoreCase));
+            var orderEventsPath = store.PathOf(final.Object.Bucket, $"{jobId:D}/1/{final.AlgorithmId}-order-events.json");
+            Assert.IsTrue(File.Exists(orderEventsPath), "order events uploaded before the final PacketRef");
+            Assert.IsNotEmpty(JArray.Parse(File.ReadAllText(orderEventsPath)));
+
             Assert.IsFalse(published.Any(m => m.Envelope.Type == MessageTypes.PacketPrefix + "BacktestResult"
                 && JsonConvert.DeserializeObject<BacktestResultPacket>(Encoding.UTF8.GetString(m.Body.Span)).Progress == 1),
                 "the final result never goes inline");
