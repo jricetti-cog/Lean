@@ -7,11 +7,15 @@
 # toolbox: help, a synthetic rdg job published atomically onto lean-data (and served by market-data), the overwrite guard
 # (a real ticker leaves equity/usa/daily/spy.zip byte-identical), a failing app publishing nothing. research: read-only
 # lean-data, injected base URLs, ServicesQuantBookTemplate.ipynb executed headless (QuantBook vs market-data history,
-# a finished backtest from results). Requires curl and jq.
+# a finished backtest from results). The smoke backtest's result is marked completed with the job.completed event
+# job-orchestrator would publish (it is not part of this stack). Requires curl and jq.
 set -euo pipefail
 [ -f .env ] && set -a && . ./.env && set +a
 MD="http://127.0.0.1:${MARKET_DATA_PORT:-5082}"
 RESEARCH="http://127.0.0.1:${RESEARCH_PORT:-8888}"
+RESULTS="http://127.0.0.1:${RESULTS_PORT:-5083}"
+MQ="http://127.0.0.1:${RABBITMQ_MANAGEMENT_PORT:-15672}/api"
+mq() { curl -fsS -u "${RABBITMQ_USER:-lean}:${RABBITMQ_PASSWORD:-lean-dev-rabbitmq}" -H 'content-type: application/json' "$@"; }
 TB="docker compose --profile toolbox run --rm -T toolbox"
 DC="docker compose --profile infra --profile research"
 VOLUME="${COMPOSE_PROJECT_NAME:-lean}_lean-data"
@@ -51,6 +55,29 @@ echo "failing app publishes nothing (kdc without --source-dir):"
 set +e; $TB kdc --date=20240102 > /dev/null 2>&1; s=$?; set -e
 [ "$s" -ne 0 ] && ok "exit code $s" || fail "kdc without inputs exited 0"
 check "toolbox staging cleaned" "$(on_volume 'find /d/.toolbox-staging -mindepth 1 -maxdepth 1 | wc -l' | tr -d ' ')" 0
+
+echo "results (profile results): a finished backtest for the notebook"
+latest=$(curl -fsS "$RESULTS/internal/v1/results?limit=200" | jq -c '[.items[] | select(.kind == "backtest")] | last // empty')
+[ -n "$latest" ] || fail "no backtest result: run sh deploy/compose/smoke-backtest.sh first"
+job=$(echo "$latest" | jq -r .jobId)
+if [ "$(echo "$latest" | jq -r .status)" != completed ]; then
+    # smoke-backtest.sh drives the worker directly; in the full stack job-orchestrator emits job.completed for it.
+    ref=$(curl -fsS "$RESULTS/internal/v1/results/$job" | jq -c '.result // empty')
+    [ -n "$ref" ] || fail "result $job has no final result file"
+    vhost="${RABBITMQ_VHOST:-lean}"
+    props=$(jq -nc --arg j "$job" --arg m "$(cat /proc/sys/kernel/random/uuid)" --argjson ts "$(date +%s)" \
+        '{message_id:$m, correlation_id:$j, type:"events.v1.JobCompleted", content_type:"application/json", delivery_mode:2,
+          timestamp:$ts, app_id:"job-orchestrator", headers:{"contract-version":"1.0", "job-id":$j, attempt:1, "job-kind":"backtest"}}')
+    body=$(jq -nc --arg j "$job" --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --argjson r "$ref" \
+        '{jobId:$j, kind:"backtest", attempt:1, completedAt:$t, artifacts:[], result:($r | {bucket, key, size, sha256})}')
+    routed=$(mq -X POST "$MQ/exchanges/$vhost/lean.events/publish" -d "$(jq -nc --argjson p "$props" \
+        --arg k "job.backtest.$job.status.v1" --arg b "$body" '{properties:$p, routing_key:$k, payload:$b, payload_encoding:"string"}')" | jq -r .routed)
+    check "events.v1.JobCompleted routed for $job (stand-in for job-orchestrator)" "$routed" true
+    for _ in $(seq 1 30); do
+        [ "$(curl -fsS "$RESULTS/internal/v1/results/$job" | jq -r .status)" = completed ] && break; sleep 1
+    done
+fi
+check "results $job status" "$(curl -fsS "$RESULTS/internal/v1/results/$job" | jq -r .status)" completed
 
 echo "research (profile research):"
 check "jupyter /api" "$(curl -s "$RESEARCH/api" | jq -r 'has("version")')" true
