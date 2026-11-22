@@ -1,0 +1,42 @@
+{
+  "schema": "report.requested",
+  "routingKey": "jobs.report.v1",
+  "exchange": "lean.jobs",
+  "envelope": {
+    "messageId": "0b5d1d8e-1111-4c1a-9a1e-000000000008",
+    "correlationId": "7d9e0f1a-2b3c-4d5e-8f6a-7b8c9d0e1f2a",
+    "type": "jobs.v1.ReportRequested",
+    "contentType": "application/json",
+    "deliveryMode": 2,
+    "timestamp": 1795858200,
+    "appId": "job-orchestrator",
+    "headers": {
+      "contract-version": "1.0",
+      "job-id": "7d9e0f1a-2b3c-4d5e-8f6a-7b8c9d0e1f2a",
+      "attempt": 1,
+      "job-kind": "report"
+    }
+  },
+  "body": {
+    "jobId": "7d9e0f1a-2b3c-4d5e-8f6a-7b8c9d0e1f2a",
+    "kind": "report",
+    "attempt": 1,
+    "submittedAt": "2026-11-22T13:31:00Z",
+    "submittedBy": "user-42",
+    "report": {
+      "sourceJobId": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b",
+      "strategyName": "Basic futures",
+      "formats": [
+        "html",
+        "pdf"
+      ]
+    },
+    "backtestResult": {
+      "bucket": "lean-results",
+      "key": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b/1/BasicTemplateFuturesAlgorithm.json",
+      "size": 3869245,
+      "sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+      "contentType": "application/json"
+    }
+  }
+}

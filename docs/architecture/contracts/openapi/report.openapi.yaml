@@ -1,0 +1,110 @@
+openapi: 3.1.0
+info:
+  title: report internal API
+  version: 1.0.0
+  description: |
+    Renders HTML/PDF reports from stored results (ADR 0001) with `Report.Report` unchanged, one render at a
+    time per replica (Python GIL). Renders are jobs (kind `report`): submitted through job-orchestrator,
+    dispatched as `report.requested` on `jobs.report`, written to `lean-reports/<jobId>/<attempt>/report.html`
+    and `report.pdf`, announced with `job.completed`. This API serves report metadata and the object
+    references; the gateway presigns downloads. Private network only.
+  contact:
+    name: LEAN migration
+    url: https://github.com/jricetti-cog/Lean
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+  - url: http://report:8080
+    description: Compose / cluster service name
+tags:
+  - name: reports
+    description: Report metadata.
+  - name: ops
+    description: Health.
+paths:
+  /internal/v1/reports:
+    get:
+      tags: [reports]
+      operationId: listReports
+      summary: List reports
+      description: Reports, optionally for one source job.
+      parameters:
+        - name: sourceJobId
+          in: query
+          required: false
+          description: Backtest or live job the report is about.
+          schema:
+            $ref: '../messages/v1/defs.schema.json#/$defs/JobId'
+        - $ref: 'common.yaml#/components/parameters/Cursor'
+        - $ref: 'common.yaml#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of reports.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Report'
+  /internal/v1/reports/{id}:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+    get:
+      tags: [reports]
+      operationId: getReport
+      summary: Get a report
+      description: Report job state and, once completed, the MinIO references of the rendered files.
+      responses:
+        '200':
+          description: The report.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+  /healthz:
+    get:
+      tags: [ops]
+      operationId: health
+      summary: Health
+      description: RabbitMQ and MinIO connectivity, render slot state.
+      responses:
+        '200':
+          $ref: 'common.yaml#/components/responses/Health'
+components:
+  schemas:
+    Report:
+      type: object
+      required: [jobId, status, attempt, spec]
+      properties:
+        jobId:
+          $ref: '../messages/v1/defs.schema.json#/$defs/JobId'
+        status:
+          $ref: '../messages/v1/defs.schema.json#/$defs/JobStatus'
+        attempt:
+          $ref: '../messages/v1/defs.schema.json#/$defs/Attempt'
+        spec:
+          $ref: '../messages/v1/defs.schema.json#/$defs/ReportSpec'
+        html:
+          oneOf:
+            - $ref: '../messages/v1/defs.schema.json#/$defs/ObjectRef'
+            - type: 'null'
+        pdf:
+          oneOf:
+            - $ref: '../messages/v1/defs.schema.json#/$defs/ObjectRef'
+            - type: 'null'
+        error:
+          oneOf:
+            - $ref: '../messages/v1/defs.schema.json#/$defs/ErrorInfo'
+            - type: 'null'
+        completedAt:
+          oneOf:
+            - $ref: '../messages/v1/defs.schema.json#/$defs/Timestamp'
+            - type: 'null'

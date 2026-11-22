@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.lean.local/messages/v1/report.requested.schema.json",
+  "title": "report.requested (v1)",
+  "description": "Dispatch of a report render. Published by job-orchestrator's outbox relay to `lean.jobs` with routing key `jobs.report.v1`, AMQP type `jobs.v1.ReportRequested`. Consumed by the report service (one render at a time per replica, GIL), which downloads `backtestResult` (and `liveResult`), runs `Report.Report` unchanged and uploads `report.html`/`report.pdf` to `lean-reports/<jobId>/<attempt>/`. The orchestrator resolves the source result references from the results service before publishing.",
+  "type": "object",
+  "required": ["jobId", "kind", "attempt", "submittedAt", "submittedBy", "report", "backtestResult"],
+  "additionalProperties": false,
+  "properties": {
+    "jobId": { "$ref": "defs.schema.json#/$defs/JobId" },
+    "kind": { "const": "report" },
+    "attempt": { "$ref": "defs.schema.json#/$defs/Attempt" },
+    "submittedAt": { "$ref": "defs.schema.json#/$defs/Timestamp" },
+    "submittedBy": { "type": "string" },
+    "report": { "$ref": "defs.schema.json#/$defs/ReportSpec" },
+    "backtestResult": {
+      "$ref": "defs.schema.json#/$defs/ObjectRef",
+      "description": "`backtest-data-source-file`: final result JSON of the source job (`job.completed.result`)."
+    },
+    "liveResult": {
+      "$ref": "defs.schema.json#/$defs/ObjectRef",
+      "description": "`live-data-source-file`, optional."
+    }
+  }
+}

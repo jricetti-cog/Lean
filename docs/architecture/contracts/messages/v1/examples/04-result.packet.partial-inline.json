@@ -1,0 +1,54 @@
+{
+  "schema": "result.packet",
+  "routingKey": "job.backtest.3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b.result.v1",
+  "exchange": "lean.events",
+  "envelope": {
+    "messageId": "0b5d1d8e-1111-4c1a-9a1e-000000000004",
+    "correlationId": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b",
+    "type": "packets.v1.BacktestResult",
+    "contentType": "application/json",
+    "deliveryMode": 2,
+    "timestamp": 1795858200,
+    "appId": "lean-engine",
+    "headers": {
+      "contract-version": "1.0",
+      "job-id": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b",
+      "attempt": 1,
+      "job-kind": "backtest",
+      "packet-type": "BacktestResult",
+      "sequence": 8
+    }
+  },
+  "body": {
+    "Type": "BacktestResult",
+    "Channel": "",
+    "UserId": 0,
+    "ProjectId": 0,
+    "SessionId": "",
+    "BacktestId": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b",
+    "OptimizationId": null,
+    "CompileId": "",
+    "Name": "Basic futures",
+    "PeriodStart": "2013-10-07T00:00:00",
+    "PeriodFinish": "2013-10-11T00:00:00",
+    "DateRequested": "2026-11-22T13:30:00Z",
+    "DateFinished": "2026-11-22T13:30:00Z",
+    "Progress": 0.42,
+    "Results": {
+      "Charts": {},
+      "Orders": {},
+      "OrderEvents": [],
+      "ProfitLoss": {},
+      "Statistics": {},
+      "RuntimeStatistics": {
+        "Equity": "$1,012,345.67"
+      },
+      "State": {},
+      "ServerStatistics": {},
+      "AlgorithmConfiguration": null,
+      "TotalPerformance": null
+    },
+    "ProcessingTime": 0.0,
+    "TradeableDates": 5
+  }
+}

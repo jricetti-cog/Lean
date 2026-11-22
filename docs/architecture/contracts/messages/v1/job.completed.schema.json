@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.lean.local/messages/v1/job.completed.schema.json",
+  "title": "job.completed (v1)",
+  "description": "Terminal success of an attempt. Published by the worker host (or optimizer/report/market-data for their kinds) **after** the engine process exited and the attempt's folder is uploaded to MinIO, and before the dispatch is acked. Routing key `job.<kind>.<jobId>.status.v1`, AMQP type `events.v1.JobCompleted`, persistent, with confirms. Carries a MinIO reference to the full result JSON, never the payload (ADR 0005: the futures result was 3.69 MB and publishing it inline cost +12% engine time). Consumed by job-orchestrator (-> completed), optimizer (child results), results (finalise), gateway SSE.",
+  "type": "object",
+  "required": ["jobId", "kind", "attempt", "completedAt", "result", "artifacts"],
+  "additionalProperties": false,
+  "properties": {
+    "jobId": { "$ref": "defs.schema.json#/$defs/JobId" },
+    "kind": { "$ref": "defs.schema.json#/$defs/JobKind" },
+    "attempt": { "$ref": "defs.schema.json#/$defs/Attempt" },
+    "parentJobId": { "$ref": "defs.schema.json#/$defs/JobId" },
+    "completedAt": { "$ref": "defs.schema.json#/$defs/Timestamp" },
+    "result": {
+      "$ref": "defs.schema.json#/$defs/ObjectRef",
+      "description": "Main output. backtest/live: `lean-results/<jobId>/<attempt>/<algorithmId>.json`, the result JSON exactly as the engine wrote it (`BaseResultsHandler.SaveResults`, camelCase, deserializes to `BacktestResult`/`LiveResult`). report: `lean-reports/<jobId>/<attempt>/report.html`. optimization: `lean-results/<jobId>/<attempt>/optimization-result.json` (`OptimizationResult`). marketdata: `lean-results/<jobId>/<attempt>/task-summary.json`."
+    },
+    "artifacts": {
+      "type": "array",
+      "description": "Every other uploaded file of the attempt (`-log.txt`, `-order-events.json`, `-summary.json`, object-store files, `report.pdf`, ...).",
+      "items": { "$ref": "defs.schema.json#/$defs/ObjectRef" },
+      "maxItems": 1000
+    },
+    "statistics": {
+      "$ref": "defs.schema.json#/$defs/Statistics",
+      "description": "Optional copy of the final `Statistics` (28 entries, about 2 KB) so job-orchestrator and the optimizer can show/fold headline numbers without downloading `result`. `result` stays authoritative."
+    },
+    "algorithmId": {
+      "type": "string",
+      "description": "Engine `AlgorithmId` (`BacktestId`/`DeployId`), the prefix of the result file names."
+    },
+    "exitCode": {
+      "type": "integer",
+      "description": "Informational. Python jobs currently abort with -6 after a successful run (ADR 0005 finding 5)."
+    }
+  }
+}

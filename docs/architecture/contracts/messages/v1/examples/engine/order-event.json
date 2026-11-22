@@ -1,0 +1,29 @@
+{
+  "Event": {
+    "OrderId": 1,
+    "Id": 0,
+    "Symbol": {
+      "value": "EURUSD",
+      "id": "EURUSD 8G",
+      "permtick": "EURUSD"
+    },
+    "UtcTime": "2013-10-07T13:31:00Z",
+    "Status": 3,
+    "OrderFee": {
+      "Value": {
+        "Amount": 1.0,
+        "Currency": "USD"
+      }
+    },
+    "FillPrice": 1.0855,
+    "FillPriceCurrency": "",
+    "FillQuantity": 10000.0,
+    "Direction": 0,
+    "Message": "filled",
+    "IsAssignment": false,
+    "Quantity": 0.0
+  },
+  "AlgorithmId": "BasicTemplateFuturesAlgorithm",
+  "Type": "OrderEvent",
+  "Channel": ""
+}

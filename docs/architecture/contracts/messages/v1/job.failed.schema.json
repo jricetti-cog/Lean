@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.lean.local/messages/v1/job.failed.schema.json",
+  "title": "job.failed (v1)",
+  "description": "An attempt failed. Published by the worker host after uploading what exists (logs!), or by job-orchestrator when it gives up (deadline passed, lease lost, message dead-lettered after max attempts). Routing key `job.<kind>.<jobId>.status.v1`, AMQP type `events.v1.JobFailed`, persistent, with confirms. `final: false` means the orchestrator will retry (a new attempt follows); `final: true` moves the job to `failed`.",
+  "type": "object",
+  "required": ["jobId", "kind", "attempt", "failedAt", "error", "final"],
+  "additionalProperties": false,
+  "properties": {
+    "jobId": { "$ref": "defs.schema.json#/$defs/JobId" },
+    "kind": { "$ref": "defs.schema.json#/$defs/JobKind" },
+    "attempt": { "$ref": "defs.schema.json#/$defs/Attempt" },
+    "parentJobId": { "$ref": "defs.schema.json#/$defs/JobId" },
+    "failedAt": { "$ref": "defs.schema.json#/$defs/Timestamp" },
+    "error": { "$ref": "defs.schema.json#/$defs/ErrorInfo" },
+    "final": {
+      "type": "boolean",
+      "description": "true when no further attempt will be made."
+    },
+    "artifacts": {
+      "type": "array",
+      "items": { "$ref": "defs.schema.json#/$defs/ObjectRef" },
+      "maxItems": 1000,
+      "description": "Whatever the attempt uploaded before failing (logs, partial results)."
+    }
+  }
+}

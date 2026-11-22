@@ -1,0 +1,23 @@
+# Lint rules for the v1 OpenAPI documents: `npx @stoplight/spectral-cli lint --fail-severity=warn openapi/*.openapi.yaml`
+extends:
+  - [spectral:oas, all]
+rules:
+  contact-properties: off
+  openapi-tags-alphabetical: off
+  # Public routes only on the gateway, internal routes under /internal/v1 (ADR 0002).
+  lean-versioned-paths:
+    description: Paths are /api/v1/..., /internal/v1/... or /healthz.
+    severity: error
+    given: $.paths
+    then:
+      field: '@key'
+      function: pattern
+      functionOptions:
+        match: '^(/api/v1/|/internal/v1/|/healthz$)'
+  lean-problem-details:
+    description: 4xx/5xx responses use RFC 9457 problem details.
+    severity: error
+    given: $.paths[*][*].responses[?(@property >= '400')].content
+    then:
+      field: application/problem+json
+      function: truthy

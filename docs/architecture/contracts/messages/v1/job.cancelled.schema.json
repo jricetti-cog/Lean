@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.lean.local/messages/v1/job.cancelled.schema.json",
+  "title": "job.cancelled (v1)",
+  "description": "The worker stopped a job after a `control.v1.CancelJob`, uploaded what existed and reports `cancelled` (ADR 0002 \"Cancellation\"). Also published by job-orchestrator for jobs cancelled before any worker started them. Routing key `job.<kind>.<jobId>.status.v1`, AMQP type `events.v1.JobCancelled`, persistent.",
+  "type": "object",
+  "required": ["jobId", "kind", "attempt", "cancelledAt", "reason"],
+  "additionalProperties": false,
+  "properties": {
+    "jobId": { "$ref": "defs.schema.json#/$defs/JobId" },
+    "kind": { "$ref": "defs.schema.json#/$defs/JobKind" },
+    "attempt": { "$ref": "defs.schema.json#/$defs/Attempt" },
+    "parentJobId": { "$ref": "defs.schema.json#/$defs/JobId" },
+    "cancelledAt": { "$ref": "defs.schema.json#/$defs/Timestamp" },
+    "reason": {
+      "type": "string",
+      "enum": ["user", "deadline", "optimization-finished", "lease-revoked"],
+      "description": "Why the job was cancelled."
+    },
+    "leaseEpoch": { "$ref": "defs.schema.json#/$defs/LeaseEpoch" },
+    "artifacts": {
+      "type": "array",
+      "items": { "$ref": "defs.schema.json#/$defs/ObjectRef" },
+      "maxItems": 1000
+    }
+  }
+}

@@ -1,0 +1,156 @@
+openapi: 3.1.0
+info:
+  title: optimizer internal API
+  version: 1.0.0
+  description: |
+    Parameter search (ADR 0001). Consumes `optimization.requested` from `jobs.optimization`, runs LEAN's
+    `IOptimizationStrategy` (e.g. `GridSearchOptimizationStrategy`) and submits every parameter set as a
+    child backtest through job-orchestrator (`POST /internal/v1/jobs`, `parentJobId` = optimization id, at most
+    `maximumConcurrentBacktests` in flight). It folds child results from `optimizer.children`
+    (`job.completed` statistics, `job.failed`) and publishes `job.progress` / terminal status for the
+    optimization. Submission and cancellation go through the orchestrator; this API serves optimization state.
+    Private network only.
+  contact:
+    name: LEAN migration
+    url: https://github.com/jricetti-cog/Lean
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+  - url: http://optimizer:8080
+    description: Compose / cluster service name
+tags:
+  - name: optimizations
+    description: Optimization state.
+  - name: ops
+    description: Health.
+paths:
+  /internal/v1/optimizations/estimate:
+    post:
+      tags: [optimizations]
+      operationId: estimateOptimization
+      summary: Estimate the number of backtests
+      description: Runs the strategy's parameter-set generation without submitting anything (LEAN `OptimizationEstimate`), so the console can show the cost before submit.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../messages/v1/defs.schema.json#/$defs/OptimizationSpec'
+      responses:
+        '200':
+          description: Estimate.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [totalBacktests]
+                properties:
+                  totalBacktests:
+                    type: integer
+                    minimum: 0
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+  /internal/v1/optimizations/{id}:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+    get:
+      tags: [optimizations]
+      operationId: getOptimization
+      summary: Optimization state
+      description: Counters and the best parameter set so far by the objective of `criterion`.
+      responses:
+        '200':
+          description: State.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OptimizationState'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+  /internal/v1/optimizations/{id}/children:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+    get:
+      tags: [optimizations]
+      operationId: listOptimizationChildren
+      summary: Child backtests
+      description: Parameter set, child job and its statistics (from `job.completed`), sortable by the objective.
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/StatusFilter'
+        - $ref: 'common.yaml#/components/parameters/Cursor'
+        - $ref: 'common.yaml#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of children.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ChildBacktest'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+  /healthz:
+    get:
+      tags: [ops]
+      operationId: health
+      summary: Health
+      description: PostgreSQL, RabbitMQ and job-orchestrator reachability.
+      responses:
+        '200':
+          $ref: 'common.yaml#/components/responses/Health'
+components:
+  schemas:
+    OptimizationState:
+      type: object
+      required: [jobId, status, totalBacktests, completed, failed, running, queued]
+      properties:
+        jobId:
+          $ref: '../messages/v1/defs.schema.json#/$defs/JobId'
+        status:
+          $ref: '../messages/v1/defs.schema.json#/$defs/JobStatus'
+        totalBacktests:
+          type: integer
+          minimum: 0
+        completed:
+          type: integer
+          minimum: 0
+        failed:
+          type: integer
+          minimum: 0
+        running:
+          type: integer
+          minimum: 0
+        queued:
+          type: integer
+          minimum: 0
+        best:
+          oneOf:
+            - $ref: '#/components/schemas/ChildBacktest'
+            - type: 'null'
+        result:
+          oneOf:
+            - $ref: '../messages/v1/defs.schema.json#/$defs/ObjectRef'
+            - type: 'null'
+          description: '`lean-results/<optimizationId>/<attempt>/optimization.json` (LEAN `OptimizationResult` list) once completed.'
+    ChildBacktest:
+      type: object
+      required: [jobId, parameters, status]
+      properties:
+        jobId:
+          $ref: '../messages/v1/defs.schema.json#/$defs/JobId'
+        parameters:
+          $ref: '../messages/v1/defs.schema.json#/$defs/Parameters'
+        status:
+          $ref: '../messages/v1/defs.schema.json#/$defs/JobStatus'
+        objective:
+          type: [number, 'null']
+          description: Value of the criterion's target statistic.
+        statistics:
+          $ref: '../messages/v1/defs.schema.json#/$defs/Statistics'

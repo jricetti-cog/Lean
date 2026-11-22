@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.lean.local/messages/v1/result.packet.schema.json",
+  "title": "result.packet (v1)",
+  "description": "An engine packet on the bus. Published by the bus `Messaging` adapter in the job's child Launcher (every `IMessagingHandler.Send(packet)`) and, for the final result, by the worker host after upload. Exchange `lean.events`, routing key `job.<kind>.<jobId>.<event>.v1` where `<event>` follows the packet type (topology.md). No engine type changes: an inline body IS the packet's existing Newtonsoft JSON (`JsonConvert.SerializeObject(packet)`, PascalCase), so consumers deserialize `BacktestResultPacket`, `LiveResultPacket`, `LogPacket`, `OrderEventPacket`, ... unchanged; AMQP type `packets.v1.<PacketType>`, header `packet-type`. A packet is sent by reference instead (AMQP type `packets.v1.PacketRef`) when it is the final result (always, ADR 0005) or its serialized body exceeds the 256 KiB inline limit.",
+  "oneOf": [
+    { "$ref": "#/$defs/InlinePacket" },
+    { "$ref": "#/$defs/PacketRef" }
+  ],
+  "$defs": {
+    "InlinePacket": {
+      "type": "object",
+      "title": "Inline LEAN packet",
+      "description": "A LEAN `QuantConnect.Packets.Packet` subclass serialized as-is. Only the fields consumers rely on are constrained; every other packet field passes through (additionalProperties).",
+      "required": ["Type"],
+      "properties": {
+        "Type": {
+          "type": "string",
+          "enum": ["BacktestResult", "LiveResult", "Log", "Debug", "SystemDebug", "OrderEvent", "RuntimeError", "HandledError", "AlgorithmStatus"],
+          "description": "LEAN `PacketType` (StringEnumConverter). Other packet types are not published in v1."
+        },
+        "Channel": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "Type": { "const": "BacktestResult" } } },
+          "then": {
+            "required": ["BacktestId", "Progress", "Results"],
+            "properties": {
+              "BacktestId": { "type": "string" },
+              "OptimizationId": { "type": ["string", "null"] },
+              "Progress": {
+                "type": "number",
+                "minimum": 0,
+                "exclusiveMaximum": 1,
+                "description": "Partial packets only: the final packet (Progress = 1) always goes by reference."
+              },
+              "Results": { "type": "object" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "Type": { "const": "LiveResult" } } },
+          "then": { "required": ["DeployId", "Results"], "properties": { "DeployId": { "type": "string" }, "Results": { "type": "object" } } }
+        },
+        {
+          "if": { "properties": { "Type": { "enum": ["Log", "Debug", "SystemDebug", "RuntimeError", "HandledError"] } } },
+          "then": { "required": ["Message", "AlgorithmId"], "properties": { "Message": { "type": "string" }, "AlgorithmId": { "type": "string" } } }
+        },
+        {
+          "if": { "properties": { "Type": { "const": "OrderEvent" } } },
+          "then": { "required": ["Event", "AlgorithmId"], "properties": { "Event": { "type": "object" }, "AlgorithmId": { "type": "string" } } }
+        },
+        {
+          "if": { "properties": { "Type": { "const": "AlgorithmStatus" } } },
+          "then": {
+            "required": ["Status", "AlgorithmId"],
+            "properties": {
+              "Status": {
+                "type": "string",
+                "enum": ["DeployError", "InQueue", "Running", "Stopped", "Liquidated", "Deleted", "Completed", "RuntimeError", "Invalid", "LoggingIn", "Initializing", "History"]
+              },
+              "AlgorithmId": { "type": "string" }
+            }
+          }
+        }
+      ]
+    },
+    "PacketRef": {
+      "type": "object",
+      "title": "Packet by reference",
+      "description": "Stand-in for a packet stored in MinIO. Never carries the payload.",
+      "required": ["packetType", "jobId", "attempt", "final", "object", "format"],
+      "additionalProperties": false,
+      "properties": {
+        "packetType": {
+          "type": "string",
+          "enum": ["BacktestResult", "LiveResult", "Log", "OrderEvent", "RuntimeError"]
+        },
+        "jobId": { "$ref": "defs.schema.json#/$defs/JobId" },
+        "attempt": { "$ref": "defs.schema.json#/$defs/Attempt" },
+        "algorithmId": { "type": "string" },
+        "final": {
+          "type": "boolean",
+          "description": "true for the final result of the attempt."
+        },
+        "progress": { "type": "number", "minimum": 0, "maximum": 1 },
+        "object": {
+          "$ref": "defs.schema.json#/$defs/ObjectRef",
+          "description": "Final: `lean-results/<jobId>/<attempt>/<algorithmId>.json`, the engine's own result file. Oversize partial: `lean-results/<jobId>/<attempt>/packets/<sequence>.json`, the packet JSON that would have been inline."
+        },
+        "format": {
+          "type": "string",
+          "enum": ["lean-result-file", "lean-packet"],
+          "description": "`lean-result-file`: camelCase result JSON written by `BaseResultsHandler.SaveResults` (deserialize as `BacktestResult`/`LiveResult` with the result handler's serializer settings). `lean-packet`: the PascalCase packet JSON of an InlinePacket."
+        },
+        "statistics": {
+          "$ref": "defs.schema.json#/$defs/Statistics",
+          "description": "Final only, optional: copy of `Statistics`."
+        }
+      },
+      "if": { "properties": { "final": { "const": true } } },
+      "then": { "properties": { "format": { "const": "lean-result-file" }, "packetType": { "enum": ["BacktestResult", "LiveResult"] } } }
+    }
+  }
+}

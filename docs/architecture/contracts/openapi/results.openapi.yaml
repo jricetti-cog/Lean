@@ -1,0 +1,328 @@
+openapi: 3.1.0
+info:
+  title: results internal API
+  version: 1.0.0
+  description: |
+    Owns stored results (ADR 0001/0003). Consumes `results.packets` (`result`, `order`, `log`, `error`,
+    `status` events, see topology.md): inline LEAN packets are deserialized as the engine's own
+    `BacktestResultPacket`/`LiveResultPacket`/`LogPacket`/`OrderEventPacket` types; the final result arrives as
+    a `PacketRef`/`job.completed` reference to `lean-results/<jobId>/<attempt>/<algorithmId>.json`, which it
+    reads from MinIO and indexes (statistics, orders, order events, chart names) in its `results` database.
+    Charts are served from the result JSON in MinIO, not from PostgreSQL. Called by api-gateway, report
+    (through the orchestrator's source resolution) and optimizer. Private network only.
+  contact:
+    name: LEAN migration
+    url: https://github.com/jricetti-cog/Lean
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+  - url: http://results:8080
+    description: Compose / cluster service name
+tags:
+  - name: results
+    description: Result queries.
+  - name: ops
+    description: Health.
+paths:
+  /internal/v1/results:
+    get:
+      tags: [results]
+      operationId: listResults
+      summary: List result summaries
+      description: Summaries of many jobs, e.g. all children of an optimization (used by optimizer to fold results and by the console's comparison view).
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/ParentFilter'
+        - name: jobId
+          in: query
+          required: false
+          description: Explicit job ids (repeatable).
+          style: form
+          explode: true
+          schema:
+            type: array
+            maxItems: 200
+            items:
+              $ref: '../messages/v1/defs.schema.json#/$defs/JobId'
+        - $ref: 'common.yaml#/components/parameters/Cursor'
+        - $ref: 'common.yaml#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of summaries.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ResultSummary'
+  /internal/v1/results/{id}:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+      - $ref: '#/components/parameters/AttemptQuery'
+    get:
+      tags: [results]
+      operationId: getResult
+      summary: Result summary
+      description: Statistics, runtime statistics, progress and the MinIO reference of the full result JSON. While the job runs, values come from the latest inline partial packet.
+      responses:
+        '200':
+          description: Summary.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultSummary'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+  /internal/v1/results/{id}/charts:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+      - $ref: '#/components/parameters/AttemptQuery'
+    get:
+      tags: [results]
+      operationId: listCharts
+      summary: Chart names
+      description: Chart and series names of the result.
+      responses:
+        '200':
+          description: Charts.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [name, series]
+                  properties:
+                    name:
+                      type: string
+                    series:
+                      type: array
+                      items:
+                        type: string
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+  /internal/v1/results/{id}/charts/{chart}:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+      - $ref: '#/components/parameters/AttemptQuery'
+      - name: chart
+        in: path
+        required: true
+        description: Chart name, e.g. `Strategy Equity`.
+        schema:
+          type: string
+    get:
+      tags: [results]
+      operationId: getChart
+      summary: One chart
+      description: The chart exactly as in LEAN's result JSON (`Chart` with `series` and points), optionally downsampled.
+      parameters:
+        - name: maxPoints
+          in: query
+          required: false
+          description: Downsample each series to at most this many points.
+          schema:
+            type: integer
+            minimum: 10
+            maximum: 100000
+      responses:
+        '200':
+          description: LEAN chart JSON.
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Serialized `QuantConnect.Chart`.
+                required: [name, series]
+                properties:
+                  name:
+                    type: string
+                  series:
+                    type: object
+                    additionalProperties: true
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+  /internal/v1/results/{id}/orders:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+      - $ref: '#/components/parameters/AttemptQuery'
+    get:
+      tags: [results]
+      operationId: listOrders
+      summary: Orders
+      description: Orders of the attempt, as LEAN serializes `Order` in the result JSON.
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/Cursor'
+        - $ref: 'common.yaml#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of orders.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeanObjectPage'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+  /internal/v1/results/{id}/order-events:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+      - $ref: '#/components/parameters/AttemptQuery'
+    get:
+      tags: [results]
+      operationId: listOrderEvents
+      summary: Order events
+      description: '`OrderEvent`s in arrival order (from `OrderEventPacket`s and the final result).'
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/Cursor'
+        - $ref: 'common.yaml#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of order events.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeanObjectPage'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+  /internal/v1/results/{id}/logs:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+      - $ref: '#/components/parameters/AttemptQuery'
+    get:
+      tags: [results]
+      operationId: listLogs
+      summary: Logs
+      description: Algorithm log, debug and error messages (`LogPacket`, `DebugPacket`, `RuntimeErrorPacket`, `HandledErrorPacket`).
+      parameters:
+        - name: level
+          in: query
+          required: false
+          description: Filter by packet type.
+          schema:
+            type: string
+            enum: [Log, Debug, SystemDebug, RuntimeError, HandledError]
+        - $ref: 'common.yaml#/components/parameters/Cursor'
+        - $ref: 'common.yaml#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of log lines.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/LogLine'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+  /internal/v1/results/{id}/artifacts:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+      - $ref: '#/components/parameters/AttemptQuery'
+    get:
+      tags: [results]
+      operationId: listArtifacts
+      summary: Artifacts
+      description: Objects under `lean-results/<jobId>/<attempt>/` (result JSON, `-log.txt`, order events, object store). The gateway turns them into presigned URLs.
+      responses:
+        '200':
+          description: Artifact references.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '../messages/v1/defs.schema.json#/$defs/ObjectRef'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+  /healthz:
+    get:
+      tags: [ops]
+      operationId: health
+      summary: Health
+      description: PostgreSQL, RabbitMQ consumer and MinIO connectivity.
+      responses:
+        '200':
+          $ref: 'common.yaml#/components/responses/Health'
+components:
+  parameters:
+    AttemptQuery:
+      name: attempt
+      in: query
+      required: false
+      description: Attempt to read; defaults to the latest completed (else latest) attempt.
+      schema:
+        $ref: '../messages/v1/defs.schema.json#/$defs/Attempt'
+  schemas:
+    ResultSummary:
+      type: object
+      required: [jobId, attempt, kind, status, progress, statistics, runtimeStatistics]
+      properties:
+        jobId:
+          $ref: '../messages/v1/defs.schema.json#/$defs/JobId'
+        attempt:
+          $ref: '../messages/v1/defs.schema.json#/$defs/Attempt'
+        kind:
+          type: string
+          enum: [backtest, live]
+        parentJobId:
+          oneOf:
+            - $ref: '../messages/v1/defs.schema.json#/$defs/JobId'
+            - type: 'null'
+        status:
+          $ref: '../messages/v1/defs.schema.json#/$defs/JobStatus'
+        algorithmId:
+          type: string
+        progress:
+          type: number
+          minimum: 0
+          maximum: 1
+        parameters:
+          $ref: '../messages/v1/defs.schema.json#/$defs/Parameters'
+        statistics:
+          $ref: '../messages/v1/defs.schema.json#/$defs/Statistics'
+        runtimeStatistics:
+          $ref: '../messages/v1/defs.schema.json#/$defs/Statistics'
+        orderCount:
+          type: integer
+          minimum: 0
+        result:
+          oneOf:
+            - $ref: '../messages/v1/defs.schema.json#/$defs/ObjectRef'
+            - type: 'null'
+          description: Full result JSON in MinIO once the attempt completed.
+        updatedAt:
+          $ref: '../messages/v1/defs.schema.json#/$defs/Timestamp'
+    LeanObjectPage:
+      allOf:
+        - $ref: 'common.yaml#/components/schemas/Page'
+        - type: object
+          properties:
+            items:
+              type: array
+              description: LEAN objects in their result-JSON form (camelCase).
+              items:
+                type: object
+                additionalProperties: true
+    LogLine:
+      type: object
+      required: [time, type, message]
+      properties:
+        time:
+          $ref: '../messages/v1/defs.schema.json#/$defs/Timestamp'
+        type:
+          type: string
+          enum: [Log, Debug, SystemDebug, RuntimeError, HandledError]
+        message:
+          type: string
+        stackTrace:
+          type: [string, 'null']

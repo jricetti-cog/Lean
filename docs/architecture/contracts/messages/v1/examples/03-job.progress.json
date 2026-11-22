@@ -1,0 +1,39 @@
+{
+  "schema": "job.progress",
+  "routingKey": "job.backtest.3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b.progress.v1",
+  "exchange": "lean.events",
+  "envelope": {
+    "messageId": "0b5d1d8e-1111-4c1a-9a1e-000000000003",
+    "correlationId": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b",
+    "type": "events.v1.JobProgress",
+    "contentType": "application/json",
+    "deliveryMode": 1,
+    "timestamp": 1795858200,
+    "appId": "lean-engine",
+    "headers": {
+      "contract-version": "1.0",
+      "job-id": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b",
+      "attempt": 1,
+      "job-kind": "backtest",
+      "sequence": 7
+    }
+  },
+  "body": {
+    "jobId": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b",
+    "kind": "backtest",
+    "attempt": 1,
+    "at": "2026-11-22T13:30:03Z",
+    "progress": 0.42,
+    "algorithmTime": "2013-10-08T15:59:00Z",
+    "runtimeStatistics": {
+      "Equity": "$1,012,345.67",
+      "Net Profit": "$12,345.67",
+      "Return": "1.23 %",
+      "Unrealized": "$0.00",
+      "Fees": "-$1,234.00",
+      "Holdings": "$0.00",
+      "Volume": "$9,876,543.21",
+      "Capacity": "$0"
+    }
+  }
+}

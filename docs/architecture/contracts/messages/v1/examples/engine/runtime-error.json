@@ -1,0 +1,8 @@
+{
+  "Message": "Division by zero",
+  "AlgorithmId": "BasicTemplateFuturesAlgorithm",
+  "StackTrace": "at Algo.OnData()",
+  "UserId": 1,
+  "Type": "RuntimeError",
+  "Channel": ""
+}

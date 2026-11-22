@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.lean.local/messages/v1/job.progress.schema.json",
+  "title": "job.progress (v1)",
+  "description": "Small, inline progress update for UIs (progress bar, headline numbers). Published by the bus `Messaging` adapter whenever the engine sends a partial `BacktestResultPacket`/`LiveResultPacket` (next to the result.packet for it), and by the optimizer for optimization jobs. Routing key `job.<kind>.<jobId>.progress.v1`, AMQP type `events.v1.JobProgress`, transient. Consumed by the gateway's SSE queues only. Never larger than a few KB.",
+  "type": "object",
+  "required": ["jobId", "kind", "attempt", "at", "progress"],
+  "additionalProperties": false,
+  "properties": {
+    "jobId": { "$ref": "defs.schema.json#/$defs/JobId" },
+    "kind": { "$ref": "defs.schema.json#/$defs/JobKind" },
+    "attempt": { "$ref": "defs.schema.json#/$defs/Attempt" },
+    "parentJobId": { "$ref": "defs.schema.json#/$defs/JobId" },
+    "at": { "$ref": "defs.schema.json#/$defs/Timestamp" },
+    "progress": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Fraction done (`BacktestResultPacket.Progress`). Live jobs report 0."
+    },
+    "algorithmTime": {
+      "$ref": "defs.schema.json#/$defs/Timestamp",
+      "description": "Algorithm clock at the last sample."
+    },
+    "runtimeStatistics": {
+      "$ref": "defs.schema.json#/$defs/Statistics",
+      "description": "Headline `RuntimeStatistics` (Equity, Net Profit, Return, ...), copied from the partial packet."
+    },
+    "optimization": {
+      "type": "object",
+      "description": "Optimization jobs only: children counters (from `LeanOptimizer.SendUpdate`).",
+      "required": ["total", "completed", "failed", "running"],
+      "additionalProperties": false,
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "completed": { "type": "integer", "minimum": 0 },
+        "failed": { "type": "integer", "minimum": 0 },
+        "running": { "type": "integer", "minimum": 0 },
+        "bestJobId": { "$ref": "defs.schema.json#/$defs/JobId" },
+        "bestTargetValue": { "type": "number" }
+      }
+    }
+  }
+}
