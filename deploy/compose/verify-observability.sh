@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
 # Plan step s5.3 verification: the observability profile (OpenTelemetry Collector, Prometheus, Grafana, Tempo, Loki,
 # postgres-exporter) next to the whole platform. Submits one backtest through api-gateway and checks that a single
-# trace spans gateway -> orchestrator -> worker -> results, that metrics and logs of every service reach Prometheus
+# trace spans gateway -> orchestrator -> worker -> results, runs a 2-backtest optimization so the optimizer has RED
+# data too, and checks that metrics and logs of every service reach Prometheus
 # and Loki, and that every panel query of the provisioned Grafana dashboards returns data.
 # Run from the repo root: deploy/compose/verify-observability.sh   (KEEP=1 leaves the stack running)
 set -euo pipefail
 [ -f .env ] && { set -a; . ./.env; set +a; }
-DC="docker compose --profile infra --profile orchestrator --profile market-data --profile results --profile report --profile workers --profile gateway --profile observability"
+DC="docker compose --profile infra --profile orchestrator --profile market-data --profile results --profile report --profile workers --profile gateway --profile optimizer --profile observability"
 GW="http://127.0.0.1:${GATEWAY_PORT:-5080}"; KEY="${GATEWAY_API_KEY:-lean-dev-api-key}"
 PROM="http://127.0.0.1:${PROMETHEUS_PORT:-9090}"; TEMPO="http://127.0.0.1:${TEMPO_PORT:-3200}"
 LOKI="http://127.0.0.1:${LOKI_PORT:-3100}"; GRAFANA="http://127.0.0.1:${GRAFANA_PORT:-3000}"
 GF_AUTH="${GRAFANA_ADMIN_USER:-admin}:${GRAFANA_ADMIN_PASSWORD:-lean-dev-grafana}"
 SERVICES="api-gateway job-orchestrator backtest-worker results"
+LOG_SERVICES="$SERVICES optimizer"
 pass() { echo "  PASS $*"; }
 fail() { echo "  FAIL $*"; exit 1; }
 prom() { curl -fsS "$PROM/api/v1/query" --data-urlencode "query=$1" | jq -r '.data.result | length'; }
@@ -64,22 +66,52 @@ jq -r '[.batches[] | (.resource.attributes[] | select(.key=="service.name") | .v
 ids=$(jq -r '[.batches[].scopeSpans[].spans[] | .traceId] | unique | length' /tmp/obs-trace.json)
 [ "$ids" = 1 ] && pass "all spans share trace id $trace across $(echo $SERVICES | tr ' ' ',')"
 
+echo "== a 2-backtest grid optimization through the gateway (optimizer RED data, one trace)"
+spec='{"name":"observability grid","backtest":{"algorithm":{"source":"builtin","language":"CSharp","typeName":"ParameterizedAlgorithm"},"maxRamMb":2048},
+  "strategy":"QuantConnect.Optimizer.Strategies.GridSearchOptimizationStrategy",
+  "criterion":{"target":"TotalPerformance.PortfolioStatistics.TotalNetProfit","extremum":"max"},
+  "parameters":[{"name":"ema-fast","min":10,"max":20,"step":10},{"name":"ema-slow","min":100,"max":100,"step":1}],
+  "maximumConcurrentBacktests":2}'
+code=$(curl -sS -o /tmp/obs-opt.body -D /tmp/obs-opt.headers -w '%{http_code}' -X POST -H "X-Api-Key: $KEY" \
+  -H 'Content-Type: application/json' -d "$spec" "$GW/api/v1/optimizations")
+[ "$code" = 201 ] || [ "$code" = 202 ] || fail "optimization submit returned $code $(cat /tmp/obs-opt.body)"
+opt=$(jq -r .id /tmp/obs-opt.body)
+opt_trace=$(grep -i '^x-request-id:' /tmp/obs-opt.headers | tr -d '\r' | cut -d' ' -f2)
+pass "POST /api/v1/optimizations -> $code optimization $opt, trace $opt_trace"
+for _ in $(seq 1 300); do
+  status=$(curl -fsS -H "X-Api-Key: $KEY" "$GW/api/v1/jobs/$opt" | jq -r .status)
+  case "$status" in completed|failed|cancelled) break;; esac; sleep 2
+done
+[ "$status" = completed ] && pass "optimization $opt -> completed ($(curl -fsS -H "X-Api-Key: $KEY" "$GW/api/v1/optimizations/$opt" | jq -c '{completed,best:.best.parameters}'))" || fail "optimization ended $status"
+opt_tree() {
+  curl -fsS "$TEMPO/api/traces/$opt_trace" > /tmp/obs-opt-trace.json 2>/dev/null &&
+  jq -e '[.batches[] | .resource.attributes[] | select(.key=="service.name") | .value.stringValue] | unique as $have
+    | ["api-gateway","optimizer","job-orchestrator","backtest-worker"] - $have | length == 0' /tmp/obs-opt-trace.json >/dev/null
+}
+retry 45 opt_tree && pass "optimization trace $opt_trace: $(jq -r '[.batches[] | (.resource.attributes[] | select(.key=="service.name") | .value.stringValue) as $svc | .scopeSpans[].spans[] | $svc] | group_by(.) | map(.[0] + "=" + (length|tostring)) | join(" ")' /tmp/obs-opt-trace.json)" \
+  || fail "optimization trace incomplete: $(jq -c '[.batches[]?.resource.attributes[]|select(.key=="service.name")|.value.stringValue]|unique' /tmp/obs-opt-trace.json 2>/dev/null)"
+
 echo "== metrics in Prometheus"
 retry 30 sh -c "[ \"\$(curl -fsS '$PROM/api/v1/query' --data-urlencode 'query=sum by (job) (rate(lean_worker_job_duration_seconds_count[5m])) > 0' | jq '.data.result|length')\" -gt 0 ]" || true
 curl -fsS "$PROM/api/v1/targets" | jq -r '.data.activeTargets[] | "    target \(.labels.job) \(.scrapeUrl) \(.health)"'
 [ "$(curl -fsS "$PROM/api/v1/targets" | jq '[.data.activeTargets[] | select(.health!="up")] | length')" = 0 ] && pass "every scrape target up"
-for svc in api-gateway job-orchestrator market-data backtest-worker results report; do
+for svc in api-gateway job-orchestrator market-data backtest-worker results report optimizer; do
   [ "$(prom "target_info{job=\"$svc\"}")" -gt 0 ] && pass "OTLP metrics from $svc" || fail "no OTLP metrics from $svc"
 done
 for q in 'lean_jobs' 'lean_queue_ready' 'sum(lean_worker_busy)' 'lean_worker_job_duration_seconds_count' \
          'http_server_request_duration_seconds_count{job="api-gateway"}' 'lean_messaging_process_duration_seconds_count{job="results"}' \
+         'http_server_request_duration_seconds_count{job="optimizer"}' 'lean_messaging_process_duration_seconds_count{job="optimizer"}' \
          'rabbitmq_identity_info' 'pg_up == 1'; do
   n=$(prom "$q"); [ "$n" -gt 0 ] && pass "$q -> $n series" || fail "$q empty"
 done
 
+retry 30 sh -c "curl -fsS -u '$GF_AUTH' '$GRAFANA/api/datasources/proxy/uid/prometheus/api/v1/label/job/values' --data-urlencode 'match[]=target_info' -G | jq -e '.data | index(\"optimizer\")' >/dev/null" \
+  && pass "Service RED \$service options: $(curl -fsS -u "$GF_AUTH" -G "$GRAFANA/api/datasources/proxy/uid/prometheus/api/v1/label/job/values" --data-urlencode 'match[]=target_info' | jq -r '.data | join(" ")')" \
+  || fail "optimizer missing from the Service RED service variable"
+
 echo "== logs in Loki"
 since=$(( $(date +%s) - 3600 ))
-for svc in $SERVICES; do
+for svc in $LOG_SERVICES; do
   n=$(curl -fsS -G "$LOKI/loki/api/v1/query_range" --data-urlencode "query={service_name=\"$svc\"}" --data-urlencode "start=${since}000000000" --data-urlencode limit=1000 | jq '[.data.result[].values[]] | length')
   [ "$n" -gt 0 ] && pass "loki {service_name=\"$svc\"} -> $n lines" || fail "no logs from $svc"
 done

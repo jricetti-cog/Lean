@@ -126,6 +126,6 @@ job duration p50/p95), Service RED, RabbitMQ health and PostgreSQL health.
 
 ```bash
 docker compose --profile infra --profile orchestrator --profile market-data --profile results --profile report \
-  --profile workers --profile gateway --profile observability up -d --build --wait
-deploy/compose/verify-observability.sh   # one backtest; checks the trace, metrics, logs and every dashboard query
+  --profile workers --profile gateway --profile optimizer --profile observability up -d --build --wait
+deploy/compose/verify-observability.sh   # one backtest + a 2-backtest optimization; checks traces, metrics, logs, dashboard queries
 ```
