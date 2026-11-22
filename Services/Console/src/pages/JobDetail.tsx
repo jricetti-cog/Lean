@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { api, ok, reportDownloadUrl, resultDownloadUrl, TERMINAL, type Job, type ResultSummary } from '../api/client';
 import { useFinalRefresh, useJobEvent, useJobEvents, usePolling, type JobEvents, type Loadable } from '../components/hooks';
@@ -38,6 +38,12 @@ export function JobHeader({ job, actions }: { job: Job; actions?: React.ReactNod
   );
 }
 
+const TERMINAL_STATUS: Record<string, Job['status']> = {
+  'events.v1.JobCompleted': 'completed',
+  'events.v1.JobFailed': 'failed',
+  'events.v1.JobCancelled': 'cancelled',
+};
+
 /**
  * Applies live events to the page's REST data: the snapshot and progress update the job, result packets the
  * runtime statistics, order events reload the orders (debounced) and the terminal status reloads everything.
@@ -45,6 +51,14 @@ export function JobHeader({ job, actions }: { job: Job; actions?: React.ReactNod
 export function useLiveUpdates(events: JobEvents, job: Loadable<Job>, result: Loadable<ResultSummary | undefined>, orders: Loadable<OrderRow[]>) {
   const orderTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(orderTimer.current), []);
+  // The terminal event can arrive before the orchestrator's REST view catches up: keep its status so the page
+  // (and the final refetch) switch to the terminal state at the event, not a polling round later.
+  const ended = useRef<Job['status']>(undefined);
+  const { data: shown, mutate: mutateJob } = job;
+  useLayoutEffect(() => {
+    const status = ended.current;
+    if (status && shown && !TERMINAL.has(shown.status)) mutateJob((j) => j && { ...j, status });
+  }, [shown, mutateJob]);
   // Live algorithms send `order` frames; backtests carry their new orders inside the result packets.
   const reloadOrders = () => {
     clearTimeout(orderTimer.current);
@@ -57,6 +71,8 @@ export function useLiveUpdates(events: JobEvents, job: Loadable<Job>, result: Lo
         job.mutate(() => e.body as Job);
         break;
       case 'status':
+        ended.current = TERMINAL_STATUS[e.type] ?? ended.current;
+        if (ended.current) job.mutate((j) => j && { ...j, status: ended.current! });
         job.reload();
         result.reload();
         orders.reload();
