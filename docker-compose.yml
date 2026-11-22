@@ -43,6 +43,11 @@ services:
     profiles: [infra]
     hostname: rabbitmq
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "${RABBITMQ_CPUS:-2}"
+          memory: ${RABBITMQ_MEMORY:-1g}
     # Adds the compose user to the topology definitions before starting the broker (see the script).
     entrypoint: ["/bin/sh", "/etc/lean/entrypoint.sh"]
     environment:
@@ -74,6 +79,11 @@ services:
     image: ${POSTGRES_IMAGE:-postgres:17.12-alpine}
     profiles: [infra]
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "${POSTGRES_CPUS:-2}"
+          memory: ${POSTGRES_MEMORY:-1g}
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lean-dev-postgres}
@@ -99,6 +109,11 @@ services:
     image: ${MINIO_IMAGE:-pgsty/minio:RELEASE.2026-08-04T00-00-00Z}
     profiles: [infra]
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "${MINIO_CPUS:-1}"
+          memory: ${MINIO_MEMORY:-1g}
     command: ["server", "/data", "--console-address", ":9001"]
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-lean-admin}
@@ -154,6 +169,11 @@ services:
     image: ${SEED_IMAGE:-alpine:3.22.8}
     profiles: [infra]
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "${INFRA_READY_CPUS:-0.25}"
+          memory: ${INFRA_READY_MEMORY:-128m}
     init: true
     command: ["sleep", "infinity"]
     depends_on:
@@ -182,6 +202,11 @@ services:
       target: job-orchestrator
     profiles: [orchestrator]
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "${ORCHESTRATOR_CPUS:-1}"
+          memory: ${ORCHESTRATOR_MEMORY:-1g}
     environment:
       <<: *lean-service-env
       ConnectionStrings__Jobs: Host=postgres;Port=5432;Database=jobs;Username=jobs;Password=${POSTGRES_JOBS_PASSWORD:-lean-dev-jobs}
@@ -195,6 +220,8 @@ services:
       Orchestrator__LiveDeployment__Network: ${COMPOSE_PROJECT_NAME:-lean}_lean
       Orchestrator__LiveDeployment__DataVolume: ${COMPOSE_PROJECT_NAME:-lean}_lean-data
       Orchestrator__LiveDeployment__ContainerPrefix: ${COMPOSE_PROJECT_NAME:-lean}-live-
+      Orchestrator__LiveDeployment__MemoryMb: ${LIVE_WORKER_MEMORY_MB:-4096}
+      Orchestrator__LiveDeployment__Cpus: ${LIVE_WORKER_CPUS:-2}
     # The image runs as a non-root user: give it the group owning the host's docker socket (`stat -c %g /var/run/docker.sock`).
     group_add: ["${DOCKER_SOCKET_GID:-999}"]
     volumes:
@@ -216,6 +243,11 @@ services:
       target: market-data
     profiles: [market-data]
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "${MARKET_DATA_CPUS:-1}"
+          memory: ${MARKET_DATA_MEMORY:-1g}
     depends_on:
       infra-ready:
         condition: service_healthy
@@ -244,6 +276,11 @@ services:
       target: results
     profiles: [results]
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "${RESULTS_CPUS:-1}"
+          memory: ${RESULTS_MEMORY:-1g}
     environment:
       <<: *lean-service-env
       ConnectionStrings__Results: Host=postgres;Port=5432;Database=results;Username=results;Password=${POSTGRES_RESULTS_PASSWORD:-lean-dev-results}
@@ -266,6 +303,11 @@ services:
       target: report
     profiles: [report]
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "${REPORT_CPUS:-2}"
+          memory: ${REPORT_MEMORY:-2g}
     environment:
       <<: *lean-service-env
       Report__DataFolder: /Lean/Data/
@@ -294,6 +336,11 @@ services:
       target: research
     profiles: [research]
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "${RESEARCH_CPUS:-2}"
+          memory: ${RESEARCH_MEMORY:-4g}
     depends_on:
       infra-ready:
         condition: service_healthy
@@ -348,8 +395,14 @@ services:
       target: backtest-worker
     profiles: [workers]
     restart: unless-stopped
+    # tini as PID 1: reaps the engine child processes and lets a crashed worker take its container down (Docker restarts it).
+    init: true
     deploy:
       replicas: ${BACKTEST_WORKER_REPLICAS:-1}
+      resources:
+        limits:
+          cpus: "${BACKTEST_WORKER_CPUS:-2}"
+          memory: ${BACKTEST_WORKER_MEMORY:-6g}
     stop_grace_period: 30s
     depends_on:
       infra-ready:
@@ -382,6 +435,11 @@ services:
       target: optimizer
     profiles: [optimizer]
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "${OPTIMIZER_CPUS:-1}"
+          memory: ${OPTIMIZER_MEMORY:-1g}
     stop_grace_period: 30s
     environment:
       <<: *lean-service-env
@@ -426,6 +484,11 @@ services:
       target: api-gateway
     profiles: [gateway]
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "${GATEWAY_CPUS:-1}"
+          memory: ${GATEWAY_MEMORY:-512m}
     environment:
       <<: *lean-service-env
       Gateway__Upstreams__Orchestrator: http://job-orchestrator:8080
@@ -459,6 +522,11 @@ services:
       target: console
     profiles: [console]
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "${CONSOLE_CPUS:-0.5}"
+          memory: ${CONSOLE_MEMORY:-256m}
     environment:
       LEAN_GATEWAY_URL: http://api-gateway:8080
       LEAN_API_KEY: ${CONSOLE_API_KEY:-${GATEWAY_API_KEY:-lean-dev-api-key}}
@@ -473,6 +541,11 @@ services:
     image: ${OTEL_COLLECTOR_IMAGE:-otel/opentelemetry-collector-contrib:0.120.0}
     profiles: [observability]
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "${OTEL_COLLECTOR_CPUS:-0.5}"
+          memory: ${OTEL_COLLECTOR_MEMORY:-512m}
     command: ["--config=/etc/otelcol/config.yaml"]
     volumes:
       - ./deploy/compose/observability/otel-collector.yaml:/etc/otelcol/config.yaml:ro
@@ -491,6 +564,11 @@ services:
     image: ${TEMPO_IMAGE:-grafana/tempo:2.7.1}
     profiles: [observability]
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "${TEMPO_CPUS:-1}"
+          memory: ${TEMPO_MEMORY:-1g}
     user: "0"
     command: ["-config.file=/etc/tempo/tempo.yaml"]
     volumes:
@@ -507,6 +585,11 @@ services:
     image: ${LOKI_IMAGE:-grafana/loki:3.4.2}
     profiles: [observability]
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "${LOKI_CPUS:-1}"
+          memory: ${LOKI_MEMORY:-1g}
     command: ["-config.file=/etc/loki/loki.yaml"]
     volumes:
       - ./deploy/compose/observability/loki.yaml:/etc/loki/loki.yaml:ro
@@ -522,6 +605,11 @@ services:
     image: ${POSTGRES_EXPORTER_IMAGE:-prometheuscommunity/postgres-exporter:v0.17.1}
     profiles: [observability]
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "${POSTGRES_EXPORTER_CPUS:-0.25}"
+          memory: ${POSTGRES_EXPORTER_MEMORY:-128m}
     environment:
       DATA_SOURCE_URI: postgres:5432/postgres?sslmode=disable
       DATA_SOURCE_USER: ${POSTGRES_USER:-postgres}
@@ -535,6 +623,11 @@ services:
     image: ${PROMETHEUS_IMAGE:-prom/prometheus:v3.2.1}
     profiles: [observability]
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "${PROMETHEUS_CPUS:-1}"
+          memory: ${PROMETHEUS_MEMORY:-1g}
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
@@ -555,6 +648,11 @@ services:
     image: ${GRAFANA_IMAGE:-grafana/grafana:11.5.2}
     profiles: [observability]
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "${GRAFANA_CPUS:-0.5}"
+          memory: ${GRAFANA_MEMORY:-512m}
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-lean-dev-grafana}

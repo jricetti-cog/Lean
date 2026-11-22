@@ -250,6 +250,7 @@ namespace QuantConnect.Services.Orchestrator
         {
             StoreOutcome.NotFound => Write(http, StatusCodes.Status404NotFound, "Not found", detail ?? "job does not exist"),
             StoreOutcome.Conflict => Write(http, StatusCodes.Status409Conflict, "Conflict", detail),
+            StoreOutcome.Exhausted => Write(http, StatusCodes.Status410Gone, "Gone", detail),
             _ => Write(http, StatusCodes.Status400BadRequest, "Bad request", detail),
         };
 

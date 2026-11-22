@@ -16,6 +16,10 @@
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -163,6 +167,63 @@ namespace QuantConnect.Tests.Services.Messaging
             Assert.AreEqual(1u, await MessageCount(Queues.OrchestratorStatus));
             Assert.AreEqual(1u, await MessageCount(Queues.ResultsPackets));
             Assert.AreEqual(1u, await MessageCount(Queues.OptimizerChildren));
+        }
+
+        [Test]
+        public async Task ConsumerKeepsReceivingAfterTheBrokerDropsTheConnection()
+        {
+            var management = Environment.GetEnvironmentVariable("LEAN_TEST_RABBITMQ_MANAGEMENT_URI");
+            if (string.IsNullOrEmpty(management))
+            {
+                Assert.Ignore("LEAN_TEST_RABBITMQ_MANAGEMENT_URI not set (e.g. http://localhost:15672)");
+            }
+            var amqp = new Uri(Environment.GetEnvironmentVariable("LEAN_TEST_RABBITMQ_URI"));
+            var clientName = $"lean-services-tests-recovery-{Guid.NewGuid():N}";
+            await using var bus = new RabbitMqMessageBus(new RabbitMqOptions { Uri = amqp, ClientName = clientName, PublishTimeout = TimeSpan.FromSeconds(10) });
+            var received = new ConcurrentQueue<Guid>();
+            await using var subscription = await bus.ConsumeAsync(Queues.Backtest, (m, ct) =>
+            {
+                received.Enqueue(Guid.Parse(JsonNode.Parse(m.Body.Span)!["jobId"]!.GetValue<string>()));
+                return Task.FromResult(MessageDisposition.Ack);
+            });
+
+            using var http = new HttpClient { BaseAddress = new Uri(management) };
+            http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
+                Convert.ToBase64String(Encoding.UTF8.GetBytes(Uri.UnescapeDataString(amqp.UserInfo))));
+            string connection = null;
+            for (var i = 0; i < 40 && connection == null; i++)
+            {
+                var connections = JsonNode.Parse(await http.GetStringAsync("api/connections"))!.AsArray();
+                connection = connections.FirstOrDefault(c => (string)c!["client_properties"]?["connection_name"] == clientName)?["name"]?.GetValue<string>();
+                if (connection == null) await Task.Delay(500);
+            }
+            Assert.IsNotNull(connection, "connection not listed by the management API");
+            (await http.DeleteAsync($"api/connections/{Uri.EscapeDataString(connection)}")).EnsureSuccessStatusCode();
+            var dropped = DateTime.UtcNow.AddSeconds(10);
+            while (bus.IsConnected && DateTime.UtcNow < dropped) await Task.Delay(50);
+            Assert.IsFalse(bus.IsConnected, "the client did not see the forced close");
+
+            // Health checks and publishers keep calling in while the client recovers; they must not replace the recovering connection.
+            var deadline = DateTime.UtcNow.AddSeconds(30);
+            while (DateTime.UtcNow < deadline)
+            {
+                try
+                {
+                    await bus.EnsureConnectedAsync();
+                    if (bus.IsConnected) break;
+                }
+                catch (Exception)
+                {
+                }
+                await Task.Delay(200);
+            }
+            Assert.IsTrue(bus.IsConnected, "connection did not recover");
+
+            var jobId = Guid.NewGuid();
+            await bus.PublishAsync(InMemoryMessageBusTests.Dispatch(jobId));
+            deadline = DateTime.UtcNow.Add(Timeout);
+            while (!received.Contains(jobId) && DateTime.UtcNow < deadline) await Task.Delay(100);
+            CollectionAssert.Contains(received, jobId, "the consumer was not recovered with the connection");
         }
 
         private async Task<uint> MessageCount(string queue)

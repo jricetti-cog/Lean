@@ -33,6 +33,8 @@ public enum AttemptOutcome
     Gone,
     /// <summary>job-orchestrator rejected the request itself: the delivery can never be run.</summary>
     Rejected,
+    /// <summary>The redelivery exceeded the job's maximum attempts and the job was failed: dead-letter the poison dispatch.</summary>
+    Exhausted,
 }
 
 public sealed record AttemptGrant(AttemptOutcome Outcome, JobAttempt? Attempt = null, string? Detail = null);
@@ -71,7 +73,11 @@ public sealed class OrchestratorAttemptClient : IAttemptClient
                     return new AttemptGrant(AttemptOutcome.Granted, granted ?? throw new InvalidOperationException("job-orchestrator returned an empty attempt"));
                 }
                 var detail = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-                if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.Conflict or HttpStatusCode.Gone)
+                if (response.StatusCode is HttpStatusCode.Gone)
+                {
+                    return new AttemptGrant(AttemptOutcome.Exhausted, Detail: detail);
+                }
+                if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.Conflict)
                 {
                     return new AttemptGrant(AttemptOutcome.Gone, Detail: detail);
                 }

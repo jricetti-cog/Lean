@@ -56,6 +56,10 @@ public sealed class LiveDeploymentOptions
         "OTEL_EXPORTER_OTLP_ENDPOINT,OTEL_EXPORTER_OTLP_PROTOCOL,OTEL_METRIC_EXPORT_INTERVAL";
     /// <summary>Docker restarts a crashed live-worker this many times; it restores the portfolio from results on every start.</summary>
     public int MaxRestarts { get; set; } = 5;
+    /// <summary>Container memory limit in MB (Docker <c>Memory</c>); 0 leaves it unlimited.</summary>
+    public int MemoryMb { get; set; }
+    /// <summary>Container CPU limit in cores (Docker <c>NanoCpus</c>); 0 leaves it unlimited.</summary>
+    public double Cpus { get; set; }
 
     public bool Enabled => string.Equals(Mode, "docker", StringComparison.OrdinalIgnoreCase);
 }
@@ -260,6 +264,8 @@ public sealed class LiveDeployer : BackgroundService
             ["RestartPolicy"] = new JsonObject { ["Name"] = "on-failure", ["MaximumRetryCount"] = _options.MaxRestarts },
         };
         if (_options.Network is { Length: > 0 } network) host["NetworkMode"] = network;
+        if (_options.MemoryMb > 0) host["Memory"] = (long)_options.MemoryMb * 1024 * 1024;
+        if (_options.Cpus > 0) host["NanoCpus"] = (long)(_options.Cpus * 1_000_000_000);
         if (_options.DataVolume is { Length: > 0 } volume) host["Binds"] = new JsonArray($"{volume}:{_options.DataMountPath}:ro");
         return new JsonObject
         {
