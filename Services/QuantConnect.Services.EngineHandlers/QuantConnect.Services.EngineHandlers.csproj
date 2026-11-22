@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>QuantConnect.Services.EngineHandlers</AssemblyName>
+    <RootNamespace>QuantConnect.Services.EngineHandlers</RootNamespace>
+    <Description>QuantConnect LEAN services: bus-backed IJobQueueHandler / IMessagingHandler selected by config in the worker's child Launcher</Description>
+    <!-- bin/ holds the adapter and every dependency, ready to be laid next to QuantConnect.Lean.Launcher.dll (ADR 0001). -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" Version="3.7.511.8" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Common\QuantConnect.csproj" />
+    <ProjectReference Include="..\..\Configuration\QuantConnect.Configuration.csproj" />
+    <ProjectReference Include="..\..\Logging\QuantConnect.Logging.csproj" />
+    <ProjectReference Include="..\..\Messaging\QuantConnect.Messaging.csproj" />
+    <ProjectReference Include="..\..\Queues\QuantConnect.Queues.csproj" />
+    <ProjectReference Include="..\QuantConnect.Services.Contracts\QuantConnect.Services.Contracts.csproj" />
+    <ProjectReference Include="..\QuantConnect.Services.Messaging\QuantConnect.Services.Messaging.csproj" />
+  </ItemGroup>
+</Project>
