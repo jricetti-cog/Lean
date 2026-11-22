@@ -1,8 +1,10 @@
+using System.IO.Compression;
 using Newtonsoft.Json;
 using QuantConnect.Configuration;
 using QuantConnect.Interfaces;
 using QuantConnect.Logging;
 using QuantConnect.Packets;
+using QuantConnect.Python;
 using QuantConnect.Queues;
 using QuantConnect.Securities;
 using QuantConnect.Services.Contracts;
@@ -122,6 +124,12 @@ public class BusJobQueueHandler : IJobQueueHandler
                 var folder = Path.Combine(BusSettings.Get(BusSettings.WorkFolder) ?? "algorithm", job.JobId.ToString("D"), job.Attempt.ToString());
                 var path = Path.Combine(folder, Path.GetFileName(upload.Object.Key));
                 EngineBus.Store.DownloadVerifiedAsync(upload.Object, path).GetAwaiter().GetResult();
+                if (upload.Language == ContractLanguage.Python)
+                {
+                    path = MaterializePython(folder, path);
+                    // Like the default JobQueue: the algorithm's folder goes on sys.path so its sibling modules import.
+                    PythonInitializer.AddAlgorithmLocationPath(Path.GetDirectoryName(Path.GetFullPath(path))!);
+                }
                 Config.Set("algorithm-location", path);
                 Config.Set("algorithm-language", (upload.Language == ContractLanguage.Python ? Language.Python : Language.CSharp).ToString());
                 Config.Set("algorithm-type-name", upload.TypeName ?? Path.GetFileNameWithoutExtension(path));
@@ -130,5 +138,33 @@ public class BusJobQueueHandler : IJobQueueHandler
             default:
                 throw new NotSupportedException($"Algorithm source {algorithm.GetType().Name}");
         }
+    }
+
+    /// <summary>
+    /// A Python project zip is extracted next to the download and its <c>main.py</c> becomes the algorithm; a single
+    /// <c>.py</c> file is used as is.
+    /// </summary>
+    internal static string MaterializePython(string folder, string downloaded)
+    {
+        if (!downloaded.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) return downloaded;
+        var project = Path.GetFullPath(Path.Combine(folder, "project"));
+        Directory.CreateDirectory(project);
+        using (var archive = ZipFile.OpenRead(downloaded))
+        {
+            foreach (var entry in archive.Entries)
+            {
+                var target = Path.GetFullPath(Path.Combine(project, entry.FullName));
+                if (!target.StartsWith(project + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+                {
+                    throw new InvalidDataException($"Zip entry {entry.FullName} escapes the project folder");
+                }
+                if (entry.FullName.EndsWith('/')) { Directory.CreateDirectory(target); continue; }
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                entry.ExtractToFile(target, overwrite: true);
+            }
+        }
+        var main = Directory.EnumerateFiles(project, "main.py", SearchOption.AllDirectories)
+            .OrderBy(file => file.Count(c => c == Path.DirectorySeparatorChar)).FirstOrDefault();
+        return main ?? throw new InvalidDataException($"Python project {Path.GetFileName(downloaded)} has no main.py");
     }
 }

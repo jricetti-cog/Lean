@@ -84,6 +84,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{58
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuantConnect.Services.LiveWorker", "Services\QuantConnect.Services.LiveWorker\QuantConnect.Services.LiveWorker.csproj", "{631C8110-EE9F-4310-85A0-1B3CE1541BE1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuantConnect.Tests.Services.Parity", "Tests\Services.Parity\QuantConnect.Tests.Services.Parity.csproj", "{5F7D7A02-D386-4596-8B85-318A887CEC2E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -524,6 +526,18 @@ Global
 		{631C8110-EE9F-4310-85A0-1B3CE1541BE1}.Release|x64.Build.0 = Release|Any CPU
 		{631C8110-EE9F-4310-85A0-1B3CE1541BE1}.Release|x86.ActiveCfg = Release|Any CPU
 		{631C8110-EE9F-4310-85A0-1B3CE1541BE1}.Release|x86.Build.0 = Release|Any CPU
+		{5F7D7A02-D386-4596-8B85-318A887CEC2E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F7D7A02-D386-4596-8B85-318A887CEC2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F7D7A02-D386-4596-8B85-318A887CEC2E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5F7D7A02-D386-4596-8B85-318A887CEC2E}.Debug|x64.Build.0 = Debug|Any CPU
+		{5F7D7A02-D386-4596-8B85-318A887CEC2E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5F7D7A02-D386-4596-8B85-318A887CEC2E}.Debug|x86.Build.0 = Debug|Any CPU
+		{5F7D7A02-D386-4596-8B85-318A887CEC2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F7D7A02-D386-4596-8B85-318A887CEC2E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F7D7A02-D386-4596-8B85-318A887CEC2E}.Release|x64.ActiveCfg = Release|Any CPU
+		{5F7D7A02-D386-4596-8B85-318A887CEC2E}.Release|x64.Build.0 = Release|Any CPU
+		{5F7D7A02-D386-4596-8B85-318A887CEC2E}.Release|x86.ActiveCfg = Release|Any CPU
+		{5F7D7A02-D386-4596-8B85-318A887CEC2E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
