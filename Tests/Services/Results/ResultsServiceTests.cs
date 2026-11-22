@@ -43,16 +43,16 @@ namespace QuantConnect.Tests.Services.Results
     using Queues = QuantConnect.Services.Messaging.Queues;
 
     /// <summary>
-    /// Results service against a real PostgreSQL (set <c>LEAN_TEST_RESULTS_POSTGRES</c> to an admin connection string;
-    /// each fixture creates and drops its own database) with a file-system object store standing in for MinIO.
+    /// Results service against a real PostgreSQL (set <c>LEAN_TEST_POSTGRES</c> to a connection string; each fixture
+    /// creates and drops its own schema) with a file-system object store standing in for MinIO.
     /// </summary>
     [TestFixture, Category("Services"), NonParallelizable]
     public class ResultsServiceTests
     {
-        private const string PostgresVariable = "LEAN_TEST_RESULTS_POSTGRES";
+        private const string PostgresVariable = "LEAN_TEST_POSTGRES";
         private const string Hash = "6a7e4c1f3b2d9e8a";
         private string _adminConnection;
-        private string _database;
+        private string _schema;
         private string _root;
         private WebApplication _app;
         private HttpClient _http;
@@ -67,11 +67,11 @@ namespace QuantConnect.Tests.Services.Results
             {
                 Assert.Ignore($"{PostgresVariable} is not set: no PostgreSQL to run the results service against");
             }
-            _database = "results_test_" + Guid.NewGuid().ToString("N")[..12];
+            _schema = "results_test_" + Guid.NewGuid().ToString("N")[..12];
             await using (var admin = new NpgsqlConnection(_adminConnection))
             {
                 await admin.OpenAsync();
-                await using var create = new NpgsqlCommand($"CREATE DATABASE {_database}", admin);
+                await using var create = new NpgsqlCommand($"CREATE SCHEMA {_schema}", admin);
                 await create.ExecuteNonQueryAsync();
             }
 
@@ -80,7 +80,7 @@ namespace QuantConnect.Tests.Services.Results
             var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Development" });
             builder.Configuration.AddInMemoryCollection(new Dictionary<string, string>
             {
-                ["ConnectionStrings:Results"] = new NpgsqlConnectionStringBuilder(_adminConnection) { Database = _database }.ConnectionString,
+                ["ConnectionStrings:Results"] = new NpgsqlConnectionStringBuilder(_adminConnection) { SearchPath = _schema }.ConnectionString,
                 ["Results:Consume"] = "false",
                 ["Results:ChartMaxPoints"] = "500",
                 ["Results:MaxLogsPerAttempt"] = "5",
@@ -113,7 +113,7 @@ namespace QuantConnect.Tests.Services.Results
             await using (var admin = new NpgsqlConnection(_adminConnection))
             {
                 await admin.OpenAsync();
-                await using var drop = new NpgsqlCommand($"DROP DATABASE IF EXISTS {_database} WITH (FORCE)", admin);
+                await using var drop = new NpgsqlCommand($"DROP SCHEMA IF EXISTS {_schema} CASCADE", admin);
                 await drop.ExecuteNonQueryAsync();
             }
             Directory.Delete(_root, true);
