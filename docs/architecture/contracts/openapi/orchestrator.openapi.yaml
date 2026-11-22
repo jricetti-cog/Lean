@@ -165,7 +165,7 @@ paths:
       tags: [workers]
       operationId: startAttempt
       summary: Start an attempt
-      description: Called by a worker when it takes a dispatch. Returns the attempt to use (the body's attempt on first delivery, a new one when the delivery is a redelivery or the previous attempt is not terminal) and the per-attempt results prefix. 409 when the job is terminal or cancelled; the worker then acks and drops the dispatch.
+      description: Called by a worker when it takes a dispatch. Returns the attempt to use (the body's attempt on first delivery, a new one when the delivery is a redelivery or the previous attempt is not terminal) and the per-attempt results prefix. 409 when the job is terminal or cancelled; the worker then acks and drops the dispatch. 410 when this redelivery exceeds the maximum attempts; the job is failed with `max-attempts-exceeded` and the worker dead-letters the dispatch.
       requestBody:
         required: true
         content:
@@ -196,6 +196,12 @@ paths:
           $ref: 'common.yaml#/components/responses/NotFound'
         '409':
           $ref: 'common.yaml#/components/responses/Conflict'
+        '410':
+          description: Maximum attempts exceeded; the job is now failed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'common.yaml#/components/schemas/Problem'
   /internal/v1/jobs/{id}/lease:
     parameters:
       - $ref: 'common.yaml#/components/parameters/JobIdPath'

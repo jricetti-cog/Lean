@@ -147,6 +147,10 @@ public sealed class BacktestJobRunner
             case AttemptOutcome.Rejected:
                 _logger.LogError("Dead-lettering job {JobId}: job-orchestrator rejected the attempt: {Detail}", job.JobId, grant.Detail);
                 return MessageDisposition.DeadLetter;
+            case AttemptOutcome.Exhausted:
+                Interlocked.Increment(ref _dropped);
+                _logger.LogError("Dead-lettering job {JobId} (delivery count {DeliveryCount}): {Detail}", job.JobId, message.DeliveryCount, grant.Detail);
+                return MessageDisposition.DeadLetter;
         }
         var attempt = grant.Attempt!;
         job = job with { Attempt = attempt.Attempt, Results = attempt.Results, Deadline = attempt.Deadline ?? job.Deadline };
@@ -397,7 +401,7 @@ public sealed class BacktestJobRunner
         {
             return await _control.SubscribeTransientAsync(Exchanges.Control, new[] { RoutingKeys.Cancel(jobId) },
                 (message, _) => Task.FromResult(OnControl(message, jobId, cancellation)),
-                new TransientQueueOptions { Prefetch = 1, QueueName = $"control.{WorkerId}.{jobId:D}" }, cancellationToken).ConfigureAwait(false);
+                new TransientQueueOptions { Prefetch = 1, QueueName = $"control.{WorkerId}.{jobId:D}.{Guid.NewGuid():N}"[..^24] }, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {
@@ -423,13 +427,19 @@ public sealed class BacktestJobRunner
             _logger.LogWarning(e, "Ignoring an invalid CancelJob for job {JobId}", jobId);
             return MessageDisposition.Ack;
         }
-        if (cancel == null || cancel.JobId != jobId || (cancel.Attempt is { } target && cancellation.Attempt is { } current && target < current))
+        if (cancel == null || cancel.JobId != jobId)
         {
-            _logger.LogInformation("Ignoring a CancelJob for job {JobId} attempt {Target} (running attempt {Current})", cancel?.JobId, cancel?.Attempt, cancellation.Attempt);
+            _logger.LogInformation("Ignoring a CancelJob for job {JobId} on the control queue of job {Expected}", cancel?.JobId, jobId);
             return MessageDisposition.Ack;
         }
-        _logger.LogInformation("Cancel requested for job {JobId} attempt {Attempt} by {RequestedBy}: {Reason}", jobId, cancellation.Attempt, cancel.RequestedBy, cancel.Reason);
-        cancellation.Request(cancel.Reason);
+        if (cancellation.Request(cancel.Reason, cancel.Attempt))
+        {
+            _logger.LogInformation("Cancel requested for job {JobId} attempt {Attempt} by {RequestedBy}: {Reason}", jobId, cancellation.Attempt, cancel.RequestedBy, cancel.Reason);
+        }
+        else
+        {
+            _logger.LogInformation("CancelJob for job {JobId} attempt {Target} does not apply to running attempt {Current} (held until the attempt is granted)", jobId, cancel.Attempt, cancellation.Attempt);
+        }
         return MessageDisposition.Ack;
     }
 
@@ -585,21 +595,54 @@ public sealed class JobCancellation : IDisposable
     private readonly CancellationTokenSource _source = new();
     private readonly object _gate = new();
     private int? _attempt;
+    private (string Reason, int Target)? _pending;
 
-    /// <summary>The granted attempt (null until claimed): older-attempt commands are ignored.</summary>
-    public int? Attempt { get { lock (_gate) return _attempt; } set { lock (_gate) _attempt = value; } }
+    /// <summary>
+    /// The granted attempt (null until claimed): older-attempt commands are ignored. A cancel aimed at an attempt that arrives
+    /// while the claim is in flight (e.g. the orchestrator superseding the previous attempt) is held until the grant is known.
+    /// </summary>
+    public int? Attempt
+    {
+        get { lock (_gate) return _attempt; }
+        set
+        {
+            string? reason = null;
+            lock (_gate)
+            {
+                _attempt = value;
+                if (_pending is { } pending && value is { } granted)
+                {
+                    _pending = null;
+                    if (pending.Target >= granted) reason = pending.Reason;
+                }
+            }
+            if (reason != null) Request(reason);
+        }
+    }
     public string? Reason { get; private set; }
     public bool IsRequested => _source.IsCancellationRequested;
     public CancellationToken Token => _source.Token;
 
-    public void Request(string reason)
+    /// <summary>Cancels the run; with <paramref name="targetAttempt"/>, only if it is the granted attempt or a later one.</summary>
+    /// <returns>False when the command was for an older attempt (ignored) or is held until the attempt is granted.</returns>
+    public bool Request(string reason, int? targetAttempt = null)
     {
         lock (_gate)
         {
-            if (_source.IsCancellationRequested) return;
+            if (targetAttempt is { } target)
+            {
+                if (_attempt is not { } current)
+                {
+                    _pending = (reason, target);
+                    return false;
+                }
+                if (target < current) return false;
+            }
+            if (_source.IsCancellationRequested) return true;
             Reason = string.IsNullOrWhiteSpace(reason) ? "cancelled" : reason;
         }
         _source.Cancel();
+        return true;
     }
 
     public void Dispose() => _source.Dispose();

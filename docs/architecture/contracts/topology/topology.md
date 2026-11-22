@@ -89,7 +89,7 @@ browser drops old progress rather than growing the broker.
 
 | Routing key | AMQP type | Body schema | Queue |
 |---|---|---|---|
-| `job.<jobId>.cancel.v1` | `control.v1.CancelJob` | `job.cancel` | `control.<workerId>.<jobId>`: classic, exclusive, auto-delete, declared by the worker for each running job |
+| `job.<jobId>.cancel.v1` | `control.v1.CancelJob` | `job.cancel` | `control.<workerId>.<jobId>.<nonce>`: classic, exclusive, auto-delete, declared by the worker for each delivery of a job (the nonce keeps a redelivery to the same worker off the running attempt's queue) |
 | `job.<jobId>.liquidate.v1` | `control.v1.LiquidateJob` | `job.liquidate` | same queue (live deployments only) |
 
 ## Live market data (`lean.marketdata.live`)

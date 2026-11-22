@@ -104,6 +104,20 @@ namespace QuantConnect.Tests.Services.LiveWorker
         }
 
         [Test]
+        public void ContainerSpecCarriesTheConfiguredCpuAndMemoryLimits()
+        {
+            var limited = new LiveDeployer(new InMemoryMessageBus(), _runtime, null,
+                new LiveDeploymentOptions { Mode = "docker", MemoryMb = 4096, Cpus = 1.5 }, NullLogger<LiveDeployer>.Instance, _ => null);
+            var host = limited.ContainerSpec(Job())["HostConfig"]!.AsObject();
+            Assert.AreEqual(4096L * 1024 * 1024, host["Memory"]!.GetValue<long>());
+            Assert.AreEqual(1_500_000_000L, host["NanoCpus"]!.GetValue<long>());
+
+            var unlimited = _deployer.ContainerSpec(Job())["HostConfig"]!.AsObject();
+            Assert.IsFalse(unlimited.ContainsKey("Memory"));
+            Assert.IsFalse(unlimited.ContainsKey("NanoCpus"));
+        }
+
+        [Test]
         public async Task SweepRemovesOnlyCleanlyExitedWorkers()
         {
             _runtime.Containers["a"] = new FakeContainer("a", false, 0);

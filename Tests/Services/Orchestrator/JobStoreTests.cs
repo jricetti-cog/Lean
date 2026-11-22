@@ -228,7 +228,7 @@ namespace QuantConnect.Tests.Services.Orchestrator
             Assert.AreEqual(1, (await _store.StartAttemptAsync(job.Id, "w1", 0, 1, Ct)).Value!.Attempt);
             Assert.AreEqual(1, (await _store.StartAttemptAsync(job.Id, "w1", 0, 1, Ct)).Value!.Attempt, "same worker retrying the call");
             Assert.AreEqual(2, (await _store.StartAttemptAsync(job.Id, "w2", 1, 1, Ct)).Value!.Attempt);
-            Assert.AreEqual(StoreOutcome.Conflict, (await _store.StartAttemptAsync(job.Id, "w3", 2, 1, Ct)).Outcome, "max attempts");
+            Assert.AreEqual(StoreOutcome.Exhausted, (await _store.StartAttemptAsync(job.Id, "w3", 2, 1, Ct)).Outcome, "max attempts");
             Assert.AreEqual(JobStatus.Failed, (await Get(job.Id)).Status);
         }
 
@@ -278,6 +278,27 @@ namespace QuantConnect.Tests.Services.Orchestrator
             await _store.MonitorAsync(Ct);
             Assert.AreEqual(JobStatus.Cancelled, (await Get(optimization.Id)).Status, "a silent worker with a cancel pending ends cancelled, not retried");
             Assert.AreEqual(StoreOutcome.Conflict, (await _store.CreateAsync(Requests.Backtest(parent: optimization.Id), "alice", null, Ct)).Outcome);
+        }
+
+        [Test]
+        public async Task HeartbeatFromAnAttemptWithAPendingCancelResendsTheCancel()
+        {
+            var job = await Create(Requests.Backtest());
+            await _relay.RelayOnceAsync(Ct);
+            await _store.StartAttemptAsync(job.Id, "w1", 0, 1, Ct);
+            await Started(job, 1);
+            await Heartbeat(job, 1);
+            await _relay.RelayOnceAsync(Ct);
+            Assert.IsEmpty(_bus.Published.Where(p => p.Envelope.Type == MessageTypes.CancelJob), "no cancel without a request");
+
+            await _store.CancelAsync(job.Id, "user stop", "alice", Ct);
+            await _relay.RelayOnceAsync(Ct);
+            await Heartbeat(job, 1);
+            await _relay.RelayOnceAsync(Ct);
+            var cancels = _bus.Published.Where(p => p.Envelope.Type == MessageTypes.CancelJob).ToList();
+            Assert.AreEqual(2, cancels.Count, "the lost cancel is repeated on the next heartbeat");
+            Assert.IsTrue(cancels.All(c => c.RoutingKey == RoutingKeys.Cancel(job.Id) && ContractJson.Deserialize<CancelJob>(c.Body.Span)!.Attempt == 1));
+            Assert.AreEqual("user stop", ContractJson.Deserialize<CancelJob>(cancels[1].Body.Span)!.Reason);
         }
 
         [Test]

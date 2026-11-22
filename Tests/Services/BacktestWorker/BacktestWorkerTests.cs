@@ -291,6 +291,7 @@ namespace QuantConnect.Tests.Services.BacktestWorker
         }
 
         [TestCase(AttemptOutcome.Gone, MessageDisposition.Ack)]
+        [TestCase(AttemptOutcome.Exhausted, MessageDisposition.DeadLetter)]
         [TestCase(AttemptOutcome.Rejected, MessageDisposition.DeadLetter)]
         public async Task DeliveriesWithoutAnAttemptAreNotRun(AttemptOutcome outcome, MessageDisposition expected)
         {

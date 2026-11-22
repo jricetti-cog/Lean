@@ -32,7 +32,7 @@ using QuantConnect.Services.Messaging;
 
 namespace QuantConnect.Services.Orchestrator;
 
-public enum StoreOutcome { Ok, NotFound, Conflict, Invalid }
+public enum StoreOutcome { Ok, NotFound, Conflict, Invalid, Exhausted }
 
 public sealed record StoreResult<T>(StoreOutcome Outcome, T? Value = default, string? Detail = null)
 {
@@ -40,6 +40,7 @@ public sealed record StoreResult<T>(StoreOutcome Outcome, T? Value = default, st
     public static StoreResult<T> NotFound() => new(StoreOutcome.NotFound);
     public static StoreResult<T> Conflict(string detail) => new(StoreOutcome.Conflict, default, detail);
     public static StoreResult<T> Invalid(string detail) => new(StoreOutcome.Invalid, default, detail);
+    public static StoreResult<T> Exhausted(string detail) => new(StoreOutcome.Exhausted, default, detail);
 }
 
 public sealed record CreatedJob(Job Job, bool Replayed);
@@ -358,7 +359,7 @@ public sealed class JobStore
                 if (attempt > _options.MaxAttempts)
                 {
                     await FailLocked(conn, tx, row, new ErrorInfo { Code = ErrorCode.MaxAttemptsExceeded, Message = $"redelivered after {row.Attempt} attempts" }, now, ct);
-                    return StoreResult<JobAttempt>.Conflict($"job failed: {_options.MaxAttempts} attempts exhausted");
+                    return StoreResult<JobAttempt>.Exhausted($"job failed: {_options.MaxAttempts} attempts exhausted");
                 }
                 await Enqueue(conn, tx, row.Id, JobStateMachine.Cancel(row.Id, row.Kind, row.Attempt, row.LeaseEpoch, "superseded by a new attempt", AppIds.Orchestrator, now), ct);
                 _logger.LogWarning("Job {JobId}: redelivery to {WorkerId}, attempt {Old} held by {Previous} is superseded by {Attempt}", id, workerId, row.Attempt, row.WorkerId, attempt);
@@ -452,6 +453,14 @@ public sealed class JobStore
                     if (row.LeaseEpoch != null && beat.LeaseEpoch != null && beat.LeaseEpoch != row.LeaseEpoch) return false;
                     await Update(conn, tx, jobId, "last_heartbeat_at = @now, worker_id = COALESCE(worker_id, @worker), " +
                         "status = CASE WHEN status = 'stale' THEN 'running' ELSE status END", now, ct, ("worker", beat.WorkerId));
+                    if (row.CancelRequestedAt != null && row.Kind != JobKind.Live)
+                    {
+                        // The attempt outlived its cancel: the CancelJob is not durable (e.g. it reached the broker while the worker's
+                        // control queue was being recovered), so repeat it; the worker acts on the first one it sees.
+                        await Enqueue(conn, tx, jobId, JobStateMachine.Cancel(jobId, row.Kind, row.Attempt, row.LeaseEpoch, row.CancelReason ?? "cancelled",
+                            AppIds.Orchestrator, now), ct);
+                        _logger.LogInformation("Job {JobId} attempt {Attempt} still running after its cancel request: cancellation re-sent", jobId, attempt);
+                    }
                     break;
                 case MessageTypes.JobProgress:
                     var progress = ContractJson.Deserialize<JobProgress>(body.Span);

@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
@@ -52,6 +53,12 @@ public sealed class RabbitMqMessageBus : IMessageBus, ITransientSubscriber, IAsy
         {
             if (_connection is not { IsOpen: true })
             {
+                if (_connection is { CloseReason: { } reason } && reason.Initiator != ShutdownInitiator.Application)
+                {
+                    // Lost to the broker or network: automatic recovery is reconnecting it and re-creating every consumer and
+                    // the publish channel on it. Disposing it here would strand those consumers on a dead connection.
+                    throw new AlreadyClosedException(reason);
+                }
                 if (_connection != null)
                 {
                     await _connection.DisposeAsync().ConfigureAwait(false);
@@ -62,6 +69,7 @@ public sealed class RabbitMqMessageBus : IMessageBus, ITransientSubscriber, IAsy
                     ClientProvidedName = _options.ClientName ?? AppDomain.CurrentDomain.FriendlyName,
                     AutomaticRecoveryEnabled = true,
                     TopologyRecoveryEnabled = true,
+                    TopologyRecoveryFilter = RecoveryFilter(),
                 };
                 _connection = await factory.CreateConnectionAsync(cancellationToken).ConfigureAwait(false);
                 _publishChannel = null;
@@ -142,24 +150,30 @@ public sealed class RabbitMqMessageBus : IMessageBus, ITransientSubscriber, IAsy
         options ??= new TransientQueueOptions();
         var connection = await EnsureConnectedAsync(cancellationToken).ConfigureAwait(false);
         var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
-        var arguments = new Dictionary<string, object?>();
-        if (options.MessageTtl is { } ttl)
+        var subscription = new TransientSubscription(this, connection, channel, exchange, bindingKeys, handler, options);
+        try
         {
-            arguments["x-message-ttl"] = (int)ttl.TotalMilliseconds;
+            await subscription.StartAsync(cancellationToken).ConfigureAwait(false);
         }
-        var declared = await channel.QueueDeclareAsync(options.QueueName ?? string.Empty, durable: false, exclusive: true, autoDelete: true, arguments: arguments,
-            cancellationToken: cancellationToken).ConfigureAwait(false);
-        foreach (var key in bindingKeys)
+        catch
         {
-            await channel.QueueBindAsync(declared.QueueName, exchange, key, cancellationToken: cancellationToken).ConfigureAwait(false);
+            await subscription.DisposeAsync().ConfigureAwait(false);
+            throw;
         }
-        await channel.BasicQosAsync(0, options.Prefetch, false, cancellationToken).ConfigureAwait(false);
-        var stopping = new CancellationTokenSource();
-        var consumer = new AsyncEventingBasicConsumer(channel);
-        consumer.ReceivedAsync += (_, delivery) => OnReceivedAsync(channel, declared.QueueName, handler, delivery, stopping.Token);
-        var tag = await channel.BasicConsumeAsync(declared.QueueName, autoAck: false, consumer, cancellationToken).ConfigureAwait(false);
-        return new Subscription(channel, tag, stopping);
+        return subscription;
     }
+
+    // Exclusive transient queues are deleted by the broker with the connection; automatic topology recovery would re-bind them before
+    // re-declaring them (not_found closes the recovery channel and aborts the rest of the recovery, including the durable consumers).
+    // They are excluded from it and re-created by their TransientSubscription once the connection has recovered.
+    private readonly ConcurrentDictionary<string, byte> _transientQueues = new();
+
+    private TopologyRecoveryFilter RecoveryFilter() => new()
+    {
+        QueueFilter = q => !_transientQueues.ContainsKey(q.Name),
+        BindingFilter = b => !_transientQueues.ContainsKey(b.Destination),
+        ConsumerFilter = c => !_transientQueues.ContainsKey(c.Queue),
+    };
 
     /// <summary>Declares exchanges, queues and bindings (dev/test brokers; production loads definitions.json).</summary>
     public async Task DeclareAsync(TopologyDefinition topology, CancellationToken cancellationToken = default)
@@ -270,6 +284,148 @@ public sealed class RabbitMqMessageBus : IMessageBus, ITransientSubscriber, IAsy
         }
         _connectLock.Dispose();
         _publishLock.Dispose();
+    }
+
+    private sealed class TransientSubscription : IAsyncDisposable
+    {
+        private readonly RabbitMqMessageBus _bus;
+        private readonly IConnection _connection;
+        private readonly IChannel _channel;
+        private readonly string _exchange;
+        private readonly IReadOnlyCollection<string> _bindingKeys;
+        private readonly MessageHandler _handler;
+        private readonly TransientQueueOptions _options;
+        private readonly CancellationTokenSource _stopping = new();
+        private readonly SemaphoreSlim _gate = new(1, 1);
+        private string? _queue;
+        private string? _tag;
+
+        public TransientSubscription(RabbitMqMessageBus bus, IConnection connection, IChannel channel, string exchange,
+            IReadOnlyCollection<string> bindingKeys, MessageHandler handler, TransientQueueOptions options)
+        {
+            _bus = bus;
+            _connection = connection;
+            _channel = channel;
+            _exchange = exchange;
+            _bindingKeys = bindingKeys;
+            _handler = handler;
+            _options = options;
+        }
+
+        public async Task StartAsync(CancellationToken cancellationToken)
+        {
+            await DeclareAndConsumeAsync(cancellationToken).ConfigureAwait(false);
+            _connection.RecoverySucceededAsync += OnRecoveredAsync;
+        }
+
+        private async Task DeclareAndConsumeAsync(CancellationToken cancellationToken)
+        {
+            await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                if (_stopping.IsCancellationRequested) return;
+                var arguments = new Dictionary<string, object?>();
+                if (_options.MessageTtl is { } ttl)
+                {
+                    arguments["x-message-ttl"] = (int)ttl.TotalMilliseconds;
+                }
+                if (_options.QueueName != null) _bus._transientQueues[_options.QueueName] = 0;
+                var declared = await _channel.QueueDeclareAsync(_options.QueueName ?? string.Empty, durable: false, exclusive: true, autoDelete: true,
+                    arguments: arguments, cancellationToken: cancellationToken).ConfigureAwait(false);
+                if (_queue != null && _queue != declared.QueueName) _bus._transientQueues.TryRemove(_queue, out _);
+                _queue = declared.QueueName;
+                _bus._transientQueues[_queue] = 0;
+                foreach (var key in _bindingKeys)
+                {
+                    await _channel.QueueBindAsync(_queue, _exchange, key, cancellationToken: cancellationToken).ConfigureAwait(false);
+                }
+                await _channel.BasicQosAsync(0, _options.Prefetch, false, cancellationToken).ConfigureAwait(false);
+                var queue = _queue;
+                var consumer = new AsyncEventingBasicConsumer(_channel);
+                consumer.ReceivedAsync += (_, delivery) => _bus.OnReceivedAsync(_channel, queue, _handler, delivery, _stopping.Token);
+                _tag = await _channel.BasicConsumeAsync(_queue, autoAck: false, consumer, cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                _gate.Release();
+            }
+        }
+
+        private async Task OnRecoveredAsync(object sender, AsyncEventArgs args)
+        {
+            for (var attempt = 1; !_stopping.IsCancellationRequested; attempt++)
+            {
+                try
+                {
+                    await DeclareAndConsumeAsync(_stopping.Token).ConfigureAwait(false);
+                    _bus._logger.LogInformation("Re-created transient queue {Queue} after the connection recovered", _queue);
+                    return;
+                }
+                catch (Exception e) when (!_stopping.IsCancellationRequested && attempt < 5)
+                {
+                    _bus._logger.LogWarning(e, "Cannot re-create transient queue {Queue} after recovery (attempt {Attempt}); retrying", _options.QueueName ?? _queue, attempt);
+                    await Task.Delay(TimeSpan.FromSeconds(attempt), _stopping.Token).ConfigureAwait(false);
+                }
+                catch (Exception e) when (!_stopping.IsCancellationRequested)
+                {
+                    _bus._logger.LogError(e, "Giving up re-creating transient queue {Queue} after recovery", _options.QueueName ?? _queue);
+                    return;
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
+            }
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            _connection.RecoverySucceededAsync -= OnRecoveredAsync;
+            _stopping.Cancel();
+            await _gate.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                // Deleting the queue also drops its recorded bindings; until that succeeds they stay excluded from recovery.
+                var forgotten = _queue == null;
+                try
+                {
+                    if (_channel.IsOpen && _tag != null)
+                    {
+                        await _channel.BasicCancelAsync(_tag).ConfigureAwait(false);
+                    }
+                    if (_channel.IsOpen && _queue != null)
+                    {
+                        foreach (var key in _bindingKeys)
+                        {
+                            await _channel.QueueUnbindAsync(_queue, _exchange, key).ConfigureAwait(false);
+                        }
+                        await _channel.QueueDeleteAsync(_queue).ConfigureAwait(false);
+                        forgotten = true;
+                    }
+                    if (_channel.IsOpen)
+                    {
+                        await _channel.CloseAsync().ConfigureAwait(false);
+                    }
+                }
+                catch (Exception e) when (e is OperationInterruptedException or AlreadyClosedException or IOException)
+                {
+                    _bus._logger.LogDebug(e, "Transient queue {Queue} closed with its channel", _queue);
+                }
+                finally
+                {
+                    if (forgotten)
+                    {
+                        if (_queue != null) _bus._transientQueues.TryRemove(_queue, out _);
+                        if (_options.QueueName != null) _bus._transientQueues.TryRemove(_options.QueueName, out _);
+                    }
+                    await _channel.DisposeAsync().ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                _gate.Release();
+            }
+        }
     }
 
     private sealed class Subscription : IAsyncDisposable
