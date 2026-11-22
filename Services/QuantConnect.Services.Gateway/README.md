@@ -7,13 +7,13 @@ The only public entry point (ADR 0001/0002). Compose publishes it on `127.0.0.1:
 | `POST /api/v1/algorithms` (multipart `file`: `.py`, `.cs`, `.dll` or project `.zip`) | gateway -> orchestrator `POST /internal/v1/algorithms` |
 | `POST /api/v1/backtests` (JSON `BacktestSpec`, or multipart `file` + `name`, `typeName`, `parameters`, `startDate`, `endDate`, `cash`, `maxRuntimeSeconds`, `fetchMissingData`) | gateway -> orchestrator `POST /internal/v1/jobs` |
 | `POST /api/v1/live` (JSON `LiveSpec`, or multipart `file` + `brokerage`, `dataQueueHandlers`), `POST /api/v1/live/{id}/stop` | gateway -> orchestrator |
-| `POST /api/v1/optimizations`, `POST /api/v1/reports` | gateway -> orchestrator |
+| `POST /api/v1/optimizations`, `POST /api/v1/reports` (`ReportSpec`; the source job must be the caller's) | gateway -> orchestrator, which dispatches `jobs.v1.ReportRequested` to the report service |
 | `GET /api/v1/jobs`, `GET /api/v1/jobs/{id}`, `POST /api/v1/jobs/{id}/cancel` | gateway -> orchestrator (non-admins see only their jobs) |
 | `GET /api/v1/jobs/{id}/result`, `/charts[/{chart}]`, `/orders`, `/order-events`, `/logs`, `/artifacts` | YARP -> results `/internal/v1/results/{id}/...` |
 | `GET /api/v1/jobs/{id}/result/download`, `GET /api/v1/reports/{id}/{html,pdf}` | gateway: 302 to a presigned MinIO URL |
 | `/api/v1/data/**` | YARP -> market-data `/internal/v1/data/**` |
 | `/api/v1/optimizations/**` (estimate, state, children) | YARP -> optimizer `/internal/v1/optimizations/**` |
-| `GET /api/v1/reports`, `GET /api/v1/reports/{id}` | YARP -> report `/internal/v1/reports...` |
+| `GET /api/v1/reports[?sourceJobId=]`, `GET /api/v1/reports/{id}` | YARP -> report `/internal/v1/reports...` (non-admins must pass a `sourceJobId` they own) |
 | `GET /openapi` | merged document: gateway operations + each proxied service's live document under its public paths |
 
 - **Auth**: `Gateway:ApiKeys` (`Key` or `KeySha256`, `User`, `Admin`) sent as `X-Api-Key` or `Authorization: Bearer`.

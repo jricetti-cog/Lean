@@ -38,6 +38,7 @@ using NUnit.Framework;
 using QuantConnect.Services.Contracts;
 using QuantConnect.Services.Contracts.Http;
 using QuantConnect.Services.Gateway;
+using ReportRecord = QuantConnect.Services.Contracts.Http.Report;
 using HttpResults = Microsoft.AspNetCore.Http.Results;
 
 namespace QuantConnect.Tests.Services.Gateway
@@ -273,7 +274,7 @@ namespace QuantConnect.Tests.Services.Gateway
         }
 
         [TestCase("/api/v1/reports/11111111-1111-1111-1111-111111111111", "report")]
-        [TestCase("/api/v1/reports", "report")]
+        [TestCase("/api/v1/reports?sourceJobId=11111111-1111-1111-1111-111111111111", "report")]
         [TestCase("/api/v1/optimizations/11111111-1111-1111-1111-111111111111", "optimizer")]
         [TestCase("/api/v1/reports/11111111-1111-1111-1111-111111111111/html", "report")]
         public async Task ReturnsServiceUnavailableProblemWhenUpstreamIsDown(string path, string upstream)
@@ -284,6 +285,56 @@ namespace QuantConnect.Tests.Services.Gateway
             var problem = ContractJson.Deserialize<Problem>(await response.Content.ReadAsStringAsync());
             Assert.AreEqual(503, problem.Status);
             StringAssert.Contains($"upstream '{upstream}' is unavailable", problem.Detail);
+        }
+
+        [Test]
+        public async Task ProxiesReportsToTheReportServiceForTheJobOwner()
+        {
+            var (gateway, http) = await StartGateway(permitLimit: 1000, reportUrl: _upstreamUrl);
+            try
+            {
+                using var report = await Send(http, HttpMethod.Get, $"/api/v1/reports/{AliceJob}", AliceKey);
+                Assert.AreEqual(HttpStatusCode.OK, report.StatusCode);
+                Assert.AreEqual(AliceJob, ContractJson.Deserialize<ReportRecord>(await report.Content.ReadAsStringAsync()).JobId);
+                Assert.AreEqual("alice", _captured.Single(c => c.PathAndQuery == $"/internal/v1/reports/{AliceJob}").Headers["X-Lean-User"]);
+
+                using var html = await Send(http, HttpMethod.Get, $"/api/v1/reports/{AliceJob}/html", AliceKey);
+                Assert.AreEqual(HttpStatusCode.Redirect, html.StatusCode);
+                StringAssert.Contains($"/{Buckets.Reports}/{AliceJob:D}/1/report.html", html.Headers.Location!.ToString());
+
+                using var notOwner = await Send(http, HttpMethod.Get, $"/api/v1/reports/{AliceJob}", BobKey);
+                Assert.AreEqual(HttpStatusCode.NotFound, notOwner.StatusCode);
+
+                using var owned = await Send(http, HttpMethod.Get, $"/api/v1/reports?sourceJobId={AliceJob}", AliceKey);
+                Assert.AreEqual(HttpStatusCode.OK, owned.StatusCode);
+                Assert.IsTrue(_captured.Any(c => c.PathAndQuery == $"/internal/v1/reports?sourceJobId={AliceJob}"));
+                using var unscoped = await Send(http, HttpMethod.Get, "/api/v1/reports", AliceKey);
+                Assert.AreEqual(HttpStatusCode.BadRequest, unscoped.StatusCode);
+                using var admin = await Send(http, HttpMethod.Get, "/api/v1/reports", AdminKey);
+                Assert.AreEqual(HttpStatusCode.OK, admin.StatusCode);
+            }
+            finally
+            {
+                http.Dispose();
+                await gateway.DisposeAsync();
+            }
+        }
+
+        [TestCase(AliceKey, HttpStatusCode.Created)]
+        [TestCase(BobKey, HttpStatusCode.NotFound)]
+        public async Task RequestsReportsOnlyForOwnedSourceJobs(string key, HttpStatusCode expected)
+        {
+            var body = $"{{\"sourceJobId\":\"{AliceJob}\",\"formats\":[\"html\"]}}";
+            using var response = await Send(HttpMethod.Post, "/api/v1/reports", key, new StringContent(body, Encoding.UTF8, "application/json"));
+            Assert.AreEqual(expected, response.StatusCode, await response.Content.ReadAsStringAsync());
+            var submitted = _captured.Where(c => c.PathAndQuery == "/internal/v1/jobs" && c.Method == "POST").ToList();
+            Assert.AreEqual(expected == HttpStatusCode.Created ? 1 : 0, submitted.Count);
+            if (submitted.Count == 1)
+            {
+                var request = ContractJson.Deserialize<JobRequest>(submitted[0].Body);
+                Assert.AreEqual(JobKind.Report, request.Kind);
+                Assert.AreEqual(AliceJob, request.Report!.SourceJobId);
+            }
         }
 
         [Test]
@@ -343,7 +394,7 @@ namespace QuantConnect.Tests.Services.Gateway
             Assert.AreEqual(expected, OpenApiMerger.PublicPath(GatewayProxy.Routes.Single(r => r.Id == routeId), internalPath));
         }
 
-        private async Task<(WebApplication, HttpClient)> StartGateway(int permitLimit)
+        private async Task<(WebApplication, HttpClient)> StartGateway(int permitLimit, string reportUrl = "http://127.0.0.1:1")
         {
             var app = GatewayHost.Build(Array.Empty<string>(), builder =>
             {
@@ -353,7 +404,7 @@ namespace QuantConnect.Tests.Services.Gateway
                     ["Gateway:Upstreams:Orchestrator"] = _upstreamUrl,
                     ["Gateway:Upstreams:Results"] = _upstreamUrl,
                     ["Gateway:Upstreams:MarketData"] = _upstreamUrl,
-                    ["Gateway:Upstreams:Report"] = "http://127.0.0.1:1",
+                    ["Gateway:Upstreams:Report"] = reportUrl,
                     ["Gateway:Upstreams:Optimizer"] = "http://127.0.0.1:1",
                     ["Gateway:ApiKeys:0:Key"] = AliceKey,
                     ["Gateway:ApiKeys:0:User"] = "alice",
@@ -367,6 +418,8 @@ namespace QuantConnect.Tests.Services.Gateway
                     ["Gateway:Jwt:Audience"] = "lean-api",
                     ["Gateway:RateLimit:PermitLimit"] = permitLimit.ToString(),
                     ["Gateway:RateLimit:WindowSeconds"] = "60",
+                    ["S3:AccessKey"] = "test-access",
+                    ["S3:SecretKey"] = "test-secret",
                     ["OTEL_SDK_DISABLED"] = "true",
                 });
             });
@@ -426,6 +479,13 @@ namespace QuantConnect.Tests.Services.Gateway
             app.MapPost("/internal/v1/jobs/{id:guid}/cancel", (Guid id) => Json(JobFor(id) with { Status = JobStatus.Cancelled }, 202));
             app.MapGet("/internal/v1/results/{id:guid}", (Guid id) => HttpResults.Text($"{{\"jobId\":\"{id}\"}}", "application/json"));
             app.MapGet("/internal/v1/results/{id:guid}/charts/{**chart}", (Guid id) => HttpResults.Text("{}", "application/json"));
+            ReportRecord ReportFor(Guid id) => new()
+            {
+                JobId = id, Status = JobStatus.Completed, Attempt = 1, Spec = new ReportSpec { SourceJobId = AliceJob },
+                Html = new ObjectRef { Bucket = Buckets.Reports, Key = $"{id:D}/1/report.html", Size = 10, Sha256 = new string('0', 64), ContentType = "text/html" },
+            };
+            app.MapGet("/internal/v1/reports", () => Json(new Page<ReportRecord> { Items = new List<ReportRecord> { ReportFor(AliceJob) } }));
+            app.MapGet("/internal/v1/reports/{id:guid}", (Guid id) => Json(ReportFor(id)));
             app.MapGet("/openapi/v1.json", () => HttpResults.Text("""
                 {"openapi":"3.1.1","info":{"title":"results","version":"v1"},
                  "paths":{"/internal/v1/results/{id}":{"get":{"operationId":"getResult","responses":{"200":{"description":"ok"}}}},

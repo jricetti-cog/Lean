@@ -79,10 +79,10 @@ and mount `lean-data:/Lean/Data:ro` (read-write only for market-data and its one
 with the API key from `GATEWAY_API_KEY` (`X-Api-Key: <key>` or `Authorization: Bearer <key>`), or with a JWT once
 `GATEWAY_JWT_AUTHORITY` / `GATEWAY_JWT_SIGNING_KEY` is set, rate-limits per key (`GATEWAY_RATE_LIMIT` requests per
 `GATEWAY_RATE_WINDOW_SECONDS`), echoes and forwards `X-Request-ID`, and proxies `/api/v1/...` to the internal services.
-An upstream that is not running (report, optimizer) answers `503 application/problem+json`. The merged OpenAPI document
+An upstream that is not running (the optimizer until it exists) answers `503 application/problem+json`. The merged OpenAPI document
 is at `/openapi`. See `Services/QuantConnect.Services.Gateway/README.md` for the routes.
 
 ```bash
-docker compose --profile orchestrator --profile results --profile gateway up -d --build --wait
-deploy/compose/verify-gateway.sh   # backtest through the gateway -> orchestrator, result through the gateway <- results
+docker compose --profile infra --profile orchestrator --profile results --profile report --profile gateway up -d --build --wait
+deploy/compose/verify-gateway.sh   # backtest through the gateway -> orchestrator, result <- results, report <- report
 ```

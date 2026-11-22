@@ -116,6 +116,11 @@ public static class GatewayEndpoints
         {
             return Problems.BadRequest(http, $"invalid {kind} request: {e.Message}");
         }
+        if (request.Report is { } report)
+        {
+            if (await JobAccess.CheckAsync(http, report.SourceJobId) is { } denied) return denied;
+            if (report.LiveJobId is { } live && await JobAccess.CheckAsync(http, live) is { } deniedLive) return deniedLive;
+        }
         return await http.PostJsonAsync(GatewayProxy.Orchestrator, Jobs, request).RelayAsync();
     }
 
@@ -209,7 +214,9 @@ public static class GatewayEndpoints
     private static IResult Presign(HttpContext http, ObjectRef obj)
     {
         var s3 = http.RequestServices.GetRequiredService<PresignedUrls>();
-        return Results.Redirect(s3.For(obj));
+        return s3.Configured
+            ? Results.Redirect(s3.For(obj))
+            : Problems.Unavailable(http, "object-storage", "S3:AccessKey / S3:SecretKey are not configured");
     }
 }
 
@@ -220,11 +227,14 @@ public sealed class PresignedUrls
     private readonly int _seconds;
     private readonly bool _http;
 
+    public bool Configured { get; }
+
     public PresignedUrls(IConfiguration configuration, IOptions<GatewayOptions> options)
     {
         var url = options.Value.PublicS3Url ?? configuration["S3:ServiceUrl"] ?? "http://127.0.0.1:9000";
         _http = url.StartsWith("http://", StringComparison.OrdinalIgnoreCase);
         _seconds = options.Value.PresignedUrlSeconds;
+        Configured = !string.IsNullOrEmpty(configuration["S3:AccessKey"]) && !string.IsNullOrEmpty(configuration["S3:SecretKey"]);
         _client = new AmazonS3Client(configuration["S3:AccessKey"] ?? "", configuration["S3:SecretKey"] ?? "", new AmazonS3Config
         {
             ServiceURL = url,

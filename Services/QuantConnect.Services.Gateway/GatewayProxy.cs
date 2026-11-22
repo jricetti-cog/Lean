@@ -80,7 +80,18 @@ public static class GatewayProxy
         });
         proxy.Use(async (http, next) =>
         {
-            if (http.GetRouteValue("id") is string raw)
+            if (http.GetReverseProxyFeature().Route.Config.RouteId == "reports-list" && !http.User.IsAdmin())
+            {
+                var denied = Guid.TryParse(http.Request.Query["sourceJobId"], out var sourceJobId)
+                    ? await JobAccess.CheckAsync(http, sourceJobId)
+                    : Problems.BadRequest(http, "sourceJobId is required to list reports without an admin key");
+                if (denied != null)
+                {
+                    await denied.ExecuteAsync(http);
+                    return;
+                }
+            }
+            else if (http.GetRouteValue("id") is string raw)
             {
                 var denied = Guid.TryParse(raw, out var id)
                     ? await JobAccess.CheckAsync(http, id)
