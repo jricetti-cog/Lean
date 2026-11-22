@@ -23,6 +23,6 @@ The only public entry point (ADR 0001/0002). Compose publishes it on `127.0.0.1:
 - **Request ids**: `X-Request-ID` (client value if well-formed, else the trace id) is echoed, tagged on the server span
   as `lean.request_id` (and baggage) and forwarded upstream with `traceparent`.
 - **Upstreams**: `X-Lean-User` is set from the caller; credentials are stripped. An unreachable upstream answers
-  `503 application/problem+json` (`504` on timeout).
+  `503 application/problem+json` (connect, including DNS, is bounded to 3 s).
 
 Verify against compose with `deploy/compose/verify-gateway.sh` (see `deploy/compose/README.md`).

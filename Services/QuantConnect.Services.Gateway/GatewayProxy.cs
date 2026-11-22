@@ -50,6 +50,7 @@ public static class GatewayProxy
             }).ToList();
         return services.AddReverseProxy()
             .LoadFromMemory(routes, clusters)
+            .ConfigureHttpClient((_, handler) => handler.ConnectTimeout = UpstreamClients.ConnectTimeout)
             .AddTransforms(context =>
             {
                 context.AddRequestHeaderRemove("Authorization");
@@ -64,7 +65,7 @@ public static class GatewayProxy
             });
     }
 
-    /// <summary>Ownership check before forwarding, and 503/504 problem+json when the upstream cannot be reached.</summary>
+    /// <summary>Ownership check before forwarding, and a 503 problem+json when the upstream cannot be reached.</summary>
     public static void UseGatewayProxyPipeline(this IReverseProxyApplicationBuilder proxy)
     {
         proxy.Use(async (http, next) =>
@@ -73,12 +74,9 @@ public static class GatewayProxy
             var error = http.GetForwarderErrorFeature();
             if (error == null || http.Response.HasStarted) return;
             var cluster = http.GetReverseProxyFeature().Cluster?.Config.ClusterId ?? "upstream";
-            var timedOut = error.Error is ForwarderError.RequestTimedOut;
             http.Response.Clear();
-            await Problems.WriteAsync(http,
-                timedOut ? StatusCodes.Status504GatewayTimeout : StatusCodes.Status503ServiceUnavailable,
-                timedOut ? "Gateway Timeout" : "Service Unavailable",
-                $"upstream '{cluster}' is unavailable: {error.Exception?.Message ?? error.Error.ToString()}");
+            await Problems.WriteAsync(http, StatusCodes.Status503ServiceUnavailable, "Service Unavailable",
+                $"upstream '{cluster}' is unavailable ({error.Error}): {error.Exception?.Message}");
         });
         proxy.Use(async (http, next) =>
         {

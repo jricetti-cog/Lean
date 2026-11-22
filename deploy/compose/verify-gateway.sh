@@ -56,7 +56,7 @@ rid=$(grep -i '^x-request-id:' /tmp/gw.headers | tr -d '\r' | cut -d' ' -f2)
 pass "201 job $job (submittedBy $(jq -r .submittedBy /tmp/gw.body), X-Request-ID $rid)"
 spec=$(curl -fsS "$ORCH/internal/v1/jobs/$job" | jq -c '.spec.backtest | {name, startDate, endDate, algorithm: {source: .algorithm.source, language: .algorithm.language, object: (.algorithm.object.bucket + "/" + .algorithm.object.key), contentType: .algorithm.object.contentType}}')
 echo "      orchestrator spec: $spec"
-echo "$spec" | grep -q '"language":"python"' && pass "orchestrator stored the uploaded Python algorithm in lean-algorithms" || fail "unexpected spec"
+echo "$spec" | grep -qi '"language":"python"' && pass "orchestrator stored the uploaded Python algorithm in lean-algorithms" || fail "unexpected spec"
 code=$(gw GET "/api/v1/jobs/$job")
 [ "$code" = 200 ] && pass "GET /api/v1/jobs/$job -> $(jq -r .status /tmp/gw.body)" || fail "get job returned $code"
 code=$(gw GET "/api/v1/jobs?kind=backtest&limit=3")

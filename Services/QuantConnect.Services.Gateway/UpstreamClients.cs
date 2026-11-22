@@ -11,6 +11,9 @@ public static class UpstreamClients
 {
     public const string UserHeader = "X-Lean-User";
 
+    /// <summary>Bounds DNS + TCP connect so a service that is not deployed fails fast with 503.</summary>
+    public static readonly TimeSpan ConnectTimeout = TimeSpan.FromSeconds(3);
+
     public static IServiceCollection AddUpstreamClients(this IServiceCollection services, GatewayOptions options)
     {
         services.AddHttpContextAccessor();
@@ -21,7 +24,8 @@ public static class UpstreamClients
             {
                 c.BaseAddress = new Uri(url.TrimEnd('/') + "/");
                 c.Timeout = TimeSpan.FromSeconds(30);
-            }).AddHttpMessageHandler<CallerHeadersHandler>();
+            }).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { ConnectTimeout = ConnectTimeout })
+              .AddHttpMessageHandler<CallerHeadersHandler>();
         }
         return services;
     }
