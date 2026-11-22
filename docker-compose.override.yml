@@ -1,0 +1,15 @@
+# Local development overrides, merged automatically by `docker compose` (skip with `-f docker-compose.yml`).
+# Later phases add each service's source mounts and debug ports here, for example:
+#
+#   results:
+#     volumes:
+#       - ./Services/QuantConnect.Services.Results:/src/Services/QuantConnect.Services.Results:ro
+#     ports:
+#       - 127.0.0.1:5005:5005   # debugger
+#     environment:
+#       ASPNETCORE_ENVIRONMENT: Development
+
+services:
+  postgres:
+    # log every statement so service migrations and queries are visible in `docker compose logs postgres`
+    command: ["postgres", "-c", "log_statement=all"]
