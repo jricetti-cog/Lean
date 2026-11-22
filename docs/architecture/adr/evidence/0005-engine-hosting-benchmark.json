@@ -1,0 +1,391 @@
+{
+ "environment": {
+  "commit": "162706671b03a72414b9e61a68e5ad4adbc64b2c",
+  "host": "Linux 6.8.0-1060-aws, 8 vCPU Intel(R) Xeon(R) Processor",
+  "docker": "29.9.2",
+  "foundation_image": "sha256:6e4fd9b135b8d5c10bad3f8ccde5c54c4d4252a5772963e185a0076f78cb58e8",
+  "rabbitmq_image": "rabbitmq:3.13-management"
+ },
+ "summary": [
+  {
+   "algorithm": "BasicTemplateAlgorithm (C#)",
+   "mode": "baseline",
+   "runs": 5,
+   "e2e_median_s": 2.625,
+   "e2e_range_s": [
+    2.525,
+    2.658
+   ],
+   "e2e_vs_baseline_pct": 0.0,
+   "engine_median_s": 2.352,
+   "engine_vs_baseline_pct": 0.0,
+   "rss_median_mb": 275.0,
+   "statistics_count": 28,
+   "statistics_identical": true,
+   "packet_statistics_identical": null,
+   "exit_codes": [
+    0
+   ],
+   "order_list_hash": "3da9fa60bf95b9ed148b95e02e0cfc9e",
+   "total_orders": "1",
+   "http": null,
+   "result_message_bytes": null
+  },
+  {
+   "algorithm": "BasicTemplateAlgorithm (C#)",
+   "mode": "broker",
+   "runs": 5,
+   "e2e_median_s": 2.687,
+   "e2e_range_s": [
+    2.537,
+    2.78
+   ],
+   "e2e_vs_baseline_pct": 2.4,
+   "engine_median_s": 2.539,
+   "engine_vs_baseline_pct": 8.0,
+   "rss_median_mb": 294.2,
+   "statistics_count": 28,
+   "statistics_identical": true,
+   "packet_statistics_identical": true,
+   "exit_codes": [
+    0
+   ],
+   "order_list_hash": "3da9fa60bf95b9ed148b95e02e0cfc9e",
+   "total_orders": "1",
+   "http": null,
+   "result_message_bytes": 39260
+  },
+  {
+   "algorithm": "BasicTemplateAlgorithm (C#)",
+   "mode": "http-data",
+   "runs": 5,
+   "e2e_median_s": 3.249,
+   "e2e_range_s": [
+    3.178,
+    3.431
+   ],
+   "e2e_vs_baseline_pct": 23.8,
+   "engine_median_s": 3.1,
+   "engine_vs_baseline_pct": 31.8,
+   "rss_median_mb": 298.2,
+   "statistics_count": 28,
+   "statistics_identical": true,
+   "packet_statistics_identical": true,
+   "exit_codes": [
+    0
+   ],
+   "order_list_hash": "3da9fa60bf95b9ed148b95e02e0cfc9e",
+   "total_orders": "1",
+   "http": {
+    "requests": 41,
+    "notFound": 0,
+    "bytes": 873441
+   },
+   "result_message_bytes": 39260
+  },
+  {
+   "algorithm": "BasicTemplateFrameworkAlgorithm (C#)",
+   "mode": "baseline",
+   "runs": 5,
+   "e2e_median_s": 2.66,
+   "e2e_range_s": [
+    2.526,
+    2.998
+   ],
+   "e2e_vs_baseline_pct": 0.0,
+   "engine_median_s": 2.405,
+   "engine_vs_baseline_pct": 0.0,
+   "rss_median_mb": 284.9,
+   "statistics_count": 28,
+   "statistics_identical": true,
+   "packet_statistics_identical": null,
+   "exit_codes": [
+    0
+   ],
+   "order_list_hash": "f209ed42701b0419858e0100595b40c0",
+   "total_orders": "3",
+   "http": null,
+   "result_message_bytes": null
+  },
+  {
+   "algorithm": "BasicTemplateFrameworkAlgorithm (C#)",
+   "mode": "broker",
+   "runs": 5,
+   "e2e_median_s": 2.705,
+   "e2e_range_s": [
+    2.548,
+    3.065
+   ],
+   "e2e_vs_baseline_pct": 1.7,
+   "engine_median_s": 2.555,
+   "engine_vs_baseline_pct": 6.2,
+   "rss_median_mb": 303.2,
+   "statistics_count": 28,
+   "statistics_identical": true,
+   "packet_statistics_identical": true,
+   "exit_codes": [
+    0
+   ],
+   "order_list_hash": "f209ed42701b0419858e0100595b40c0",
+   "total_orders": "3",
+   "http": null,
+   "result_message_bytes": 42674
+  },
+  {
+   "algorithm": "BasicTemplateFrameworkAlgorithm (C#)",
+   "mode": "http-data",
+   "runs": 5,
+   "e2e_median_s": 3.13,
+   "e2e_range_s": [
+    2.976,
+    3.412
+   ],
+   "e2e_vs_baseline_pct": 17.7,
+   "engine_median_s": 2.972,
+   "engine_vs_baseline_pct": 23.6,
+   "rss_median_mb": 308.3,
+   "statistics_count": 28,
+   "statistics_identical": true,
+   "packet_statistics_identical": true,
+   "exit_codes": [
+    0
+   ],
+   "order_list_hash": "f209ed42701b0419858e0100595b40c0",
+   "total_orders": "3",
+   "http": {
+    "requests": 41,
+    "notFound": 0,
+    "bytes": 873441
+   },
+   "result_message_bytes": 42674
+  },
+  {
+   "algorithm": "BasicTemplateOptionsAlgorithm (C#)",
+   "mode": "baseline",
+   "runs": 5,
+   "e2e_median_s": 2.776,
+   "e2e_range_s": [
+    2.614,
+    4.247
+   ],
+   "e2e_vs_baseline_pct": 0.0,
+   "engine_median_s": 2.491,
+   "engine_vs_baseline_pct": 0.0,
+   "rss_median_mb": 299.1,
+   "statistics_count": 28,
+   "statistics_identical": true,
+   "packet_statistics_identical": null,
+   "exit_codes": [
+    0
+   ],
+   "order_list_hash": "19ba1220073493495880581b38df2da9",
+   "total_orders": "2",
+   "http": null,
+   "result_message_bytes": null
+  },
+  {
+   "algorithm": "BasicTemplateOptionsAlgorithm (C#)",
+   "mode": "broker",
+   "runs": 5,
+   "e2e_median_s": 2.623,
+   "e2e_range_s": [
+    2.517,
+    2.846
+   ],
+   "e2e_vs_baseline_pct": -5.5,
+   "engine_median_s": 2.467,
+   "engine_vs_baseline_pct": -1.0,
+   "rss_median_mb": 296.4,
+   "statistics_count": 28,
+   "statistics_identical": true,
+   "packet_statistics_identical": true,
+   "exit_codes": [
+    0
+   ],
+   "order_list_hash": "19ba1220073493495880581b38df2da9",
+   "total_orders": "2",
+   "http": null,
+   "result_message_bytes": 19021
+  },
+  {
+   "algorithm": "BasicTemplateOptionsAlgorithm (C#)",
+   "mode": "http-data",
+   "runs": 5,
+   "e2e_median_s": 3.245,
+   "e2e_range_s": [
+    3.06,
+    4.519
+   ],
+   "e2e_vs_baseline_pct": 16.9,
+   "engine_median_s": 3.105,
+   "engine_vs_baseline_pct": 24.6,
+   "rss_median_mb": 325.8,
+   "statistics_count": 28,
+   "statistics_identical": true,
+   "packet_statistics_identical": true,
+   "exit_codes": [
+    0
+   ],
+   "order_list_hash": "19ba1220073493495880581b38df2da9",
+   "total_orders": "2",
+   "http": {
+    "requests": 42,
+    "notFound": 1,
+    "bytes": 6962569
+   },
+   "result_message_bytes": 19021
+  },
+  {
+   "algorithm": "BasicTemplateFuturesAlgorithm (C#)",
+   "mode": "baseline",
+   "runs": 5,
+   "e2e_median_s": 3.312,
+   "e2e_range_s": [
+    3.298,
+    3.772
+   ],
+   "e2e_vs_baseline_pct": 0.0,
+   "engine_median_s": 3.046,
+   "engine_vs_baseline_pct": 0.0,
+   "rss_median_mb": 343.5,
+   "statistics_count": 28,
+   "statistics_identical": true,
+   "packet_statistics_identical": null,
+   "exit_codes": [
+    0
+   ],
+   "order_list_hash": "6e0f767a46a54365287801295cf7bb75",
+   "total_orders": "2700",
+   "http": null,
+   "result_message_bytes": null
+  },
+  {
+   "algorithm": "BasicTemplateFuturesAlgorithm (C#)",
+   "mode": "broker",
+   "runs": 5,
+   "e2e_median_s": 3.608,
+   "e2e_range_s": [
+    3.497,
+    4.656
+   ],
+   "e2e_vs_baseline_pct": 8.9,
+   "engine_median_s": 3.413,
+   "engine_vs_baseline_pct": 12.0,
+   "rss_median_mb": 358.0,
+   "statistics_count": 28,
+   "statistics_identical": true,
+   "packet_statistics_identical": true,
+   "exit_codes": [
+    0
+   ],
+   "order_list_hash": "6e0f767a46a54365287801295cf7bb75",
+   "total_orders": "2700",
+   "http": null,
+   "result_message_bytes": 3689548
+  },
+  {
+   "algorithm": "BasicTemplateFuturesAlgorithm (C#)",
+   "mode": "http-data",
+   "runs": 5,
+   "e2e_median_s": 4.254,
+   "e2e_range_s": [
+    3.99,
+    4.482
+   ],
+   "e2e_vs_baseline_pct": 28.4,
+   "engine_median_s": 4.067,
+   "engine_vs_baseline_pct": 33.5,
+   "rss_median_mb": 352.2,
+   "statistics_count": 28,
+   "statistics_identical": true,
+   "packet_statistics_identical": true,
+   "exit_codes": [
+    0
+   ],
+   "order_list_hash": "6e0f767a46a54365287801295cf7bb75",
+   "total_orders": "2700",
+   "http": {
+    "requests": 106,
+    "notFound": 13,
+    "bytes": 4610922
+   },
+   "result_message_bytes": 3689549
+  },
+  {
+   "algorithm": "BasicTemplateAlgorithm (Py)",
+   "mode": "baseline",
+   "runs": 5,
+   "e2e_median_s": 4.627,
+   "e2e_range_s": [
+    4.53,
+    4.853
+   ],
+   "e2e_vs_baseline_pct": 0.0,
+   "engine_median_s": 4.378,
+   "engine_vs_baseline_pct": 0.0,
+   "rss_median_mb": 524.1,
+   "statistics_count": 28,
+   "statistics_identical": true,
+   "packet_statistics_identical": null,
+   "exit_codes": [
+    -6
+   ],
+   "order_list_hash": "3da9fa60bf95b9ed148b95e02e0cfc9e",
+   "total_orders": "1",
+   "http": null,
+   "result_message_bytes": null
+  },
+  {
+   "algorithm": "BasicTemplateAlgorithm (Py)",
+   "mode": "broker",
+   "runs": 5,
+   "e2e_median_s": 4.611,
+   "e2e_range_s": [
+    4.533,
+    5.061
+   ],
+   "e2e_vs_baseline_pct": -0.3,
+   "engine_median_s": 4.584,
+   "engine_vs_baseline_pct": 4.7,
+   "rss_median_mb": 516.4,
+   "statistics_count": 28,
+   "statistics_identical": true,
+   "packet_statistics_identical": true,
+   "exit_codes": [
+    -6
+   ],
+   "order_list_hash": "3da9fa60bf95b9ed148b95e02e0cfc9e",
+   "total_orders": "1",
+   "http": null,
+   "result_message_bytes": 39261
+  },
+  {
+   "algorithm": "BasicTemplateAlgorithm (Py)",
+   "mode": "http-data",
+   "runs": 5,
+   "e2e_median_s": 4.942,
+   "e2e_range_s": [
+    4.925,
+    5.492
+   ],
+   "e2e_vs_baseline_pct": 6.8,
+   "engine_median_s": 4.913,
+   "engine_vs_baseline_pct": 12.2,
+   "rss_median_mb": 524.2,
+   "statistics_count": 28,
+   "statistics_identical": true,
+   "packet_statistics_identical": true,
+   "exit_codes": [
+    -6
+   ],
+   "order_list_hash": "3da9fa60bf95b9ed148b95e02e0cfc9e",
+   "total_orders": "1",
+   "http": {
+    "requests": 41,
+    "notFound": 0,
+    "bytes": 873441
+   },
+   "result_message_bytes": 39261
+  }
+ ]
+}

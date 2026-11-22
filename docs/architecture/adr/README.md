@@ -11,6 +11,7 @@ not an edit of an accepted one.
 | [0002](0002-service-communication.md) | Communication: REST + OpenAPI and RabbitMQ | Accepted |
 | [0003](0003-storage.md) | Storage: PostgreSQL, MinIO, shared data volume | Accepted |
 | [0004](0004-market-data-access.md) | Market data access: shared read-only volume + market-data service | Accepted |
+| [0005](0005-engine-hosting-benchmark.md) | Engine hosting benchmark (evidence for 0004) | Accepted |
 
 Format: Context → Decision → Consequences → Alternatives considered. Section references like "§4.2" point to
 `current-state.md`.

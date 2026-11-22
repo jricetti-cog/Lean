@@ -1,0 +1,9 @@
+# Spike engine image (plan step s1.3): the stock Release launcher plus the spike handlers.
+# Built by bench.py from a staged context (out/image-context); data comes from the lean-data volume.
+FROM quantconnect/lean:foundation
+COPY Launcher/bin/Release/ /Lean/Launcher/bin/Release/
+COPY Algorithm.Python/ /Lean/Algorithm.Python/
+COPY engine/ /Lean/Launcher/bin/Release/
+COPY measure.py /spike/measure.py
+WORKDIR /Lean/Launcher/bin/Release
+ENTRYPOINT ["python3", "/spike/measure.py", "dotnet", "QuantConnect.Lean.Launcher.dll"]

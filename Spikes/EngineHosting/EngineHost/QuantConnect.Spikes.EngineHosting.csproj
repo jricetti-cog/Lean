@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Spike only (plan step s1.3): not part of QuantConnect.Lean.sln. Builds against the Release launcher output. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>QuantConnect.Spikes.EngineHosting</AssemblyName>
+    <RootNamespace>QuantConnect.Spikes.EngineHosting</RootNamespace>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <Nullable>disable</Nullable>
+    <LeanBin>$(MSBuildThisFileDirectory)../../../Launcher/bin/Release/</LeanBin>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="RabbitMQ.Client" Version="6.8.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="QuantConnect.Common"><HintPath>$(LeanBin)QuantConnect.Common.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="QuantConnect.Configuration"><HintPath>$(LeanBin)QuantConnect.Configuration.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="QuantConnect.Logging"><HintPath>$(LeanBin)QuantConnect.Logging.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="QuantConnect.Messaging"><HintPath>$(LeanBin)QuantConnect.Messaging.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="QuantConnect.Queues"><HintPath>$(LeanBin)QuantConnect.Queues.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Newtonsoft.Json"><HintPath>$(LeanBin)Newtonsoft.Json.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+</Project>

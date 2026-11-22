@@ -1,0 +1,28 @@
+# Spike infrastructure (plan step s1.3). Engine containers are started per job by bench.py.
+name: lean-spike
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    ports: ["5672:5672", "15672:15672"]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+      interval: 3s
+      timeout: 10s
+      retries: 30
+  market-data:
+    image: quantconnect/lean:foundation
+    command: ["dotnet", "/spike/market-data/QuantConnect.Spikes.MarketData.dll", "--urls", "http://0.0.0.0:8080"]
+    environment:
+      LEAN_DATA_ROOT: /lean-data
+    volumes:
+      - ./out/market-data:/spike/market-data:ro
+      - lean-data:/lean-data:ro
+    ports: ["8080:8080"]
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:8080/healthz"]
+      interval: 3s
+      timeout: 5s
+      retries: 30
+volumes:
+  lean-data:
+    external: true
