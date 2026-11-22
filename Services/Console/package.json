@@ -1,0 +1,43 @@
+{
+  "name": "lean-console",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "LEAN web console (plan step s5.1): React + Vite + TypeScript SPA on the public api-gateway API.",
+  "scripts": {
+    "samples": "node scripts/samples.mjs",
+    "gen:api": "openapi-typescript ../../docs/architecture/contracts/openapi/gateway.openapi.yaml -o src/api/schema.d.ts",
+    "gen:api:live": "openapi-typescript ${GATEWAY_OPENAPI_URL:-http://127.0.0.1:5080/openapi} -o src/api/schema.d.ts",
+    "check:api": "openapi-typescript ../../docs/architecture/contracts/openapi/gateway.openapi.yaml -o /tmp/lean-console-schema.d.ts && diff -q src/api/schema.d.ts /tmp/lean-console-schema.d.ts",
+    "predev": "npm run samples",
+    "dev": "vite",
+    "prebuild": "npm run samples",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b",
+    "test": "vitest run",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@codemirror/lang-python": "^6.2.1",
+    "@codemirror/language": "^6.11.3",
+    "@codemirror/legacy-modes": "^6.5.2",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/view": "^6.38.6",
+    "codemirror": "^6.0.2",
+    "lightweight-charts": "^5.0.9",
+    "openapi-fetch": "^0.14.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router": "^7.9.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^5.1.0",
+    "openapi-typescript": "^7.10.1",
+    "typescript": "~5.9.3",
+    "vite": "^7.1.12",
+    "vitest": "^3.2.4"
+  }
+}

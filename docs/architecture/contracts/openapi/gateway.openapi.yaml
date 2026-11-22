@@ -118,6 +118,27 @@ paths:
           $ref: 'common.yaml#/components/responses/Unauthorized'
         '503':
           $ref: 'common.yaml#/components/responses/Unavailable'
+  /api/v1/live/{id}/stop:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+    post:
+      tags: [jobs]
+      operationId: stopLive
+      summary: Stop a live deployment
+      description: Same as `POST /api/v1/jobs/{id}/cancel` for a live job; the live worker stops the engine and the job turns `cancelled`.
+      responses:
+        '202':
+          description: Stop accepted.
+          content:
+            application/json:
+              schema:
+                $ref: 'common.yaml#/components/schemas/Job'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '409':
+          $ref: 'common.yaml#/components/responses/Conflict'
   /api/v1/optimizations:
     post:
       tags: [jobs]

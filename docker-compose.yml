@@ -420,6 +420,23 @@ services:
         condition: service_healthy
     networks: [lean]
 
+  # Web console (plan step s5.1): nginx serves the SPA at / and proxies /api to api-gateway, adding the API key from
+  # CONSOLE_API_KEY (default: GATEWAY_API_KEY). Run with --profile gateway; UI at http://127.0.0.1:${CONSOLE_PORT:-5090}.
+  console:
+    image: ${LEAN_IMAGE_REGISTRY:-lean}/console:${LEAN_IMAGE_TAG:-dev}
+    build:
+      context: .
+      dockerfile: Services/Dockerfile
+      target: console
+    profiles: [console]
+    restart: unless-stopped
+    environment:
+      LEAN_GATEWAY_URL: http://api-gateway:8080
+      LEAN_API_KEY: ${CONSOLE_API_KEY:-${GATEWAY_API_KEY:-lean-dev-api-key}}
+    ports:
+      - 127.0.0.1:${CONSOLE_PORT:-5090}:8080
+    networks: [lean]
+
 volumes:
   rabbitmq-data:
   postgres-data:

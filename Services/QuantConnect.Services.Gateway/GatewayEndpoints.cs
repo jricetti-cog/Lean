@@ -22,7 +22,7 @@ public static class GatewayEndpoints
             if (!http.Request.HasFormContentType) return Problems.BadRequest(http, "send multipart/form-data with a 'file' part");
             var form = await http.Request.ReadFormAsync(http.RequestAborted);
             var (algorithm, failure) = await UploadAsync(http, form);
-            return failure ?? Contract(algorithm!, StatusCodes.Status201Created);
+            return failure ?? Contract<AlgorithmRef>(algorithm!, StatusCodes.Status201Created);
         }).WithName("uploadAlgorithm").WithTags("algorithms").DisableAntiforgery();
 
         api.MapPost("/backtests", Task<IResult> (HttpContext http) => SubmitAsync(http, JobKind.Backtest))
