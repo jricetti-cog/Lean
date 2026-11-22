@@ -23,6 +23,14 @@ export async function listJobs(query: JobListQuery): Promise<{ items: Job[]; nex
   return { items: (page.items ?? []) as Job[], next: page.next };
 }
 
+export type ChildQuery = NonNullable<paths['/api/v1/optimizations/{id}/children']['get']['parameters']['query']>;
+
+/** `GET /api/v1/optimizations/{id}/children` (optimizer via the gateway) with `items` narrowed to `ChildBacktest`. */
+export async function listOptimizationChildren(id: string, query: ChildQuery = {}): Promise<{ items: ChildBacktest[]; next?: string | null }> {
+  const page = ok(await api.GET('/api/v1/optimizations/{id}/children', { params: { path: { id }, query } }));
+  return { items: (page.items ?? []) as ChildBacktest[], next: page.next };
+}
+
 /**
  * Typed client generated (openapi-typescript) from the gateway's public OpenAPI document. Requests are same-origin
  * `/api/v1/...`; the console's nginx (or the Vite dev proxy) forwards them to api-gateway and injects the API key

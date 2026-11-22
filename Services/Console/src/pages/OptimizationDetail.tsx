@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { allPages, api, type Job, listJobs, ok, type ResultSummary, TERMINAL } from '../api/client';
+import { allPages, api, ApiError, type ChildBacktest, listOptimizationChildren, ok, TERMINAL } from '../api/client';
 import { usePolling } from '../components/hooks';
 import { Card, ErrorBox, Progress, StatusBadge } from '../components/ui';
-import { fetchResult, JobHeader } from './JobDetail';
+import { JobHeader } from './JobDetail';
 
+const OBJECTIVE = 'Objective';
 const STAT_COLUMNS = ['Sharpe Ratio', 'Net Profit', 'Compounding Annual Return', 'Drawdown', 'Total Orders'];
 
-type Row = { job: Job; result?: ResultSummary };
+type Row = ChildBacktest;
 
 const numeric = (v?: string) => (v === undefined ? NaN : Number(v.replace(/[%$,]/g, '')));
 
@@ -26,18 +27,23 @@ export default function OptimizationDetail() {
   );
   const rows = usePolling<Row[]>(
     async () => {
-      const children = await allPages<Job>((cursor) => listJobs({ parentJobId: id, cursor, limit: 100 }), 5);
-      return Promise.all(children.map(async (c) => ({ job: c, result: c.status === 'completed' ? await fetchResult(c.id).catch(() => undefined) : undefined })));
+      try {
+        return await allPages<Row>((cursor) => listOptimizationChildren(id, { cursor, limit: 100 }), 10);
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 404) return [];
+        throw e;
+      }
     },
     [id],
     5000,
     () => live,
   );
-  const [sort, setSort] = useState<string>('Sharpe Ratio');
+  const [sort, setSort] = useState<string>(OBJECTIVE);
   const [desc, setDesc] = useState(true);
 
-  const paramNames = useMemo(() => [...new Set((rows.data ?? []).flatMap((r) => Object.keys(r.job.spec?.backtest?.parameters ?? {})))].sort(), [rows.data]);
-  const value = (r: Row, col: string) => (paramNames.includes(col) ? r.job.spec?.backtest?.parameters?.[col] : r.result?.statistics?.[col]);
+  const paramNames = useMemo(() => [...new Set((rows.data ?? []).flatMap((r) => Object.keys(r.parameters ?? {})))].sort(), [rows.data]);
+  const value = (r: Row, col: string) =>
+    col === OBJECTIVE ? r.objective?.toString() : paramNames.includes(col) ? r.parameters?.[col] : r.statistics?.[col];
   const sorted = useMemo(() => {
     const list = [...(rows.data ?? [])];
     list.sort((a, b) => {
@@ -111,36 +117,40 @@ export default function OptimizationDetail() {
                 <th>Backtest</th>
                 <th>Status</th>
                 {paramNames.map(header)}
+                {header(OBJECTIVE)}
                 {STAT_COLUMNS.map(header)}
               </tr>
             </thead>
             <tbody>
               {sorted.map((r) => (
-                <tr key={r.job.id} className={r.job.id === best ? 'best' : ''}>
+                <tr key={r.jobId} className={r.jobId === best ? 'best' : ''}>
                   <td>
-                    <Link to={`/jobs/${r.job.id}`} className="mono">
-                      {r.job.id.slice(0, 8)}
+                    <Link to={`/jobs/${r.jobId}`} className="mono">
+                      {r.jobId.slice(0, 8)}
                     </Link>
-                    {r.job.id === best && <span className="badge badge-best">best</span>}
+                    {r.jobId === best && <span className="badge badge-best">best</span>}
                   </td>
                   <td>
-                    <StatusBadge status={r.job.status} />
+                    <StatusBadge status={r.status} />
                   </td>
                   {paramNames.map((p) => (
                     <td key={p} className="num" style={sort === p ? shade(r) : undefined}>
-                      {r.job.spec?.backtest?.parameters?.[p] ?? '—'}
+                      {r.parameters?.[p] ?? '—'}
                     </td>
                   ))}
+                  <td className="num" style={sort === OBJECTIVE ? shade(r) : undefined}>
+                    {r.objective ?? '—'}
+                  </td>
                   {STAT_COLUMNS.map((c) => (
                     <td key={c} className="num" style={sort === c ? shade(r) : undefined}>
-                      {r.result?.statistics?.[c] ?? '—'}
+                      {r.statistics?.[c] ?? '—'}
                     </td>
                   ))}
                 </tr>
               ))}
               {!sorted.length && (
                 <tr>
-                  <td colSpan={2 + paramNames.length + STAT_COLUMNS.length} className="muted">
+                  <td colSpan={3 + paramNames.length + STAT_COLUMNS.length} className="muted">
                     No child backtests yet.
                   </td>
                 </tr>

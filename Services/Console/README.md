@@ -10,7 +10,7 @@ the console talks only to the public gateway API.
 | New backtest | `/backtests/new` | `POST /api/v1/algorithms` (Python / edited C#), `POST /api/v1/backtests` |
 | Jobs | `/jobs` | `GET /api/v1/jobs` (kind/status filters, cursor paging), `POST /api/v1/jobs/{id}/cancel` |
 | Backtest detail | `/jobs/{id}` | `GET /api/v1/jobs/{id}`, `/result`, `/charts/Strategy Equity`, `/charts/Drawdown`, `/orders`, `/logs`, `/result/download`; `POST /api/v1/reports`, `GET /api/v1/reports/{id}`, `/reports/{id}/html` |
-| Optimizations | `/optimizations`, `/optimizations/{id}` | `POST /api/v1/optimizations/estimate`, `POST /api/v1/optimizations`, `GET /api/v1/optimizations/{id}`, `GET /api/v1/jobs?parentJobId=` + child `/result` (results grid) |
+| Optimizations | `/optimizations`, `/optimizations/{id}` | `POST /api/v1/optimizations/estimate`, `POST /api/v1/optimizations`, `GET /api/v1/optimizations/{id}`, `GET /api/v1/optimizations/{id}/children` (results grid) |
 | Live | `/live`, `/live/{id}` | `POST /api/v1/live`, `POST /api/v1/live/{id}/stop`, `/result`, `/orders` (positions are net filled orders), `/logs` |
 
 Samples: `npm run samples` (run by `dev`/`build`) copies every standalone algorithm of `Algorithm.CSharp` and
@@ -33,7 +33,7 @@ npm run check:api      # fails when schema.d.ts is stale (run by the image build
 ```bash
 # whole stack (from the repo root); console on http://127.0.0.1:5090
 docker compose --profile infra --profile orchestrator --profile results --profile report --profile workers \
-  --profile gateway --profile console up -d --build --wait
+  --profile optimizer --profile gateway --profile console up -d --build --wait
 deploy/compose/verify-console.sh
 
 # dev server with HMR against a running gateway (proxy adds the key like nginx does)

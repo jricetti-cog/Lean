@@ -150,6 +150,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/optimizations/{id}/children": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Job id (UUID, owned by job-orchestrator). */
+                id: components["parameters"]["JobIdPath"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Optimization child backtests
+         * @description Forwards to optimizer. Parameter set, child job id, status, objective and statistics of each child backtest.
+         */
+        get: operations["listOptimizationChildren"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports": {
         parameters: {
             query?: never;
@@ -842,6 +865,11 @@ export interface components {
             /** @description `lean-results/<optimizationId>/<attempt>/optimization.json` (LEAN `OptimizationResult` list) once completed. */
             result?: components["schemas"]["ObjectRef"] | null;
         };
+        Page: {
+            items: unknown[];
+            /** @description Cursor of the next page, null on the last page. */
+            next?: string | null;
+        };
         Report: {
             jobId: components["schemas"]["Uuid"];
             status: components["schemas"]["JobStatus"];
@@ -851,11 +879,6 @@ export interface components {
             pdf?: components["schemas"]["ObjectRef"] | null;
             error?: components["schemas"]["ErrorInfo"] | null;
             completedAt?: components["schemas"]["Timestamp"] | null;
-        };
-        Page: {
-            items: unknown[];
-            /** @description Cursor of the next page, null on the last page. */
-            next?: string | null;
         };
         JobPage: components["schemas"]["Page"] & {
             items?: components["schemas"]["Job"][];
@@ -1237,16 +1260,16 @@ export interface components {
         IdempotencyKey: string;
         /** @description Job id (UUID, owned by job-orchestrator). */
         JobIdPath: components["schemas"]["Uuid"];
-        /** @description Filter by job kind. */
-        KindFilter: components["schemas"]["JobKind"];
         /** @description Filter by status. */
         StatusFilter: components["schemas"]["JobStatus"];
-        /** @description Children of an optimization. */
-        ParentFilter: components["schemas"]["Uuid"];
         /** @description Opaque cursor from `next` of the previous page. */
         Cursor: string;
         /** @description Page size. */
         Limit: number;
+        /** @description Filter by job kind. */
+        KindFilter: components["schemas"]["JobKind"];
+        /** @description Children of an optimization. */
+        ParentFilter: components["schemas"]["Uuid"];
         /** @description Attempt to read; defaults to the latest completed (else latest) attempt. */
         AttemptQuery: components["schemas"]["Attempt"];
         /** @description LEAN `SecurityType`. */
@@ -1439,6 +1462,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OptimizationState"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listOptimizationChildren: {
+        parameters: {
+            query?: {
+                /** @description Filter by status. */
+                status?: components["parameters"]["StatusFilter"];
+                /** @description Opaque cursor from `next` of the previous page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description Page size. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                /** @description Job id (UUID, owned by job-orchestrator). */
+                id: components["parameters"]["JobIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of children. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page"] & {
+                        items?: components["schemas"]["ChildBacktest"][];
+                    };
                 };
             };
             401: components["responses"]["Unauthorized"];

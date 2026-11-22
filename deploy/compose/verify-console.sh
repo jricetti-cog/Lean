@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # Verifies the web console (plan step s5.1) through its nginx container only, the way a browser uses it:
 #   docker compose --profile infra --profile orchestrator --profile results --profile report --profile workers \
-#     --profile gateway --profile console up -d --build --wait
+#     --profile optimizer --profile gateway --profile console up -d --build --wait
 #   deploy/compose/verify-console.sh
 # No API key is sent: nginx must add it for /api, while the gateway itself still rejects anonymous calls.
 set -eu
@@ -84,6 +84,30 @@ done
 [ "$(ui GET "/api/v1/reports/$REPORT/html")" = 302 ] || fail "report html redirect"
 curl -fsS -o /tmp/ui.report.html "$(sed -n 's/^[Ll]ocation: //p' /tmp/ui.headers | tr -d '\r')" && grep -qi '<html' /tmp/ui.report.html || fail "report html download"
 pass "report $REPORT rendered; /api/v1/reports/$REPORT/html redirects to the presigned HTML"
+
+OPT_SPEC='{"name":"console-verify EMA grid","backtest":{"algorithm":{"source":"builtin","language":"CSharp","typeName":"ParameterizedAlgorithm"},"fetchMissingData":false},
+  "strategy":"QuantConnect.Optimizer.Strategies.GridSearchOptimizationStrategy",
+  "criterion":{"target":"TotalPerformance.PortfolioStatistics.TotalNetProfit","extremum":"max"},
+  "parameters":[{"name":"ema-fast","min":10,"max":20,"step":10},{"name":"ema-slow","min":100,"max":200,"step":100}],
+  "maximumConcurrentBacktests":4}'
+[ "$(ui POST /api/v1/optimizations/estimate -H 'content-type: application/json' --data "$OPT_SPEC")" = 200 ] || fail "optimization estimate: $(cat /tmp/ui.body)"
+[ "$(js "d['totalBacktests']")" = 4 ] || fail "estimate is $(js "d['totalBacktests']"), expected 4"
+pass "optimization estimate through console: 4 backtests"
+ui POST /api/v1/optimizations -H 'content-type: application/json' --data "$OPT_SPEC" | grep -q "^20[12]$" || fail "optimization submit: $(cat /tmp/ui.body)"
+OPT=$(js "d['id']")
+deadline=$(( $(date +%s) + TIMEOUT ))
+while :; do
+  ui GET "/api/v1/jobs/$OPT" >/dev/null
+  status=$(js "d['status']")
+  case "$status" in completed) break ;; failed|cancelled|stale) fail "optimization $status: $(cat /tmp/ui.body)" ;; esac
+  [ "$(date +%s)" -lt "$deadline" ] || fail "optimization still $status after ${TIMEOUT}s"
+  sleep 3
+done
+[ "$(ui GET "/api/v1/optimizations/$OPT")" = 200 ] || fail "optimization state"
+pass "optimization $OPT completed: $(js "f\"{d['completed']}/{d['totalBacktests']} completed, best {d['best']['parameters']} objective {d['best']['objective']}\"")"
+[ "$(ui GET "/api/v1/optimizations/$OPT/children?limit=100")" = 200 ] || fail "optimization children"
+[ "$(js "len(d['items'])")" = 4 ] || fail "children: $(cat /tmp/ui.body)"
+pass "results grid rows: $(js "'; '.join(f\"{c['parameters']} {c['status']} objective={c.get('objective')} sharpe={(c.get('statistics') or {}).get('Sharpe Ratio')}\" for c in d['items'])")"
 
 [ "$(ui POST "/api/v1/live/00000000-0000-0000-0000-000000000000/stop")" = 404 ] || fail "live stop route: $(cat /tmp/ui.body)"
 pass "live stop route reachable through console (unknown id -> 404)"
