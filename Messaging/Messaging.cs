@@ -123,7 +123,7 @@ namespace QuantConnect.Messaging
         /// <summary>
         /// Dispose of any resources
         /// </summary>
-        public void Dispose()
+        public virtual void Dispose()
         {
         }
     }
