@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <AssemblyName>QuantConnect.Services.Optimizer</AssemblyName>
+    <RootNamespace>QuantConnect.Services.Optimizer</RootNamespace>
+    <Description>QuantConnect LEAN services: optimizer (consumes optimization.requested, runs LEAN's optimization strategies over child backtest jobs, optimizer API)</Description>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <UseAppHost>false</UseAppHost>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Optimizer\QuantConnect.Optimizer.csproj" />
+    <ProjectReference Include="..\QuantConnect.Services.Contracts\QuantConnect.Services.Contracts.csproj" />
+    <ProjectReference Include="..\QuantConnect.Services.Defaults\QuantConnect.Services.Defaults.csproj" />
+    <ProjectReference Include="..\QuantConnect.Services.Messaging\QuantConnect.Services.Messaging.csproj" />
+    <ProjectReference Include="..\QuantConnect.Services.Results\QuantConnect.Services.Results.csproj" />
+  </ItemGroup>
+</Project>

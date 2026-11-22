@@ -79,10 +79,26 @@ and mount `lean-data:/Lean/Data:ro` (read-write only for market-data and its one
 with the API key from `GATEWAY_API_KEY` (`X-Api-Key: <key>` or `Authorization: Bearer <key>`), or with a JWT once
 `GATEWAY_JWT_AUTHORITY` / `GATEWAY_JWT_SIGNING_KEY` is set, rate-limits per key (`GATEWAY_RATE_LIMIT` requests per
 `GATEWAY_RATE_WINDOW_SECONDS`), echoes and forwards `X-Request-ID`, and proxies `/api/v1/...` to the internal services.
-An upstream that is not running (the optimizer until it exists) answers `503 application/problem+json`. The merged OpenAPI document
+An upstream that is not running answers `503 application/problem+json`. The merged OpenAPI document
 is at `/openapi`. See `Services/QuantConnect.Services.Gateway/README.md` for the routes.
 
 ```bash
 docker compose --profile infra --profile orchestrator --profile results --profile report --profile gateway up -d --build --wait
 deploy/compose/verify-gateway.sh   # backtest through the gateway -> orchestrator, result <- results, report <- report
+```
+
+## Optimizer (plan step s4.6)
+
+`optimizer` (profile `optimizer`) consumes `jobs.optimization` and runs LEAN's `LeanOptimizer` strategies (grid, Euler) in
+`BusLeanOptimizer`: every parameter set becomes a child backtest job (`parentJobId` = the optimization) submitted to
+job-orchestrator and run by the `backtest-worker` pool; child `job.completed` events (queue `optimizer.children`) are folded
+against the target/constraints, and progress plus the best parameter set are published as `job.progress` / the terminal
+event, with `optimization-result.json` in `lean-results`. Its API (`/internal/v1/optimizations/...`) is the gateway's
+`optimizer` upstream, on `127.0.0.1:${OPTIMIZER_PORT:-5085}`. In-flight children are capped by the spec's
+`maximumConcurrentBacktests` and `OPTIMIZER_MAX_CONCURRENT_BACKTESTS`; past that, the worker pool sets the pace, so scale
+`backtest-worker` to speed optimizations up. Run one optimizer replica.
+
+```bash
+docker compose --profile infra --profile orchestrator --profile workers --profile optimizer --profile gateway build
+deploy/compose/verify-optimizer.sh   # 3x3 grid through the gateway on 3 workers, then on 1 for comparison
 ```

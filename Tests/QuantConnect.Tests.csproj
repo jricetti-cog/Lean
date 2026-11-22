@@ -433,6 +433,7 @@
     <ProjectReference Include="..\Services\QuantConnect.Services.Results\QuantConnect.Services.Results.csproj" />
     <ProjectReference Include="..\Services\QuantConnect.Services.Report\QuantConnect.Services.Report.csproj" />
     <ProjectReference Include="..\Services\QuantConnect.Services.BacktestWorker\QuantConnect.Services.BacktestWorker.csproj" />
+    <ProjectReference Include="..\Services\QuantConnect.Services.Optimizer\QuantConnect.Services.Optimizer.csproj" />
     <ProjectReference Include="..\Services\QuantConnect.Services.Gateway\QuantConnect.Services.Gateway.csproj" />
     <ProjectReference Include="..\Compression\QuantConnect.Compression.csproj" />
     <ProjectReference Include="..\Configuration\QuantConnect.Configuration.csproj" />
