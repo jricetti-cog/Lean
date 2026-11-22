@@ -138,8 +138,23 @@ public sealed class BacktestJobRunner
         var attempt = grant.Attempt!;
         job = job with { Attempt = attempt.Attempt, Results = attempt.Results, Deadline = attempt.Deadline ?? job.Deadline };
 
-        var terminal = await RunAsync(job, cancellationToken).ConfigureAwait(false);
-        await _publisher.PublishAsync(terminal, cancellationToken).ConfigureAwait(false);
+        OutgoingMessage terminal;
+        var started = _time.GetTimestamp();
+        using (var activity = WorkerTelemetry.StartRun(job, WorkerId))
+        {
+            try
+            {
+                terminal = await RunAsync(job, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                activity?.AddException(e);
+                WorkerTelemetry.Abandon();
+                throw;
+            }
+            WorkerTelemetry.EndRun(activity, terminal.Envelope.Type, _time.GetElapsedTime(started));
+            await _publisher.PublishAsync(terminal, cancellationToken).ConfigureAwait(false);
+        }
         if (terminal.Envelope.Type == MessageTypes.JobCompleted)
         {
             Interlocked.Increment(ref _completed);

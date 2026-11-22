@@ -12,6 +12,7 @@ public sealed record BusJobContext
     public long? LeaseEpoch { get; init; }
     public required string WorkerId { get; init; }
     public required ResultsPrefix Results { get; init; }
+    public string? TraceParent { get; init; }
 
     public static BusJobContext From(JobSubmitted job) => new()
     {
@@ -22,6 +23,7 @@ public sealed record BusJobContext
         LeaseEpoch = long.TryParse(BusSettings.Get(BusSettings.LeaseEpoch), out var epoch) ? epoch : null,
         WorkerId = BusSettings.Get(BusSettings.WorkerId) ?? Environment.MachineName,
         Results = job.Results ?? new ResultsPrefix { Prefix = $"{job.JobId:D}/{job.Attempt}/" },
+        TraceParent = BusSettings.Get(BusSettings.TraceParent),
     };
 
     /// <summary>Reads the dispatched job from <c>bus-job-file</c> or <c>bus-job</c>; null when neither is set.</summary>

@@ -1,0 +1,54 @@
+# Grafana datasources (plan step s5.3), cross-linked: metric exemplars and log trace_ids open the trace in Tempo,
+# spans open their logs in Loki.
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      timeInterval: 15s
+      exemplarTraceIdDestinations:
+        - name: trace_id
+          datasourceUid: tempo
+
+  - name: Tempo
+    uid: tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    editable: false
+    jsonData:
+      nodeGraph:
+        enabled: true
+      serviceMap:
+        datasourceUid: prometheus
+      tracesToMetrics:
+        datasourceUid: prometheus
+      tracesToLogsV2:
+        datasourceUid: loki
+        spanStartTimeShift: -5m
+        spanEndTimeShift: 5m
+        filterByTraceID: true
+        tags:
+          - key: service.name
+            value: service_name
+
+  - name: Loki
+    uid: loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    editable: false
+    jsonData:
+      derivedFields:
+        - name: TraceID
+          matcherType: label
+          matcherRegex: trace_id
+          datasourceUid: tempo
+          url: "$${__value.raw}"
+          urlDisplayLabel: View trace

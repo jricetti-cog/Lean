@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -44,8 +45,14 @@ public sealed record MessageEnvelope
             LeaseEpoch = leaseEpoch,
             PacketType = packetType,
             Sequence = sequence,
+            TraceParent = Activity.Current?.Id is { } id && Activity.Current.IdFormat == ActivityIdFormat.W3C ? id : null,
+            TraceState = Activity.Current?.IdFormat == ActivityIdFormat.W3C ? Activity.Current.TraceStateString : null,
         },
     };
+
+    /// <summary>This envelope carrying <paramref name="traceParent"/> unless it already has a trace context.</summary>
+    public MessageEnvelope WithTraceParent(string? traceParent) =>
+        Headers.TraceParent != null || string.IsNullOrEmpty(traceParent) ? this : this with { Headers = Headers with { TraceParent = traceParent } };
 }
 
 /// <summary><c>envelope.schema.json#/properties/headers</c>.</summary>
@@ -59,6 +66,9 @@ public sealed record MessageHeaders
     [JsonPropertyName("lease-epoch")] public long? LeaseEpoch { get; init; }
     [JsonPropertyName("packet-type")] public string? PacketType { get; init; }
     [JsonPropertyName("sequence")] public long? Sequence { get; init; }
+    /// <summary>W3C trace context of the publishing span, so a job's trace spans every service it crosses.</summary>
+    [JsonPropertyName("traceparent")] public string? TraceParent { get; init; }
+    [JsonPropertyName("tracestate")] public string? TraceState { get; init; }
     /// <summary>Set by the broker on quorum-queue redeliveries; never set by publishers.</summary>
     [JsonPropertyName("x-delivery-count")] public long? DeliveryCount { get; init; }
     /// <summary>Additional (additive, minor-version) headers.</summary>

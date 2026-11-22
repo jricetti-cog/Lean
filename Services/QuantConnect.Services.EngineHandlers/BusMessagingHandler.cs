@@ -221,12 +221,14 @@ public class BusMessagingHandler : QuantConnect.Messaging.Messaging
             Progress = (double)result.Progress,
             RuntimeStatistics = result.Results?.RuntimeStatistics is { } statistics ? new Dictionary<string, string>(statistics) : null,
         };
-        var envelope = MessageEnvelope.Create(MessageTypes.JobProgress, job.JobId, job.Attempt, AppId, job.Kind, job.ParentJobId, job.LeaseEpoch);
+        var envelope = MessageEnvelope.Create(MessageTypes.JobProgress, job.JobId, job.Attempt, AppId, job.Kind, job.ParentJobId, job.LeaseEpoch)
+            .WithTraceParent(job.TraceParent);
         return OutgoingMessage.Create(BusExchanges.Events, RoutingKeys.EventFor(MessageTypes.JobProgress, job.Kind, job.JobId), envelope, progress);
     }
 
     private static MessageEnvelope Envelope(BusJobContext job, string type, string packetType, long sequence) =>
-        MessageEnvelope.Create(type, job.JobId, job.Attempt, AppId, job.Kind, job.ParentJobId, job.LeaseEpoch, packetType, sequence);
+        MessageEnvelope.Create(type, job.JobId, job.Attempt, AppId, job.Kind, job.ParentJobId, job.LeaseEpoch, packetType, sequence)
+            .WithTraceParent(job.TraceParent);
 
     private void Enqueue(OutgoingMessage message)
     {

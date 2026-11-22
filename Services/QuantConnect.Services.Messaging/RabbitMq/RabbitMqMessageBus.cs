@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -84,6 +85,7 @@ public sealed class RabbitMqMessageBus : IMessageBus, IAsyncDisposable
         message.Validate();
         await EnsureConnectedAsync(cancellationToken).ConfigureAwait(false);
         var envelope = message.Envelope;
+        using var activity = MessagingTelemetry.StartPublish(message);
         var properties = new BasicProperties
         {
             MessageId = envelope.MessageId.ToString("D"),
@@ -95,7 +97,7 @@ public sealed class RabbitMqMessageBus : IMessageBus, IAsyncDisposable
             Timestamp = new AmqpTimestamp(envelope.Timestamp),
             AppId = envelope.AppId,
             Expiration = envelope.Expiration,
-            Headers = AmqpHeaders.ToAmqp(envelope.Headers with { DeliveryCount = null }),
+            Headers = AmqpHeaders.ToAmqp(MessagingTelemetry.HeadersFor(envelope, activity)),
         };
 
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -105,6 +107,7 @@ public sealed class RabbitMqMessageBus : IMessageBus, IAsyncDisposable
         {
             await _publishChannel!.BasicPublishAsync(message.Exchange, message.RoutingKey, message.Mandatory, properties, message.Body, timeout.Token)
                 .ConfigureAwait(false);
+            MessagingTelemetry.RecordPublished(message);
         }
         catch (PublishException e) when (e.IsReturn)
         {
@@ -180,16 +183,20 @@ public sealed class RabbitMqMessageBus : IMessageBus, IAsyncDisposable
         }
         else
         {
+            using var activity = MessagingTelemetry.StartProcess(message);
+            var started = Stopwatch.GetTimestamp();
             try
             {
                 disposition = await handler(message, stopping).ConfigureAwait(false);
             }
             catch (Exception e)
             {
+                activity?.AddException(e);
                 _logger.LogWarning(e, "Handler failed for {Type} {MessageId} on {Queue} (delivery count {DeliveryCount}); requeueing",
                     message.Envelope.Type, message.Envelope.MessageId, queue, message.DeliveryCount);
                 disposition = MessageDisposition.Retry;
             }
+            MessagingTelemetry.RecordProcessed(activity, queue, message.Envelope.Type, disposition, Stopwatch.GetElapsedTime(started));
         }
 
         switch (disposition)

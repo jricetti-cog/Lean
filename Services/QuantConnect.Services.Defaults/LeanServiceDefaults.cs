@@ -24,7 +24,8 @@ namespace QuantConnect.Services.Defaults;
 /// <list type="bullet">
 /// <item>configuration from environment variables (already layered by the host builder; <c>Service__*</c>, <c>RabbitMQ__*</c>, ... and <c>LEAN_*</c> onto LEAN <c>Config</c> when <see cref="LeanServiceDefaultsOptions.HostsLeanCode"/>);</item>
 /// <item><c>GET /healthz</c> (liveness) and <c>GET /readyz</c> (checks tagged <see cref="HealthTags.Ready"/>) with the <see cref="Health"/> contract body;</item>
-/// <item>OpenTelemetry traces and metrics (ASP.NET Core, HttpClient, runtime, <c>QuantConnect.Services*</c> sources/meters), OTLP export when <c>OTEL_EXPORTER_OTLP_ENDPOINT</c> is set;</item>
+/// <item>OpenTelemetry traces, metrics and logs (ASP.NET Core, HttpClient, runtime, <c>QuantConnect.Services*</c> sources/meters, every
+/// <c>ILogger</c> category), OTLP export of all three when <c>OTEL_EXPORTER_OTLP_ENDPOINT</c> is set;</item>
 /// <item>JSON console logging in UTC;</item>
 /// <item>graceful shutdown: readiness goes down first, an optional drain delay (<c>Service__DrainSeconds</c>), then hosted services stop within <c>Service__ShutdownTimeoutSeconds</c> (default 30).</item>
 /// </list>
@@ -63,7 +64,8 @@ public static class LeanServiceDefaults
 
         // OpenTelemetry
         var telemetry = builder.Services.AddOpenTelemetry()
-            .ConfigureResource(r => r.AddService(serviceName, serviceVersion: typeof(LeanServiceDefaults).Assembly.GetName().Version?.ToString()))
+            .ConfigureResource(r => r.AddService(serviceName, serviceVersion: typeof(LeanServiceDefaults).Assembly.GetName().Version?.ToString(),
+                serviceInstanceId: Environment.MachineName))
             .WithTracing(tracing =>
             {
                 tracing.AddAspNetCoreInstrumentation(o => o.Filter = context => !IsProbe(context.Request.Path))
@@ -78,6 +80,11 @@ public static class LeanServiceDefaults
                     .AddRuntimeInstrumentation()
                     .AddMeter(TelemetryPrefix + "*");
                 options.ConfigureMetrics?.Invoke(metrics);
+            })
+            .WithLogging(configureBuilder: null, configureOptions: o =>
+            {
+                o.IncludeScopes = true;
+                o.IncludeFormattedMessage = true;
             });
         if (!string.IsNullOrWhiteSpace(configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]))
         {
