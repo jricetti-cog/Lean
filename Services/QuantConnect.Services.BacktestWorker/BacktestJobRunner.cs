@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,13 +40,17 @@ public sealed record WorkerStatus
     public int? EnginePid { get; init; }
     public long JobsCompleted { get; init; }
     public long JobsFailed { get; init; }
+    public long JobsCancelled { get; init; }
     public long DeliveriesDropped { get; init; }
 }
 
 /// <summary>
 /// Handles one <c>jobs.backtest</c> delivery end to end: claims the attempt from job-orchestrator, runs the stock Launcher
 /// with the bus handlers in a child process under the job's time and RAM limits, reports <c>JobStarted</c>, worker
-/// heartbeats and the terminal <c>JobCompleted</c>/<c>JobFailed</c>, and only then lets the delivery be acked.
+/// heartbeats and the terminal <c>JobCompleted</c>/<c>JobFailed</c>/<c>JobCancelled</c>, and only then lets the delivery be acked.
+/// While a job runs, the worker consumes its <c>job.&lt;jobId&gt;.cancel.v1</c> commands on <c>lean.control</c> through a private
+/// queue bound before the attempt is claimed, and kills the engine process tree when job-orchestrator cancels the job.
+/// Uploaded C# source is compiled with Roslyn (<see cref="CSharpAlgorithmCompiler"/>) before the engine starts.
 /// The engine itself publishes its packets, heartbeats and the final result (<c>BusMessagingHandler</c>); the worker
 /// confirms that upload instead of repeating it.
 /// </summary>
@@ -61,13 +66,16 @@ public sealed class BacktestJobRunner
     private readonly WorkerOptions _options;
     private readonly TimeProvider _time;
     private readonly ILogger<BacktestJobRunner> _logger;
+    private readonly ITransientSubscriber? _control;
     private readonly object _gate = new();
     private (Guid JobId, int Attempt, int Pid)? _current;
-    private long _completed, _failed, _dropped;
+    private long _completed, _failed, _cancelled, _dropped;
 
     public BacktestJobRunner(IMessagePublisher publisher, IAttemptClient attempts, IResultStore store, IEngineLauncher launcher,
-        EngineEnvironment environment, IOptions<WorkerOptions> options, TimeProvider time, ILogger<BacktestJobRunner> logger)
+        EngineEnvironment environment, IOptions<WorkerOptions> options, TimeProvider time, ILogger<BacktestJobRunner> logger,
+        ITransientSubscriber? control = null)
     {
+        _control = control;
         _publisher = publisher;
         _attempts = attempts;
         _store = store;
@@ -95,6 +103,7 @@ public sealed class BacktestJobRunner
                     EnginePid = _current?.Pid,
                     JobsCompleted = Interlocked.Read(ref _completed),
                     JobsFailed = Interlocked.Read(ref _failed),
+                    JobsCancelled = Interlocked.Read(ref _cancelled),
                     DeliveriesDropped = Interlocked.Read(ref _dropped),
                 };
             }
@@ -124,6 +133,10 @@ public sealed class BacktestJobRunner
             return MessageDisposition.DeadLetter;
         }
 
+        // Bound before the attempt is claimed: a cancel requested earlier makes the claim fail, a later one reaches this queue.
+        using var cancellation = new JobCancellation();
+        await using var control = await SubscribeControlAsync(job.JobId, cancellation, cancellationToken).ConfigureAwait(false);
+
         var grant = await _attempts.StartAttemptAsync(job.JobId, WorkerId, message.DeliveryCount, job.Attempt, cancellationToken).ConfigureAwait(false);
         switch (grant.Outcome)
         {
@@ -137,6 +150,7 @@ public sealed class BacktestJobRunner
         }
         var attempt = grant.Attempt!;
         job = job with { Attempt = attempt.Attempt, Results = attempt.Results, Deadline = attempt.Deadline ?? job.Deadline };
+        cancellation.Attempt = attempt.Attempt;
 
         OutgoingMessage terminal;
         var started = _time.GetTimestamp();
@@ -144,7 +158,7 @@ public sealed class BacktestJobRunner
         {
             try
             {
-                terminal = await RunAsync(job, cancellationToken).ConfigureAwait(false);
+                terminal = await RunAsync(job, cancellationToken, cancellation).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -152,13 +166,18 @@ public sealed class BacktestJobRunner
                 WorkerTelemetry.Abandon();
                 throw;
             }
-            WorkerTelemetry.EndRun(activity, terminal.Envelope.Type, _time.GetElapsedTime(started));
+            WorkerTelemetry.EndRun(activity, terminal.Envelope.Type, _time.GetElapsedTime(started), FailureCode(terminal));
             await _publisher.PublishAsync(terminal, cancellationToken).ConfigureAwait(false);
         }
         if (terminal.Envelope.Type == MessageTypes.JobCompleted)
         {
             Interlocked.Increment(ref _completed);
             _logger.LogInformation("Job {JobId} attempt {Attempt} completed on {WorkerId}", job.JobId, job.Attempt, WorkerId);
+        }
+        else if (terminal.Envelope.Type == MessageTypes.JobCancelled)
+        {
+            Interlocked.Increment(ref _cancelled);
+            _logger.LogInformation("Job {JobId} attempt {Attempt} cancelled on {WorkerId}: {Reason}", job.JobId, job.Attempt, WorkerId, cancellation.Reason);
         }
         else
         {
@@ -169,7 +188,7 @@ public sealed class BacktestJobRunner
     }
 
     /// <summary>Runs one granted attempt and returns its terminal status message (not yet published).</summary>
-    public async Task<OutgoingMessage> RunAsync(JobSubmitted job, CancellationToken cancellationToken)
+    public async Task<OutgoingMessage> RunAsync(JobSubmitted job, CancellationToken cancellationToken, JobCancellation? cancellation = null)
     {
         var spec = job.Backtest!;
         var ramMb = spec.MaxRamMb ?? _options.DefaultRamMb;
@@ -192,17 +211,33 @@ public sealed class BacktestJobRunner
             _logger.LogInformation("Job {JobId} attempt {Attempt} starting on {WorkerId}: {Algorithm}, {RamMb} MB RAM, deadline {Deadline:O}",
                 job.JobId, job.Attempt, WorkerId, Describe(spec.Algorithm), ramMb, deadline);
 
+            if (spec.Algorithm is UploadedAlgorithmRef upload && CSharpAlgorithmCompiler.Handles(upload)
+                && await CompileAsync(job, upload, workspace, cancellationToken).ConfigureAwait(false) is { } compiled)
+            {
+                if (!compiled.Success)
+                {
+                    return await CompileFailedAsync(job, workspace, compiled.Diagnostics, cancellationToken).ConfigureAwait(false);
+                }
+                workspace.SetCompiledAlgorithm(compiled.AssemblyPath!, compiled.TypeName!);
+            }
+            if (cancellation is { IsRequested: true })
+            {
+                return await CancelledAsync(job, workspace, cancellation.Reason!, cancellationToken).ConfigureAwait(false);
+            }
+
             ErrorInfo? limit = null;
+            var cancelled = false;
             int exitCode;
             await using (var engine = _launcher.Start(StartInfo(workspace, ramMb)))
             {
                 SetCurrent((job.JobId, job.Attempt, engine.Id));
                 var nextBeat = startedAt + heartbeat;
+                using var stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, cancellation?.Token ?? CancellationToken.None);
                 while (!engine.Exited.IsCompleted)
                 {
                     try
                     {
-                        await engine.Exited.WaitAsync(poll, _time, cancellationToken).ConfigureAwait(false);
+                        await engine.Exited.WaitAsync(poll, _time, stop.Token).ConfigureAwait(false);
                         break;
                     }
                     catch (TimeoutException)
@@ -213,6 +248,13 @@ public sealed class BacktestJobRunner
                         _logger.LogWarning("Worker stopping: killing job {JobId} attempt {Attempt}; the delivery is requeued", job.JobId, job.Attempt);
                         engine.Kill();
                         throw;
+                    }
+                    catch (OperationCanceledException) when (cancellation is { IsRequested: true })
+                    {
+                        _logger.LogWarning("Job {JobId} attempt {Attempt} cancelled ({Reason}): killing engine process tree {Pid}", job.JobId, job.Attempt, cancellation.Reason, engine.Id);
+                        engine.Kill();
+                        cancelled = true;
+                        break;
                     }
 
                     var now = _time.GetUtcNow();
@@ -242,6 +284,11 @@ public sealed class BacktestJobRunner
                 exitCode = await engine.Exited.ConfigureAwait(false);
             }
             SetCurrent(null);
+            if (cancelled)
+            {
+                _logger.LogInformation("Job {JobId} attempt {Attempt} engine exited with {ExitCode} after cancellation", job.JobId, job.Attempt, exitCode);
+                return await CancelledAsync(job, workspace, cancellation!.Reason!, cancellationToken).ConfigureAwait(false);
+            }
             return await TerminalAsync(job, workspace, exitCode, limit, cancellationToken).ConfigureAwait(false);
         }
         finally
@@ -254,23 +301,156 @@ public sealed class BacktestJobRunner
         }
     }
 
-    private async Task<OutgoingMessage> TerminalAsync(JobSubmitted job, JobWorkspace workspace, int exitCode, ErrorInfo? limit, CancellationToken cancellationToken)
+    private async Task<List<ObjectRef>> StoreLogAsync(JobSubmitted job, JobWorkspace workspace, CancellationToken cancellationToken)
     {
-        var results = job.Results!;
-        string Key(string name) => $"{results.Prefix.TrimEnd('/')}/{name}";
         var artifacts = new List<ObjectRef>();
         if (File.Exists(workspace.LogPath))
         {
             try
             {
-                artifacts.Add(await _store.PutRefAsync(results.Bucket, Key("engine.log"), await File.ReadAllBytesAsync(workspace.LogPath, cancellationToken).ConfigureAwait(false),
-                    "text/plain", cancellationToken).ConfigureAwait(false));
+                artifacts.Add(await _store.PutRefAsync(job.Results!.Bucket, $"{job.Results.Prefix.TrimEnd('/')}/engine.log",
+                    await File.ReadAllBytesAsync(workspace.LogPath, cancellationToken).ConfigureAwait(false), "text/plain", cancellationToken).ConfigureAwait(false));
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
                 _logger.LogWarning(e, "Could not store the engine log of job {JobId} attempt {Attempt}", job.JobId, job.Attempt);
             }
         }
+        return artifacts;
+    }
+
+    private async Task<OutgoingMessage> CancelledAsync(JobSubmitted job, JobWorkspace workspace, string reason, CancellationToken cancellationToken)
+    {
+        var artifacts = await StoreLogAsync(job, workspace, cancellationToken).ConfigureAwait(false);
+        return Event(MessageTypes.JobCancelled, job, new JobCancelled
+        {
+            JobId = job.JobId, Kind = job.Kind, Attempt = job.Attempt, ParentJobId = job.ParentJobId, CancelledAt = _time.GetUtcNow(), Reason = reason,
+            Artifacts = artifacts.Count > 0 ? artifacts : null,
+        });
+    }
+
+    /// <summary>
+    /// Compiles an uploaded C# source/zip into the workspace; null when the upload cannot be read here (the engine then
+    /// reports the missing or corrupt object as before).
+    /// </summary>
+    private async Task<CompileResult?> CompileAsync(JobSubmitted job, UploadedAlgorithmRef upload, JobWorkspace workspace, CancellationToken cancellationToken)
+    {
+        var content = await _store.TryGetAsync(upload.Object.Bucket, upload.Object.Key, cancellationToken).ConfigureAwait(false);
+        if (content == null || !string.Equals(Convert.ToHexStringLower(SHA256.HashData(content)), upload.Object.Sha256, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning("Uploaded algorithm s3://{Bucket}/{Key} of job {JobId} is missing or does not match its sha256; leaving it to the engine",
+                upload.Object.Bucket, upload.Object.Key, job.JobId);
+            return null;
+        }
+        var started = _time.GetTimestamp();
+        var result = await Task.Run(() =>
+        {
+            IReadOnlyList<(string Path, string Text)> sources;
+            try
+            {
+                sources = CSharpAlgorithmCompiler.ReadSources(upload.Object.Key, content);
+            }
+            catch (InvalidDataException e)
+            {
+                return new CompileResult(null, null, [$"error: {Path.GetFileName(upload.Object.Key)} is not a valid zip archive: {e.Message}"]);
+            }
+            return CSharpAlgorithmCompiler.Compile(sources, _options.LauncherDirectory, Path.Combine(workspace.AlgorithmPath, "compiled"),
+                $"UploadedAlgorithm_{job.JobId:N}_{job.Attempt}", upload.TypeName, upload.Object.Key);
+        }, cancellationToken).ConfigureAwait(false);
+        _logger.LogInformation("Compiled uploaded C# of job {JobId} attempt {Attempt} in {Elapsed:0.0} s: {Outcome}", job.JobId, job.Attempt,
+            _time.GetElapsedTime(started).TotalSeconds, result.Success ? result.TypeName : $"{result.Diagnostics.Count} errors");
+        return result;
+    }
+
+    /// <summary>A final <c>compile-error</c>: the diagnostics go to <c>engine.log</c> and, as <c>Log</c> packets, to the job logs.</summary>
+    private async Task<OutgoingMessage> CompileFailedAsync(JobSubmitted job, JobWorkspace workspace, IReadOnlyList<string> diagnostics, CancellationToken cancellationToken)
+    {
+        var lines = new List<string> { $"Compile error: the uploaded C# algorithm failed to build ({diagnostics.Count} diagnostics)" };
+        lines.AddRange(diagnostics);
+        await File.AppendAllLinesAsync(workspace.LogPath, lines.Select(line => $"{_time.GetUtcNow():yyyyMMdd HH:mm:ss.fff} ERROR:: {line}"), cancellationToken).ConfigureAwait(false);
+        long sequence = 0;
+        foreach (var line in lines)
+        {
+            await TryPublishAsync(LogPacket(job, ++sequence, line), cancellationToken).ConfigureAwait(false);
+        }
+        var message = string.Join("\n", lines);
+        var artifacts = await StoreLogAsync(job, workspace, cancellationToken).ConfigureAwait(false);
+        return Failed(job, new ErrorInfo { Code = ErrorCode.CompileError, Message = message.Length > 8000 ? message[..8000] + " ..." : message }, final: true, artifacts);
+    }
+
+    private static OutgoingMessage LogPacket(JobSubmitted job, long sequence, string text)
+    {
+        const string packetType = "Log";
+        var type = MessageTypes.PacketPrefix + packetType;
+        var body = JsonSerializer.SerializeToUtf8Bytes(new Dictionary<string, object?>
+        {
+            ["Type"] = packetType, ["AlgorithmId"] = job.JobId.ToString("D"), ["Message"] = text,
+        });
+        return OutgoingMessage.CreateRaw(Exchanges.Events, RoutingKeys.EventFor(type, job.Kind, job.JobId),
+            MessageEnvelope.Create(type, job.JobId, job.Attempt, AppIds.BacktestWorker, job.Kind, job.ParentJobId, packetType: packetType, sequence: sequence), body);
+    }
+
+    private async Task<IAsyncDisposable?> SubscribeControlAsync(Guid jobId, JobCancellation cancellation, CancellationToken cancellationToken)
+    {
+        if (_control == null) return null;
+        try
+        {
+            return await _control.SubscribeTransientAsync(Exchanges.Control, new[] { RoutingKeys.Cancel(jobId) },
+                (message, _) => Task.FromResult(OnControl(message, jobId, cancellation)),
+                new TransientQueueOptions { Prefetch = 1, QueueName = $"control.{WorkerId}.{jobId:D}" }, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            _logger.LogWarning(e, "Cannot bind the cancel queue of job {JobId}; it can only be stopped by its deadline", jobId);
+            return null;
+        }
+    }
+
+    private MessageDisposition OnControl(ReceivedMessage message, Guid jobId, JobCancellation cancellation)
+    {
+        if (message.Envelope.Type != MessageTypes.CancelJob)
+        {
+            _logger.LogWarning("Ignoring {Type} on the control queue of job {JobId}", message.Envelope.Type, jobId);
+            return MessageDisposition.Ack;
+        }
+        CancelJob? cancel;
+        try
+        {
+            cancel = ContractJson.Deserialize<CancelJob>(message.Body.Span);
+        }
+        catch (JsonException e)
+        {
+            _logger.LogWarning(e, "Ignoring an invalid CancelJob for job {JobId}", jobId);
+            return MessageDisposition.Ack;
+        }
+        if (cancel == null || cancel.JobId != jobId || (cancel.Attempt is { } target && cancellation.Attempt is { } current && target < current))
+        {
+            _logger.LogInformation("Ignoring a CancelJob for job {JobId} attempt {Target} (running attempt {Current})", cancel?.JobId, cancel?.Attempt, cancellation.Attempt);
+            return MessageDisposition.Ack;
+        }
+        _logger.LogInformation("Cancel requested for job {JobId} attempt {Attempt} by {RequestedBy}: {Reason}", jobId, cancellation.Attempt, cancel.RequestedBy, cancel.Reason);
+        cancellation.Request(cancel.Reason);
+        return MessageDisposition.Ack;
+    }
+
+    private static ErrorCode? FailureCode(OutgoingMessage terminal)
+    {
+        if (terminal.Envelope.Type != MessageTypes.JobFailed) return null;
+        try
+        {
+            return ContractJson.Deserialize<JobFailed>(terminal.Body.Span)?.Error.Code;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private async Task<OutgoingMessage> TerminalAsync(JobSubmitted job, JobWorkspace workspace, int exitCode, ErrorInfo? limit, CancellationToken cancellationToken)
+    {
+        var results = job.Results!;
+        string Key(string name) => $"{results.Prefix.TrimEnd('/')}/{name}";
+        var artifacts = await StoreLogAsync(job, workspace, cancellationToken).ConfigureAwait(false);
 
         if (limit != null)
         {
@@ -397,6 +577,32 @@ public sealed class BacktestJobRunner
         JobId = job.JobId, Kind = job.Kind, Attempt = job.Attempt, ParentJobId = job.ParentJobId, FailedAt = _time.GetUtcNow(),
         Error = error, Final = final, Artifacts = artifacts.Count > 0 ? artifacts : null,
     });
+}
+
+/// <summary>The cancel request of the running job, set from its <c>lean.control</c> queue.</summary>
+public sealed class JobCancellation : IDisposable
+{
+    private readonly CancellationTokenSource _source = new();
+    private readonly object _gate = new();
+    private int? _attempt;
+
+    /// <summary>The granted attempt (null until claimed): older-attempt commands are ignored.</summary>
+    public int? Attempt { get { lock (_gate) return _attempt; } set { lock (_gate) _attempt = value; } }
+    public string? Reason { get; private set; }
+    public bool IsRequested => _source.IsCancellationRequested;
+    public CancellationToken Token => _source.Token;
+
+    public void Request(string reason)
+    {
+        lock (_gate)
+        {
+            if (_source.IsCancellationRequested) return;
+            Reason = string.IsNullOrWhiteSpace(reason) ? "cancelled" : reason;
+        }
+        _source.Cancel();
+    }
+
+    public void Dispose() => _source.Dispose();
 }
 
 /// <summary>The <c>state</c> block LEAN writes into the result file (<c>Status</c>, <c>RuntimeError</c>, <c>StackTrace</c>).</summary>

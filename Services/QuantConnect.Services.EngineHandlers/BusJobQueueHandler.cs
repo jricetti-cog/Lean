@@ -112,6 +112,12 @@ public class BusJobQueueHandler : IJobQueueHandler
                 Config.Set("algorithm-location", BusSettings.Get(BusSettings.BuiltinAlgorithmLocation) ?? "QuantConnect.Algorithm.CSharp.dll");
                 break;
 
+            case UploadedAlgorithmRef { Language: ContractLanguage.CSharp } when BusSettings.Get(BusSettings.CompiledAlgorithmLocation) is { } compiled:
+                // Uploaded C# source compiled by the backtest worker before it started this engine.
+                Config.Set("algorithm-location", compiled);
+                Config.Set("algorithm-language", Language.CSharp.ToString());
+                Config.Set("algorithm-type-name", BusSettings.Get(BusSettings.CompiledAlgorithmTypeName) ?? Path.GetFileNameWithoutExtension(compiled));
+                break;
             case UploadedAlgorithmRef upload:
                 var folder = Path.Combine(BusSettings.Get(BusSettings.WorkFolder) ?? "algorithm", job.JobId.ToString("D"), job.Attempt.ToString());
                 var path = Path.Combine(folder, Path.GetFileName(upload.Object.Key));

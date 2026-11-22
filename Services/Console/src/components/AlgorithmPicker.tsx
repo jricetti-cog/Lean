@@ -101,7 +101,7 @@ export function AlgorithmPicker({ value, onChange, height = 420 }: { value?: Alg
       <p className="muted small">
         {language === 'CSharp'
           ? value?.edited
-            ? 'Edited C# is uploaded as a .cs file; the stock worker image runs C# samples as built-in classes.'
+            ? 'Edited C# is uploaded as a .cs file through POST /api/v1/algorithms and compiled by the worker; compile errors show in the job logs.'
             : `Runs built-in ${value?.sample?.typeName ?? ''} from the worker image.`
           : 'Uploaded as main.py through POST /api/v1/algorithms.'}
       </p>

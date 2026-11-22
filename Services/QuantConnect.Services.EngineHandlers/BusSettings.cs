@@ -16,6 +16,9 @@ public static class BusSettings
     public const string WorkerId = "bus-worker-id";
     public const string LeaseEpoch = "bus-lease-epoch";
     public const string WorkFolder = "bus-work-folder";
+    /// <summary>Assembly and class of an uploaded C# algorithm the worker compiled (set by backtest-worker).</summary>
+    public const string CompiledAlgorithmLocation = "bus-compiled-algorithm-location";
+    public const string CompiledAlgorithmTypeName = "bus-compiled-algorithm-type-name";
     public const string BuiltinAlgorithmLocation = "bus-builtin-algorithm-location";
     public const string HeartbeatIntervalSeconds = "bus-heartbeat-interval-seconds";
     public const string OutboxLimit = "bus-outbox-limit";

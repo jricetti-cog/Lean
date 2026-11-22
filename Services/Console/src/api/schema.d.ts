@@ -760,7 +760,7 @@ export interface components {
              * @description Machine-readable failure class.
              * @enum {string}
              */
-            code: "invalid-request" | "algorithm-not-found" | "runtime-error" | "engine-crash" | "data-missing" | "timeout" | "lease-lost" | "upload-failed" | "max-attempts-exceeded" | "internal";
+            code: "invalid-request" | "algorithm-not-found" | "runtime-error" | "engine-crash" | "data-missing" | "timeout" | "lease-lost" | "upload-failed" | "max-attempts-exceeded" | "internal" | "compile-error";
             message: string;
             stackTrace?: string;
             /** @description Engine process exit code, informational only: a worker judges success by "result uploaded + terminal event confirmed", never by exit code (ADR 0005 finding 5). */

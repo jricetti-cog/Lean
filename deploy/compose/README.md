@@ -73,6 +73,18 @@ Adding a service (later phases): give it a profile, `environment: *lean-service-
 and mount `lean-data:/Lean/Data:ro` (read-write only for market-data and its one-shot `toolbox` jobs). Source mounts and debug ports go in
 `docker-compose.override.yml`. Reseed market data with `docker volume rm lean_lean-data`.
 
+### Cancel and uploaded C# (plan step s4.8)
+
+A worker binds a private `lean.control` queue for `job.<jobId>.cancel.v1` before claiming each attempt: a cancel
+(`POST /api/v1/jobs/{id}/cancel`, optimizer `AbortLean`, live stop) kills the engine process tree, publishes
+`job.cancelled` and acks the delivery. Uploaded C# (`.cs` or a project `.zip`) is compiled by the worker with Roslyn
+against the LEAN assemblies in the image; build errors fail the job as a final `compile-error` with the diagnostics in
+its logs.
+
+```bash
+deploy/compose/verify-cancel-and-csharp.sh   # cancel mid-run, edited C# (.cs and .zip), C# syntax error
+```
+
 ## API gateway (plan step s4.5)
 
 `api-gateway` (profile `gateway`) is the only public entry point, on `127.0.0.1:${GATEWAY_PORT:-5080}`. It authenticates

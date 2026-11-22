@@ -31,6 +31,7 @@ public static class MessagingServiceCollectionExtensions
         services.AddSingleton<IMessageBus>(sp => sp.GetRequiredService<RabbitMqMessageBus>());
         services.AddSingleton<IMessagePublisher>(sp => sp.GetRequiredService<RabbitMqMessageBus>());
         services.AddSingleton<IMessageConsumer>(sp => sp.GetRequiredService<RabbitMqMessageBus>());
+        services.AddSingleton<ITransientSubscriber>(sp => sp.GetRequiredService<RabbitMqMessageBus>());
         services.AddHealthChecks().AddCheck<RabbitMqHealthCheck>("rabbitmq", tags: new[] { HealthTags.Ready });
         return services;
     }
@@ -43,6 +44,7 @@ public static class MessagingServiceCollectionExtensions
         services.AddSingleton<IMessageBus>(bus);
         services.AddSingleton<IMessagePublisher>(bus);
         services.AddSingleton<IMessageConsumer>(bus);
+        services.AddSingleton<ITransientSubscriber>(bus);
         return services;
     }
 }
