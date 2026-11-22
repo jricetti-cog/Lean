@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>QuantConnect.Services.Contracts</AssemblyName>
+    <RootNamespace>QuantConnect.Services.Contracts</RootNamespace>
+    <Description>QuantConnect LEAN services: v1 message and HTTP contracts (docs/architecture/contracts) as C# records</Description>
+  </PropertyGroup>
+</Project>
