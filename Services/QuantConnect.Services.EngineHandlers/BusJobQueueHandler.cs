@@ -4,6 +4,7 @@ using QuantConnect.Configuration;
 using QuantConnect.Interfaces;
 using QuantConnect.Logging;
 using QuantConnect.Packets;
+using Python.Runtime;
 using QuantConnect.Python;
 using QuantConnect.Queues;
 using QuantConnect.Securities;
@@ -129,6 +130,7 @@ public class BusJobQueueHandler : IJobQueueHandler
                     path = MaterializePython(folder, path);
                     // Like the default JobQueue: the algorithm's folder goes on sys.path so its sibling modules import.
                     PythonInitializer.AddAlgorithmLocationPath(Path.GetDirectoryName(Path.GetFullPath(path))!);
+                    WarmUpPythonConversions();
                 }
                 Config.Set("algorithm-location", path);
                 Config.Set("algorithm-language", (upload.Language == ContractLanguage.Python ? Language.Python : Language.CSharp).ToString());
@@ -137,6 +139,23 @@ public class BusJobQueueHandler : IJobQueueHandler
 
             default:
                 throw new NotSupportedException($"Algorithm source {algorithm.GetType().Name}");
+        }
+    }
+
+    /// <summary>
+    /// pythonnet builds its date/time converters lazily under a lock, running Python while it holds it. Two data-feed
+    /// threads that convert their first <see cref="DateTime"/> at once (e.g. custom data <c>get_source</c> for two
+    /// symbols) deadlock: one waits for the lock holding the GIL, the other for the GIL holding the lock. LEAN's suite
+    /// never sees it because earlier algorithms in its process built them; every platform attempt is a fresh process,
+    /// so build them here, before the engine starts any data-feed thread.
+    /// </summary>
+    public static void WarmUpPythonConversions()
+    {
+        PythonInitializer.Initialize();
+        using (Py.GIL())
+        {
+            using var dateTime = DateTime.UtcNow.ToPython();
+            using var timeSpan = TimeSpan.FromMinutes(1).ToPython();
         }
     }
 

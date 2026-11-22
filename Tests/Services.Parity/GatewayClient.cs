@@ -42,12 +42,14 @@ public sealed class GatewayClient : IDisposable
         }, ct))!;
 
     /// <summary><c>POST /backtests</c>: returns the job id.</summary>
-    public async Task<Guid> SubmitBacktestAsync(string name, JsonNode algorithm, int maxRuntimeSeconds, CancellationToken ct)
+    public async Task<Guid> SubmitBacktestAsync(string name, JsonNode algorithm, IReadOnlyDictionary<string, string> parameters,
+        int maxRuntimeSeconds, CancellationToken ct)
     {
         var body = new JsonObject
         {
             ["name"] = name,
             ["algorithm"] = algorithm.DeepClone(),
+            ["parameters"] = new JsonObject(parameters.Select(p => KeyValuePair.Create(p.Key, (JsonNode?)JsonValue.Create(p.Value)))),
             ["fetchMissingData"] = false,
             ["maxRuntimeSeconds"] = maxRuntimeSeconds,
         };

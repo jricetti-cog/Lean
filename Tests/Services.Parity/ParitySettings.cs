@@ -26,6 +26,12 @@ public static class ParitySettings
     /// <summary>TRX of LEAN's own <c>RegressionTests.AlgorithmStatisticsRegression</c> run: the monolith column of the table.</summary>
     public static string? MonolithTrx => Env("PARITY_MONOLITH_TRX");
 
+    /// <summary>
+    /// The algorithm parameters LEAN's suite runs with: <c>parameters</c> of <c>Launcher/config.json</c>, which the test
+    /// binaries load as their <c>config.json</c>. Each job is submitted with them (e.g. <c>GetParameterRegressionAlgorithm</c>).
+    /// </summary>
+    public static IReadOnlyDictionary<string, string> MonolithParameters { get; } = ReadLauncherParameters();
+
     public static string OutputFolder => Path.GetFullPath(Env("PARITY_OUTPUT_DIR") ?? Path.Combine(ParityCatalog.RepoRoot, "Tests", "Services.Parity", "parity-results"));
 
     private static string? Env(string name) => Environment.GetEnvironmentVariable(name) is { Length: > 0 } value ? value : null;
@@ -40,5 +46,12 @@ public static class ParitySettings
             if (line != null && line.Length > name.Length + 1) return line[(name.Length + 1)..].Trim('"', '\'');
         }
         return null;
+    }
+
+    private static Dictionary<string, string> ReadLauncherParameters()
+    {
+        var config = Newtonsoft.Json.Linq.JObject.Parse(File.ReadAllText(Path.Combine(ParityCatalog.RepoRoot, "Launcher", "config.json")));
+        return (config["parameters"] as Newtonsoft.Json.Linq.JObject)?.Properties()
+            .ToDictionary(p => p.Name, p => p.Value.ToString(), StringComparer.Ordinal) ?? new Dictionary<string, string>();
     }
 }

@@ -28,6 +28,9 @@ parity stack's backtest workers must too. `docker-compose.parity.yml` adds it on
 `Worker__EngineConfig__fundamental-data-provider`. `Worker:EngineConfig` entries are added to every attempt's engine
 config, but never replace the worker's bus handlers or paths; the default stack and `Launcher/config.json` are unchanged.
 
+The overlay also mounts `Tests/TestData` where algorithms that read expected data relative to the engine's working
+directory find it. Jobs are submitted with the `parameters` of `Launcher/config.json`, which LEAN's suite runs with.
+
 Definition `CustomConfigurations` are not sent: of the local set only `OptionChainConsistencyRegressionAlgorithm` has
 them (symbol limits it never reaches), and it matches without them.
 

@@ -1,11 +1,20 @@
 # Parity stack overlay (Tests/Services.Parity/run-parity.sh): backtest workers run every attempt with the engine settings
 # LEAN's regression suite uses (Tests/AlgorithmRunner.cs), so ExpectedStatistics apply to the platform as they do to the
-# monolith suite. Only the fundamental-data-provider differs from Launcher/config.json; the default stack is unchanged.
+# monolith suite: the test fundamental-data-provider and Tests/TestData. The default stack is unchanged.
 #   docker compose -f docker-compose.yml -f Tests/Services.Parity/docker-compose.parity.yml --profile ... up -d
 services:
   backtest-worker:
     environment:
       Worker__EngineConfig__fundamental-data-provider: QuantConnect.Tests.Common.Data.Fundamental.TestFundamentalDataProvider
       Worker__EngineConfig__plugin-directory: /parity-fixtures
+      # Tests/AssemblyInitialize.cs puts LEAN's framework model folders on sys.path for the suite (Python models such as
+      # Portfolio/InsightWeightingPortfolioConstructionModel.py import their siblings by bare module name), after the
+      # image's own PYTHONPATH (the Launcher folder, home of AlgorithmImports).
+      PYTHONPATH: /Lean/Launcher/bin/Release/:/Lean/Launcher/bin/Release/Alphas:/Lean/Launcher/bin/Release/Execution:/Lean/Launcher/bin/Release/Portfolio:/Lean/Launcher/bin/Release/Risk:/Lean/Launcher/bin/Release/Selection
     volumes:
       - ./Tests/Services.Parity/Fixtures/bin/Release:/parity-fixtures:ro
+      # Expected-data files some algorithms read relative to the engine's working directory, which is
+      # Tests/bin/Release in LEAN's suite and /work/<job>/<attempt> on a worker:
+      # "../../TestData" (FillForwardStrictEndTime*) and "../../../Tests/TestData" (PersistentCustomDataUniverse).
+      - ./Tests/TestData:/work/TestData:ro
+      - ./Tests/TestData:/Tests/TestData:ro

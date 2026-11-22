@@ -14,6 +14,7 @@
 */
 
 using System;
+using System.Reflection;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -280,6 +281,20 @@ namespace QuantConnect.Tests.Services.EngineHandlers
             var debug = bus.Inner.Published.Where(m => m.Envelope.Type == MessageTypes.PacketPrefix + "Debug")
                 .Select(m => JsonConvert.DeserializeObject<DebugPacket>(Encoding.UTF8.GetString(m.Body.Span)).Message).ToList();
             CollectionAssert.AreEqual(Enumerable.Range(0, 25).Select(i => $"line {i}"), debug, "every packet is published, in order");
+        }
+
+        [Test]
+        public void WarmUpPythonConversionsBuildsPythonnetsLazyConverters()
+        {
+            BusJobQueueHandler.WarmUpPythonConversions();
+
+            var lazies = typeof(global::Python.Runtime.PyObject).Assembly.GetType("Python.Runtime.Converter")!
+                .GetFields(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
+                .Where(f => f.FieldType.IsGenericType && f.FieldType.GetGenericTypeDefinition() == typeof(Lazy<>))
+                .ToDictionary(f => f.Name, f => (bool)f.FieldType.GetProperty("IsValueCreated")!.GetValue(f.GetValue(null))!);
+            TestContext.Progress.WriteLine(string.Join(", ", lazies.Select(l => $"{l.Key}={l.Value}")));
+            Assert.IsNotEmpty(lazies);
+            Assert.IsTrue(lazies.Values.All(created => created), "every lazy converter is built before any data-feed thread");
         }
 
         [Test]

@@ -85,7 +85,7 @@ public sealed class ParityRunner
         }
 
         var submitted = Stopwatch.StartNew();
-        var id = await _gateway.SubmitBacktestAsync($"parity {parityCase.Name}", algorithm, ParitySettings.MaxRuntimeSeconds, ct);
+        var id = await _gateway.SubmitBacktestAsync($"parity {parityCase.Name}", algorithm, ParitySettings.MonolithParameters, ParitySettings.MaxRuntimeSeconds, ct);
         var deadline = TimeSpan.FromSeconds(ParitySettings.MaxRuntimeSeconds + 600);
         JsonNode job;
         while (true)
