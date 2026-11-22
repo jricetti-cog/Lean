@@ -14,7 +14,7 @@ The only public entry point (ADR 0001/0002). Compose publishes it on `127.0.0.1:
 | `/api/v1/data/**` | YARP -> market-data `/internal/v1/data/**` |
 | `/api/v1/optimizations/**` (estimate, state, children) | YARP -> optimizer `/internal/v1/optimizations/**` |
 | `GET /api/v1/reports[?sourceJobId=]`, `GET /api/v1/reports/{id}` | YARP -> report `/internal/v1/reports...` (non-admins must pass a `sourceJobId` they own) |
-| `GET /openapi` | merged document: gateway operations + each proxied service's live document under its public paths |
+| `GET /openapi` | merged document: gateway operations + each proxied service's live `/openapi/v1.json` (or, when that is unavailable, its embedded contract from `docs/architecture/contracts/openapi/`) under its public paths; `x-lean-upstreams` names the source |
 
 - **Auth**: `Gateway:ApiKeys` (`Key` or `KeySha256`, `User`, `Admin`) sent as `X-Api-Key` or `Authorization: Bearer`.
   A three-part bearer token goes to JWT validation when `Gateway:Jwt:Authority` (OIDC) or `Gateway:Jwt:SigningKey`
