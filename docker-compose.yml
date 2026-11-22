@@ -321,6 +321,38 @@ services:
       - ${TOOLBOX_INPUT_DIR:-./deploy/compose/toolbox-input}:/input:ro
     network_mode: none
 
+  # Backtest workers (plan step s4.3): each replica consumes jobs.backtest with prefetch 1 and runs every job in a
+  # child Launcher (bus engine handlers, lean-data read-only, the job's RAM/run-time limits). No published port, so
+  # replicas scale freely (5081-5084 are taken by the other services):
+  #   docker compose --profile infra --profile orchestrator --profile workers up -d --wait --scale backtest-worker=3
+  backtest-worker:
+    image: ${LEAN_IMAGE_REGISTRY:-lean}/backtest-worker:${LEAN_IMAGE_TAG:-dev}
+    build:
+      context: .
+      dockerfile: Services/Dockerfile
+      target: backtest-worker
+    profiles: [workers]
+    restart: unless-stopped
+    deploy:
+      replicas: ${BACKTEST_WORKER_REPLICAS:-1}
+    stop_grace_period: 30s
+    depends_on:
+      infra-ready:
+        condition: service_healthy
+      job-orchestrator:
+        condition: service_started
+    environment:
+      <<: *lean-service-env
+      Worker__OrchestratorUri: http://job-orchestrator:8080/
+      Worker__DefaultRamMb: ${BACKTEST_WORKER_DEFAULT_RAM_MB:-4096}
+      Worker__HeartbeatIntervalSeconds: ${BACKTEST_WORKER_HEARTBEAT_SECONDS:-30}
+    volumes:
+      - lean-data:/Lean/Data:ro
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "lean-healthcheck", "8080", "/readyz"]
+    networks: [lean]
+
 volumes:
   rabbitmq-data:
   postgres-data:

@@ -124,6 +124,7 @@ public sealed record BacktestSpec
     public decimal? Cash { get; init; }
     public bool? FetchMissingData { get; init; }
     public int? MaxRuntimeSeconds { get; init; }
+    public int? MaxRamMb { get; init; }
 }
 
 public sealed record LiveSpec

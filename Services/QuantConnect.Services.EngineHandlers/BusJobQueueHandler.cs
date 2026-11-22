@@ -73,6 +73,10 @@ public class BusJobQueueHandler : IJobQueueHandler
 
         if (packet is BacktestNodePacket backtest && job.Backtest is { } backtestSpec)
         {
+            if (backtestSpec.MaxRamMb is { } ramMb)
+            {
+                backtest.Controls.RamAllocation = ramMb;
+            }
             if (backtestSpec.StartDate is { } start)
             {
                 backtest.PeriodStart = start.ToDateTime(TimeOnly.MinValue);

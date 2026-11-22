@@ -74,6 +74,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QuantConnect.Services.Resul
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QuantConnect.Services.Report", "Services\QuantConnect.Services.Report\QuantConnect.Services.Report.csproj", "{5B3E9F14-7A2C-4D81-9E6B-2F0C8D4A1E73}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QuantConnect.Services.BacktestWorker", "Services\QuantConnect.Services.BacktestWorker\QuantConnect.Services.BacktestWorker.csproj", "{DE602DC0-B162-4BB1-8F0D-93C8AA813BD8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -206,6 +208,10 @@ Global
 		{5B3E9F14-7A2C-4D81-9E6B-2F0C8D4A1E73}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5B3E9F14-7A2C-4D81-9E6B-2F0C8D4A1E73}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5B3E9F14-7A2C-4D81-9E6B-2F0C8D4A1E73}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DE602DC0-B162-4BB1-8F0D-93C8AA813BD8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE602DC0-B162-4BB1-8F0D-93C8AA813BD8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DE602DC0-B162-4BB1-8F0D-93C8AA813BD8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DE602DC0-B162-4BB1-8F0D-93C8AA813BD8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
