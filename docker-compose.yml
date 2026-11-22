@@ -1,0 +1,178 @@
+# LEAN platform: infrastructure (plan step s2.3). Services from later phases add themselves to this file.
+#
+#   cp .env.example .env               # optional: every setting has a local-development default
+#   docker compose --profile infra up            # foreground; or `up -d --wait` to block until healthy
+#   docker compose --profile infra ps -a         # long-running services healthy, the two one-shot jobs Exited (0)
+#
+# docker-compose.override.yml is merged automatically for local development (source mounts, debug ports);
+# use `docker compose -f docker-compose.yml ...` to run without it.
+# Published ports bind to 127.0.0.1 only. Services reach each other by service name on the `lean` network.
+
+name: ${COMPOSE_PROJECT_NAME:-lean}
+
+# Shared settings for LEAN service containers added by later phases (`environment: *lean-service-env`, or
+# `<<: *lean-service-env` to extend). Each service adds its own `ConnectionStrings__<Database>`.
+x-lean-service-env: &lean-service-env
+  RabbitMQ__Uri: amqp://${RABBITMQ_USER:-lean}:${RABBITMQ_PASSWORD:-lean-dev-rabbitmq}@rabbitmq:5672/${RABBITMQ_VHOST:-lean}
+  S3__ServiceUrl: http://minio:9000
+  S3__ForcePathStyle: "true"
+  S3__AccessKey: ${MINIO_SERVICE_ACCESS_KEY:-lean-services}
+  S3__SecretKey: ${MINIO_SERVICE_SECRET_KEY:-lean-dev-minio-services}
+  S3__AlgorithmsBucket: ${MINIO_BUCKET_ALGORITHMS:-lean-algorithms}
+  S3__ResultsBucket: ${MINIO_BUCKET_RESULTS:-lean-results}
+  S3__ReportsBucket: ${MINIO_BUCKET_REPORTS:-lean-reports}
+  LEAN_DATA_FOLDER: /Lean/Data/
+
+# Fast first probe on start (start_interval), then a slower steady-state probe.
+x-healthcheck: &healthcheck
+  interval: 15s
+  timeout: 5s
+  retries: 5
+  start_period: 60s
+  start_interval: 1s
+
+services:
+  # Message broker (ADR 0002). Exchanges, queues, DLQs and policies load from the v1 topology contract
+  # at boot; the management UI is on RABBITMQ_MANAGEMENT_PORT.
+  rabbitmq:
+    image: ${RABBITMQ_IMAGE:-rabbitmq:3.13.7-management}
+    profiles: [infra]
+    hostname: rabbitmq
+    restart: unless-stopped
+    # Adds the compose user to the topology definitions before starting the broker (see the script).
+    entrypoint: ["/bin/sh", "/etc/lean/entrypoint.sh"]
+    environment:
+      RABBITMQ_USER: ${RABBITMQ_USER:-lean}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-lean-dev-rabbitmq}
+      RABBITMQ_VHOST: ${RABBITMQ_VHOST:-lean}
+      # The cookie is passed on the command line instead of the image's .erlang.cookie file, which some
+      # Docker hosts cannot read at boot (eacces).
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: -setcookie ${RABBITMQ_ERLANG_COOKIE:-lean-dev-erlang-cookie}
+      RABBITMQ_CTL_ERL_ARGS: -setcookie ${RABBITMQ_ERLANG_COOKIE:-lean-dev-erlang-cookie}
+    volumes:
+      - ./docs/architecture/contracts/topology/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./docs/architecture/contracts/topology/definitions.json:/etc/lean/topology/definitions.json:ro
+      - ./deploy/compose/rabbitmq/entrypoint.sh:/etc/lean/entrypoint.sh:ro
+      - rabbitmq-data:/var/lib/rabbitmq
+    ports:
+      - 127.0.0.1:${RABBITMQ_PORT:-5672}:5672
+      - 127.0.0.1:${RABBITMQ_MANAGEMENT_PORT:-15672}:15672
+    healthcheck:
+      <<: *healthcheck
+      # Healthy = AMQP and management listeners accept connections, the v1 topology is loaded and the
+      # compose user can log in.
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q check_port_connectivity && rabbitmqctl -q list_queues -p \"$$RABBITMQ_VHOST\" name | grep -qx jobs.backtest && rabbitmqctl -q authenticate_user \"$$RABBITMQ_USER\" \"$$RABBITMQ_PASSWORD\" >/dev/null"]
+    networks: [lean]
+
+  # Metadata store (ADR 0003): one server, one database + one login role per owning service.
+  # deploy/compose/postgres/ creates them on first start; each service applies its own schema migrations.
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:17.12-alpine}
+    profiles: [infra]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lean-dev-postgres}
+      POSTGRES_DB: postgres
+      LEAN_DB_JOBS_PASSWORD: ${POSTGRES_JOBS_PASSWORD:-lean-dev-jobs}
+      LEAN_DB_RESULTS_PASSWORD: ${POSTGRES_RESULTS_PASSWORD:-lean-dev-results}
+      LEAN_DB_GATEWAY_PASSWORD: ${POSTGRES_GATEWAY_PASSWORD:-lean-dev-gateway}
+      LEAN_DB_MARKETDATA_PASSWORD: ${POSTGRES_MARKETDATA_PASSWORD:-lean-dev-marketdata}
+    volumes:
+      - ./deploy/compose/postgres/initdb:/docker-entrypoint-initdb.d:ro
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - 127.0.0.1:${POSTGRES_PORT:-5432}:5432
+    healthcheck:
+      <<: *healthcheck
+      # TCP probe: the init-time server only listens on the socket, so this stays unhealthy until the
+      # service databases exist and the real server is up.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U \"$$POSTGRES_USER\" -d marketdata"]
+    networks: [lean]
+
+  # S3-compatible artifact store (ADR 0003). Community MinIO build: upstream stopped publishing images.
+  minio:
+    image: ${MINIO_IMAGE:-pgsty/minio:RELEASE.2026-08-04T00-00-00Z}
+    profiles: [infra]
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-lean-admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-lean-dev-minio-admin}
+    volumes:
+      - minio-data:/data
+    ports:
+      - 127.0.0.1:${MINIO_API_PORT:-9000}:9000
+      - 127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:9000/minio/health/ready"]
+    networks: [lean]
+
+  # One-shot: creates the buckets and the least-privilege service account. Idempotent, runs on every `up`.
+  minio-bootstrap:
+    image: ${MINIO_IMAGE:-pgsty/minio:RELEASE.2026-08-04T00-00-00Z}
+    profiles: [infra]
+    restart: "no"
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "/bootstrap/minio-bootstrap.sh"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-lean-admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-lean-dev-minio-admin}
+      MINIO_SERVICE_ACCESS_KEY: ${MINIO_SERVICE_ACCESS_KEY:-lean-services}
+      MINIO_SERVICE_SECRET_KEY: ${MINIO_SERVICE_SECRET_KEY:-lean-dev-minio-services}
+      MINIO_BUCKETS: ${MINIO_BUCKET_ALGORITHMS:-lean-algorithms} ${MINIO_BUCKET_RESULTS:-lean-results} ${MINIO_BUCKET_REPORTS:-lean-reports}
+    volumes:
+      - ./deploy/compose/minio:/bootstrap:ro
+    networks: [lean]
+
+  # One-shot: seeds the shared market-data volume (ADR 0004) from the repo's Data/ folder once; later runs
+  # see the marker and exit. market-data mounts lean-data read-write, every other service read-only.
+  lean-data-seed:
+    image: ${SEED_IMAGE:-alpine:3.22.8}
+    profiles: [infra]
+    restart: "no"
+    entrypoint: ["/bin/sh", "/seed/seed-lean-data.sh"]
+    environment:
+      LEAN_DATA_UID: ${LEAN_DATA_UID:-1654}
+      LEAN_DATA_GID: ${LEAN_DATA_GID:-1654}
+    volumes:
+      - ./deploy/compose/lean-data:/seed:ro
+      - ./Data:/source:ro
+      - lean-data:/Lean/Data
+    network_mode: none
+
+  # Readiness gate: healthy once every long-running infrastructure service is healthy and both one-shot jobs
+  # completed, so `up --wait` works for the infra profile and later services can depend on this one service.
+  infra-ready:
+    image: ${SEED_IMAGE:-alpine:3.22.8}
+    profiles: [infra]
+    restart: unless-stopped
+    init: true
+    command: ["sleep", "infinity"]
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-bootstrap:
+        condition: service_completed_successfully
+      lean-data-seed:
+        condition: service_completed_successfully
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "true"]
+    network_mode: none
+
+volumes:
+  rabbitmq-data:
+  postgres-data:
+  minio-data:
+  lean-data:
+
+networks:
+  lean:
