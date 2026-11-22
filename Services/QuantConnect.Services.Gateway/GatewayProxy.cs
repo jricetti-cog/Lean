@@ -22,6 +22,7 @@ public static class GatewayProxy
     public static readonly IReadOnlyList<ProxyRoute> Routes = new[]
     {
         new ProxyRoute("results-summary", Results, "/api/v1/jobs/{id}/result", "/internal/v1/results/{id}", Get),
+        new ProxyRoute("results-live-state", Results, "/api/v1/live/{id}/state", "/internal/v1/results/{id}/live-state", Get),
     }.Concat(new[] { "charts", "orders", "order-events", "logs", "artifacts" }.Select(section =>
         new ProxyRoute($"results-{section}", Results, $"/api/v1/jobs/{{id}}/{section}/{{**rest}}", $"/internal/v1/results/{{id}}/{section}/{{**rest}}", Get)))
     .Concat(new[]

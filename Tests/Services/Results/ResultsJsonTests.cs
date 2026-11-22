@@ -102,5 +102,22 @@ namespace QuantConnect.Tests.Services.Results
                 ["Equity"] = new JsonObject { ["name"] = "Equity", ["unit"] = "$", ["index"] = 0, ["seriesType"] = 2, ["values"] = values },
             },
         };
+
+        [Test]
+        public void LiveStateKeepsInvestedHoldingsWithTheirSymbolAndTheCashBookInLeanRestoreShapes()
+        {
+            // Holdings and Cash as LiveTradingResultHandler sends them (keyed by SecurityIdentifier, symbol not in the value).
+            var results = JsonNode.Parse(@"{""Holdings"":{""BTCUSD 2XR"":{""a"":105.59,""p"":100.36,""q"":495.9480457,""v"":49773},""SPY R735QTJ8XC9X"":{""a"":0,""q"":0}},
+                ""Cash"":{""USD"":{""Symbol"":""USD"",""Amount"":47631.25},""BTC"":{""Symbol"":""BTC"",""Amount"":495.9480457}}}")!.AsObject();
+
+            var state = ResultsIngestor.LiveStateOf(results)!;
+
+            Assert.AreEqual(1, state["holdings"]!.AsArray().Count);
+            var holdings = Newtonsoft.Json.JsonConvert.DeserializeObject<System.Collections.Generic.List<Holding>>(state["holdings"]!.ToJsonString());
+            Assert.AreEqual(Symbol.Create("BTCUSD", SecurityType.Crypto, Market.Coinbase), holdings![0].Symbol);
+            Assert.AreEqual(495.9480457m, holdings[0].Quantity);
+            CollectionAssert.AreEquivalent(new[] { "USD", "BTC" }, state["cash"]!.AsArray().Select(c => (string)c!["currency"]));
+            Assert.IsNull(ResultsIngestor.LiveStateOf(JsonNode.Parse(@"{""Orders"":{}}")!.AsObject()), "partial packets without the portfolio are not live state");
+        }
     }
 }

@@ -31,6 +31,11 @@ public static class GatewayEndpoints
             .WithName("deployLive").WithTags("live").DisableAntiforgery();
         api.MapPost("/live/{id:guid}/stop", (HttpContext http, Guid id) => CancelAsync(http, id, "live deployment stopped"))
             .WithName("stopLive").WithTags("live");
+        api.MapPost("/live/{id:guid}/liquidate", async Task<IResult> (HttpContext http, Guid id) =>
+        {
+            if (await JobAccess.CheckAsync(http, id) is { } denied) return denied;
+            return await http.PostJsonAsync(GatewayProxy.Orchestrator, $"{Jobs}/{id:D}/liquidate", new { }).RelayAsync();
+        }).WithName("liquidateLive").WithTags("live");
         api.MapPost("/optimizations", Task<IResult> (HttpContext http) => SubmitAsync(http, JobKind.Optimization))
             .WithName("submitOptimization").WithTags("optimizations");
         api.MapPost("/reports", Task<IResult> (HttpContext http) => SubmitAsync(http, JobKind.Report))
@@ -128,19 +133,21 @@ public static class GatewayEndpoints
     {
         if (await JobAccess.CheckAsync(http, id) is { } denied) return denied;
         string? reason = defaultReason;
+        bool? liquidate = null;
         if (http.Request.HasJsonContentType() && http.Request.ContentLength != 0)
         {
             try
             {
                 using var body = await JsonDocument.ParseAsync(http.Request.Body, cancellationToken: http.RequestAborted);
                 if (body.RootElement.ValueKind == JsonValueKind.Object && body.RootElement.TryGetProperty("reason", out var r)) reason = r.GetString();
+                if (body.RootElement.ValueKind == JsonValueKind.Object && body.RootElement.TryGetProperty("liquidate", out var l) && l.ValueKind is JsonValueKind.True) liquidate = true;
             }
             catch (JsonException e)
             {
                 return Problems.BadRequest(http, $"invalid cancel request: {e.Message}");
             }
         }
-        return await http.PostJsonAsync(GatewayProxy.Orchestrator, $"{Jobs}/{id:D}/cancel", new { reason }).RelayAsync();
+        return await http.PostJsonAsync(GatewayProxy.Orchestrator, $"{Jobs}/{id:D}/cancel", new { reason, liquidate }).RelayAsync();
     }
 
     /// <summary>Validates the multipart <c>file</c> and stores it in <c>lean-algorithms</c> through the orchestrator.</summary>

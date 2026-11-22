@@ -32,6 +32,7 @@
         "events.v1.JobFailed",
         "events.v1.JobCancelled",
         "control.v1.CancelJob",
+        "control.v1.LiquidateJob",
         "packets.v1.BacktestResult",
         "packets.v1.LiveResult",
         "packets.v1.Log",

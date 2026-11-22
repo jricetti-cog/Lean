@@ -235,6 +235,22 @@ public sealed record ResultSummary
     public DateTimeOffset? UpdatedAt { get; init; }
 }
 
+/// <summary><c>results.openapi.yaml#/components/schemas/LiveState</c>.</summary>
+public sealed record LiveState
+{
+    public required Guid JobId { get; init; }
+    public required int Attempt { get; init; }
+    public required List<System.Text.Json.Nodes.JsonObject> Holdings { get; init; }
+    public required List<LiveCashAmount> Cash { get; init; }
+    public DateTimeOffset? UpdatedAt { get; init; }
+}
+
+public sealed record LiveCashAmount
+{
+    public required string Currency { get; init; }
+    public required decimal Amount { get; init; }
+}
+
 /// <summary><c>results.openapi.yaml#/components/schemas/LogLine</c>.</summary>
 public sealed record LogLine
 {

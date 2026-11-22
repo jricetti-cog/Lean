@@ -21,6 +21,10 @@
     "leaseEpoch": {
       "$ref": "defs.schema.json#/$defs/LeaseEpoch",
       "description": "Live only: the epoch being revoked. Workers holding this or an older epoch stop their engine process."
+    },
+    "liquidate": {
+      "type": "boolean",
+      "description": "Live only: liquidate every holding (LEAN `LiquidateCommand`) before stopping the algorithm. Absent = stop without trading."
     }
   }
 }

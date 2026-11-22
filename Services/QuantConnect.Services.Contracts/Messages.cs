@@ -183,6 +183,17 @@ public sealed record CancelJob
     public string? RequestedBy { get; init; }
     public required string Reason { get; init; }
     public long? LeaseEpoch { get; init; }
+    public bool? Liquidate { get; init; }
+}
+
+/// <summary><c>job.liquidate.schema.json</c>: <c>control.v1.LiquidateJob</c>, live deployments only.</summary>
+public sealed record LiquidateJob
+{
+    public required Guid JobId { get; init; }
+    public int? Attempt { get; init; }
+    public required DateTimeOffset RequestedAt { get; init; }
+    public string? RequestedBy { get; init; }
+    public long? LeaseEpoch { get; init; }
 }
 
 /// <summary><c>job.cancelled.schema.json</c>: <c>events.v1.JobCancelled</c>.</summary>

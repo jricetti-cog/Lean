@@ -92,6 +92,10 @@ public static class ResultsHost
             ForAttempt(queries, id, attempt, ct, async a => Json(await queries.ArtifactsAsync(id, a, ct).ConfigureAwait(false))))
             .WithName("listArtifacts");
 
+        results.MapGet("/{id:guid}/live-state", (ResultsQueries queries, Guid id, CancellationToken ct) =>
+            Guarded(async () => await queries.LiveStateAsync(id, ct).ConfigureAwait(false) is { } state ? Json(state) : NotFound(id)))
+            .WithName("getLiveState");
+
         return app;
     }
 

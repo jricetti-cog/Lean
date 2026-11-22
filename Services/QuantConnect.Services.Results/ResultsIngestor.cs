@@ -195,7 +195,16 @@ public sealed class ResultsIngestor(ResultsDatabase database, IResultObjectStore
                     finalRef = await store.PutRefAsync(settings.ResultsBucket, $"{prefix}{algorithmId ?? context.JobId.ToString("D")}-final-packet.json",
                         Encoding.UTF8.GetBytes(packet.ToJsonString()), "application/json", cancellationToken).ConfigureAwait(false);
                 }
-                return session => ApplyResultAsync(session, results, final, progress, algorithmId, null, finalRef);
+                var live = packetType == "LiveResult" ? LiveStateOf(results) : null;
+                if (live == null)
+                {
+                    return session => ApplyResultAsync(session, results, final, progress, algorithmId, null, finalRef);
+                }
+                return async session =>
+                {
+                    await ApplyResultAsync(session, results, final, progress, algorithmId, null, finalRef).ConfigureAwait(false);
+                    await StoreLiveStateAsync(session, live).ConfigureAwait(false);
+                };
             }
             case "OrderEvent":
             {
@@ -221,6 +230,63 @@ public sealed class ResultsIngestor(ResultsDatabase database, IResultObjectStore
     }
 
     public const string OrderListHashKey = "OrderListHash";
+
+    /// <summary>Key under <c>results.state</c> holding the latest live portfolio (served by <c>GET .../live-state</c>).</summary>
+    public const string LiveStateKey = "Live";
+
+    /// <summary>
+    /// The invested holdings and cash book of a <c>LiveResult</c> that carries them (<c>LiveTradingResultHandler</c> sends both
+    /// together), in the shapes LEAN's <c>live-holdings</c> / <c>live-cash-balance</c> read back; null for other partial packets.
+    /// </summary>
+    public static JsonObject? LiveStateOf(JsonObject results)
+    {
+        var holdings = results.GetObject("Holdings");
+        var cash = results.GetObject("Cash");
+        if (holdings == null || cash == null)
+        {
+            return null;
+        }
+        var invested = new JsonArray();
+        foreach (var (id, holding) in holdings)
+        {
+            if (holding is JsonObject h && (AsDecimal(h.Get("q")) ?? AsDecimal(h.Get("Quantity")) ?? 0) != 0)
+            {
+                // LEAN writes the symbol only as the dictionary key (its SecurityIdentifier); Holding reads it back from "symbol".
+                var entry = (JsonObject)h.DeepClone();
+                if (entry["symbol"] == null && entry["Symbol"] == null)
+                {
+                    entry["symbol"] = new JsonObject { ["value"] = id.Split(' ')[0], ["id"] = id };
+                }
+                invested.Add(entry);
+            }
+        }
+        var amounts = new JsonArray();
+        foreach (var (currency, value) in cash)
+        {
+            if (value is JsonObject c && AsDecimal(c.Get("Amount")) is { } amount)
+            {
+                amounts.Add(new JsonObject { ["currency"] = c.GetString("Symbol") ?? currency, ["amount"] = amount });
+            }
+        }
+        return new JsonObject { ["holdings"] = invested, ["cash"] = amounts };
+    }
+
+    private static decimal? AsDecimal(JsonNode? node) => node is JsonValue value
+        ? value.TryGetValue<decimal>(out var number) ? number
+        : value.TryGetValue<string>(out var text) && decimal.TryParse(text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out number) ? number : null
+        : null;
+
+    /// <summary>Keeps the newest live state by publish sequence, so a redelivered or reordered packet never rolls the portfolio back.</summary>
+    private static Task StoreLiveStateAsync(Session session, JsonObject live)
+    {
+        var sequence = session.Context.Sequence ?? 0;
+        live["sequence"] = sequence;
+        live["at"] = session.Context.Time.UtcDateTime;
+        return session.Execute("""
+            UPDATE results SET state = COALESCE(state, '{}'::jsonb) || jsonb_build_object('Live', @live::jsonb), updated_at = now()
+            WHERE job_id = @job AND attempt = @attempt AND COALESCE((state -> 'Live' ->> 'sequence')::bigint, -1) <= @sequence
+            """, c => c.WithJson("live", live).With("sequence", sequence));
+    }
 
     /// <summary>
     /// Applies a LEAN <c>Result</c> (partial packet delta or final result): statistics, runtime statistics, orders, order

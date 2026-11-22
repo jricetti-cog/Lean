@@ -188,6 +188,17 @@ services:
       RabbitMQ__ManagementUri: http://rabbitmq:15672/
       Orchestrator__MaxAttempts: ${ORCHESTRATOR_MAX_ATTEMPTS:-3}
       Orchestrator__HeartbeatTimeoutSeconds: ${ORCHESTRATOR_HEARTBEAT_TIMEOUT_SECONDS:-90}
+      # Live deployments (plan step s4.4): one live-worker container per deployment, created through the Docker Engine
+      # API on the mounted socket (LIVE_DEPLOYMENT_MODE=none leaves jobs.live to externally run workers).
+      Orchestrator__LiveDeployment__Mode: ${LIVE_DEPLOYMENT_MODE:-docker}
+      Orchestrator__LiveDeployment__Image: ${LEAN_IMAGE_REGISTRY:-lean}/live-worker:${LEAN_IMAGE_TAG:-dev}
+      Orchestrator__LiveDeployment__Network: ${COMPOSE_PROJECT_NAME:-lean}_lean
+      Orchestrator__LiveDeployment__DataVolume: ${COMPOSE_PROJECT_NAME:-lean}_lean-data
+      Orchestrator__LiveDeployment__ContainerPrefix: ${COMPOSE_PROJECT_NAME:-lean}-live-
+    # The image runs as a non-root user: give it the group owning the host's docker socket (`stat -c %g /var/run/docker.sock`).
+    group_add: ["${DOCKER_SOCKET_GID:-999}"]
+    volumes:
+      - ${DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock
     ports:
       - 127.0.0.1:${ORCHESTRATOR_PORT:-5081}:8080
     depends_on:
@@ -212,7 +223,7 @@ services:
       <<: *lean-service-env
       ConnectionStrings__Marketdata: Host=postgres;Database=marketdata;Username=marketdata;Password=${POSTGRES_MARKETDATA_PASSWORD:-lean-dev-marketdata}
       # Simulated live feed (LEAN FakeDataQueue; no data vendor is connected) published on lean.marketdata.live.
-      MarketData__Live__Symbols: ${MARKET_DATA_LIVE_SYMBOLS:-Equity/usa/SPY,Forex/oanda/EURUSD}
+      MarketData__Live__Symbols: ${MARKET_DATA_LIVE_SYMBOLS:-Equity/usa/SPY,Forex/oanda/EURUSD,Crypto/coinbase/BTCUSD}
       MarketData__Live__Resolution: ${MARKET_DATA_LIVE_RESOLUTION:-Second}
     volumes:
       - lean-data:/Lean/Data
@@ -388,6 +399,20 @@ services:
     healthcheck:
       <<: *healthcheck
       test: ["CMD", "lean-healthcheck", "8080", "/readyz"]
+    networks: [lean]
+
+  # Live worker (plan step s4.4): never scaled by compose. job-orchestrator creates one `lean-live-<jobId>` container
+  # per live deployment from this image (PaperBrokerage on market-data's simulated feed by default); this entry only
+  # builds it:  docker compose --profile workers build live-worker
+  live-worker:
+    image: ${LEAN_IMAGE_REGISTRY:-lean}/live-worker:${LEAN_IMAGE_TAG:-dev}
+    build:
+      context: .
+      dockerfile: Services/Dockerfile
+      target: live-worker
+    profiles: [workers]
+    deploy:
+      replicas: 0
     networks: [lean]
 
   # Public API gateway (plan step s4.5): the only public entry point. API keys from GATEWAY_API_KEY (JWT bearer

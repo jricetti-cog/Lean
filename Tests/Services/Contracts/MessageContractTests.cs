@@ -90,6 +90,10 @@ namespace QuantConnect.Tests.Services.Contracts
                 Assert.AreEqual(routingKey, RoutingKeys.MarketData(symbol.GetProperty("securityType").GetString(),
                     symbol.GetProperty("market").GetString(), symbol.GetProperty("ticker").GetString()));
             }
+            else if (exchange == Exchanges.Control)
+            {
+                Assert.AreEqual(routingKey, envelope.Type == MessageTypes.LiquidateJob ? RoutingKeys.Liquidate(envelope.CorrelationId) : RoutingKeys.Cancel(envelope.CorrelationId));
+            }
             else
             {
                 Assert.AreEqual(Exchanges.Events, exchange);
@@ -219,7 +223,11 @@ namespace QuantConnect.Tests.Services.Contracts
             });
             yield return Case("job.cancel.schema.json", new CancelJob
             {
-                JobId = JobId, Attempt = 2, RequestedAt = At, RequestedBy = "alice", Reason = "user", LeaseEpoch = 3,
+                JobId = JobId, Attempt = 2, RequestedAt = At, RequestedBy = "alice", Reason = "user", LeaseEpoch = 3, Liquidate = true,
+            });
+            yield return Case("job.liquidate.schema.json", new LiquidateJob
+            {
+                JobId = JobId, Attempt = 2, RequestedAt = At, RequestedBy = "alice", LeaseEpoch = 3,
             });
             yield return Case("job.cancelled.schema.json", new JobCancelled
             {

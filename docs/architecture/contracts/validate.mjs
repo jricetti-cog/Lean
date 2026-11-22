@@ -47,6 +47,7 @@ const catalogue = {
   'events.v1.JobFailed': ['job.failed.schema.json', ev('status')],
   'events.v1.JobCancelled': ['job.cancelled.schema.json', ev('status')],
   'control.v1.CancelJob': ['job.cancel.schema.json', new RegExp(`^job\\.${U}\\.cancel\\.v1$`)],
+  'control.v1.LiquidateJob': ['job.liquidate.schema.json', new RegExp(`^job\\.${U}\\.liquidate\\.v1$`)],
   'packets.v1.BacktestResult': ['result.packet.schema.json', ev('result')],
   'packets.v1.LiveResult': ['result.packet.schema.json', ev('result')],
   'packets.v1.AlgorithmStatus': ['result.packet.schema.json', ev('result')],

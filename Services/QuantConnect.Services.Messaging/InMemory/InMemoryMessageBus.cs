@@ -7,7 +7,7 @@ namespace QuantConnect.Services.Messaging.InMemory;
 /// delivery limits and dead-letter arguments as the broker (from <see cref="TopologyDefinition"/>), applies the
 /// same publish checks, and delivers only when the test calls <see cref="DeliverAllAsync"/>.
 /// </summary>
-public sealed class InMemoryMessageBus : IMessageBus
+public sealed class InMemoryMessageBus : IMessageBus, ITransientSubscriber
 {
     /// <summary>A message the bus accepted (confirmed).</summary>
     public sealed record PublishedMessage(string Exchange, string RoutingKey, MessageEnvelope Envelope, ReadOnlyMemory<byte> Body);
@@ -33,9 +33,11 @@ public sealed class InMemoryMessageBus : IMessageBus
     private sealed class Subscription : IAsyncDisposable
     {
         public bool Active { get; private set; } = true;
+        public Action? Disposed { get; set; }
         public ValueTask DisposeAsync()
         {
             Active = false;
+            Disposed?.Invoke();
             return ValueTask.CompletedTask;
         }
     }
@@ -130,6 +132,35 @@ public sealed class InMemoryMessageBus : IMessageBus
         {
             Queue(queue).Consumers.Add((handler, subscription));
         }
+        return Task.FromResult<IAsyncDisposable>(subscription);
+    }
+
+    public Task<IAsyncDisposable> SubscribeTransientAsync(string exchange, IReadOnlyCollection<string> bindingKeys, MessageHandler handler,
+        TransientQueueOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        var name = options?.QueueName ?? $"amq.gen-{Guid.NewGuid():N}";
+        var subscription = new Subscription();
+        lock (_lock)
+        {
+            if (!_exchanges.ContainsKey(exchange))
+            {
+                throw new InvalidOperationException($"Exchange '{exchange}' not declared");
+            }
+            DeclareQueue(name);
+            foreach (var key in bindingKeys)
+            {
+                _bindings.Add(new TopologyDefinition.Binding(exchange, name, key));
+            }
+            Queue(name).Consumers.Add((handler, subscription));
+        }
+        subscription.Disposed = () =>
+        {
+            lock (_lock)
+            {
+                _bindings.RemoveAll(b => b.Destination == name);
+                _queues.Remove(name);
+            }
+        };
         return Task.FromResult<IAsyncDisposable>(subscription);
     }
 

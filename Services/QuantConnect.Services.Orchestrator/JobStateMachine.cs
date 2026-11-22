@@ -143,10 +143,22 @@ public static class JobStateMachine
         }
     }
 
-    public static OutgoingMessage Cancel(Guid jobId, JobKind kind, int attempt, long? leaseEpoch, string reason, string? requestedBy, DateTimeOffset now) =>
+    public static OutgoingMessage Cancel(Guid jobId, JobKind kind, int attempt, long? leaseEpoch, string reason, string? requestedBy, DateTimeOffset now,
+        bool liquidate = false) =>
         OutgoingMessage.Create(Exchanges.Control, RoutingKeys.Cancel(jobId),
             MessageEnvelope.Create(MessageTypes.CancelJob, jobId, attempt, AppIds.Orchestrator, kind, leaseEpoch: leaseEpoch, now: now),
-            new CancelJob { JobId = jobId, Attempt = attempt, RequestedAt = now, RequestedBy = requestedBy, Reason = reason, LeaseEpoch = leaseEpoch })
+            new CancelJob
+            {
+                JobId = jobId, Attempt = attempt, RequestedAt = now, RequestedBy = requestedBy, Reason = reason, LeaseEpoch = leaseEpoch,
+                Liquidate = liquidate && kind == JobKind.Live ? true : null,
+            })
+        with { Mandatory = false };
+
+    /// <summary><c>control.v1.LiquidateJob</c> to the live-worker holding the lease.</summary>
+    public static OutgoingMessage Liquidate(Guid jobId, int attempt, long? leaseEpoch, string? requestedBy, DateTimeOffset now) =>
+        OutgoingMessage.Create(Exchanges.Control, RoutingKeys.Liquidate(jobId),
+            MessageEnvelope.Create(MessageTypes.LiquidateJob, jobId, attempt, AppIds.Orchestrator, JobKind.Live, leaseEpoch: leaseEpoch, now: now),
+            new LiquidateJob { JobId = jobId, Attempt = attempt, RequestedAt = now, RequestedBy = requestedBy, LeaseEpoch = leaseEpoch })
         with { Mandatory = false };
 
     public static OutgoingMessage Failed(Guid jobId, JobKind kind, int attempt, Guid? parentJobId, ErrorInfo error, DateTimeOffset now) =>

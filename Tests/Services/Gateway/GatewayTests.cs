@@ -287,10 +287,15 @@ namespace QuantConnect.Tests.Services.Gateway
             Assert.AreEqual(HttpStatusCode.Created, deploy.StatusCode, await deploy.Content.ReadAsStringAsync());
             Assert.AreEqual(JobKind.Live, ContractJson.Deserialize<JobRequest>(_captured.Single(c => c.PathAndQuery == "/internal/v1/jobs").Body).Kind);
 
-            using var stop = await Send(HttpMethod.Post, $"/api/v1/live/{AliceJob}/stop", AliceKey);
+            using var liquidate = await Send(HttpMethod.Post, $"/api/v1/live/{AliceJob}/liquidate", AliceKey);
+            Assert.AreEqual(HttpStatusCode.Accepted, liquidate.StatusCode);
+            Assert.AreEqual(1, _captured.Count(c => c.PathAndQuery == $"/internal/v1/jobs/{AliceJob}/liquidate"));
+
+            using var stop = await Send(HttpMethod.Post, $"/api/v1/live/{AliceJob}/stop", AliceKey, new StringContent("{\"liquidate\":true}", Encoding.UTF8, "application/json"));
             Assert.AreEqual(HttpStatusCode.Accepted, stop.StatusCode);
             var cancel = _captured.Single(c => c.PathAndQuery == $"/internal/v1/jobs/{AliceJob}/cancel");
             StringAssert.Contains("live deployment stopped", cancel.Body);
+            StringAssert.Contains("\"liquidate\":true", cancel.Body);
         }
 
         [TestCase("/api/v1/reports/11111111-1111-1111-1111-111111111111", "report")]
@@ -507,6 +512,7 @@ namespace QuantConnect.Tests.Services.Gateway
             app.MapGet("/internal/v1/jobs", () => Json(new Page<Job> { Items = new List<Job> { JobFor(AliceJob) } }));
             app.MapGet("/internal/v1/jobs/{id:guid}", (Guid id) => id == AliceJob ? Json(JobFor(id)) : HttpResults.NotFound());
             app.MapPost("/internal/v1/jobs/{id:guid}/cancel", (Guid id) => Json(JobFor(id) with { Status = JobStatus.Cancelled }, 202));
+            app.MapPost("/internal/v1/jobs/{id:guid}/liquidate", (Guid id) => Json(JobFor(id) with { Kind = JobKind.Live }, 202));
             app.MapGet("/internal/v1/results/{id:guid}", (Guid id) => HttpResults.Text($"{{\"jobId\":\"{id}\"}}", "application/json"));
             app.MapGet("/internal/v1/results/{id:guid}/charts/{**chart}", (Guid id) => HttpResults.Text("{}", "application/json"));
             ReportRecord ReportFor(Guid id) => new()

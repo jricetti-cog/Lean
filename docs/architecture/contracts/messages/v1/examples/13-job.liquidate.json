@@ -1,0 +1,28 @@
+{
+  "schema": "job.liquidate",
+  "routingKey": "job.5e1f2a3b-4c5d-4e6f-8a9b-0c1d2e3f4a5b.liquidate.v1",
+  "exchange": "lean.control",
+  "envelope": {
+    "messageId": "0b5d1d8e-1111-4c1a-9a1e-000000000013",
+    "correlationId": "5e1f2a3b-4c5d-4e6f-8a9b-0c1d2e3f4a5b",
+    "type": "control.v1.LiquidateJob",
+    "contentType": "application/json",
+    "deliveryMode": 2,
+    "timestamp": 1795858320,
+    "appId": "job-orchestrator",
+    "headers": {
+      "contract-version": "1.0",
+      "job-id": "5e1f2a3b-4c5d-4e6f-8a9b-0c1d2e3f4a5b",
+      "attempt": 1,
+      "job-kind": "live",
+      "lease-epoch": 1
+    }
+  },
+  "body": {
+    "jobId": "5e1f2a3b-4c5d-4e6f-8a9b-0c1d2e3f4a5b",
+    "attempt": 1,
+    "requestedAt": "2026-11-22T14:32:00Z",
+    "requestedBy": "alice",
+    "leaseEpoch": 1
+  }
+}
