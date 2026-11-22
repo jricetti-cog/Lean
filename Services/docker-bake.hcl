@@ -15,14 +15,14 @@ variable "TAG" {
 
 group "default" {
   targets = ["api-gateway", "job-orchestrator", "results", "optimizer",
-             "backtest-worker", "live-worker", "market-data", "report", "research"]
+             "backtest-worker", "live-worker", "market-data", "report", "research", "toolbox"]
 }
 
 target "service" {
   name       = svc
   matrix     = {
     svc = ["api-gateway", "job-orchestrator", "results", "optimizer",
-           "backtest-worker", "live-worker", "market-data", "report", "research"]
+           "backtest-worker", "live-worker", "market-data", "report", "research", "toolbox"]
   }
   context    = "."
   dockerfile = "Services/Dockerfile"
