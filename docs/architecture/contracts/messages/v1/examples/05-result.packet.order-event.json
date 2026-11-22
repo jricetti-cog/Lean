@@ -1,0 +1,51 @@
+{
+  "schema": "result.packet",
+  "routingKey": "job.backtest.3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b.order.v1",
+  "exchange": "lean.events",
+  "envelope": {
+    "messageId": "0b5d1d8e-1111-4c1a-9a1e-000000000005",
+    "correlationId": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b",
+    "type": "packets.v1.OrderEvent",
+    "contentType": "application/json",
+    "deliveryMode": 2,
+    "timestamp": 1795858200,
+    "appId": "lean-engine",
+    "headers": {
+      "contract-version": "1.0",
+      "job-id": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b",
+      "attempt": 1,
+      "job-kind": "backtest",
+      "packet-type": "OrderEvent",
+      "sequence": 9
+    }
+  },
+  "body": {
+    "Event": {
+      "OrderId": 1,
+      "Id": 0,
+      "Symbol": {
+        "value": "EURUSD",
+        "id": "EURUSD 8G",
+        "permtick": "EURUSD"
+      },
+      "UtcTime": "2013-10-07T13:31:00Z",
+      "Status": 3,
+      "OrderFee": {
+        "Value": {
+          "Amount": 1.0,
+          "Currency": "USD"
+        }
+      },
+      "FillPrice": 1.0855,
+      "FillPriceCurrency": "",
+      "FillQuantity": 10000.0,
+      "Direction": 0,
+      "Message": "filled",
+      "IsAssignment": false,
+      "Quantity": 0.0
+    },
+    "AlgorithmId": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b",
+    "Type": "OrderEvent",
+    "Channel": ""
+  }
+}

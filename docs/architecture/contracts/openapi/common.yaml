@@ -1,0 +1,244 @@
+# Shared OpenAPI 3.1 components for the v1 HTTP contracts. Referenced from the per-service documents;
+# message/body types come from ../messages/v1/defs.schema.json so HTTP and AMQP share one definition.
+openapi: 3.1.0
+info:
+  title: LEAN shared HTTP components (v1)
+  version: 1.0.0
+  description: Fragment, not a service. Problem details, paging, job resources and health.
+paths: {}
+components:
+  parameters:
+    JobIdPath:
+      name: id
+      in: path
+      required: true
+      description: Job id (UUID, owned by job-orchestrator).
+      schema:
+        $ref: '../messages/v1/defs.schema.json#/$defs/JobId'
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      description: Opaque cursor from `next` of the previous page.
+      schema:
+        type: string
+    Limit:
+      name: limit
+      in: query
+      required: false
+      description: Page size.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 500
+        default: 50
+    KindFilter:
+      name: kind
+      in: query
+      required: false
+      description: Filter by job kind.
+      schema:
+        $ref: '../messages/v1/defs.schema.json#/$defs/JobKind'
+    StatusFilter:
+      name: status
+      in: query
+      required: false
+      description: Filter by status.
+      schema:
+        $ref: '../messages/v1/defs.schema.json#/$defs/JobStatus'
+    ParentFilter:
+      name: parentJobId
+      in: query
+      required: false
+      description: Children of an optimization.
+      schema:
+        $ref: '../messages/v1/defs.schema.json#/$defs/JobId'
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: Client key; a repeated POST with the same key and body returns the original job (24 h window).
+      schema:
+        type: string
+        maxLength: 128
+  schemas:
+    Problem:
+      type: object
+      description: RFC 9457 problem details (`application/problem+json`).
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri-reference
+          description: Problem type URI, e.g. `https://lean.local/problems/job-not-cancellable`.
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        traceId:
+          type: string
+          description: W3C trace id of the failing request.
+        errors:
+          type: object
+          description: Validation errors by JSON pointer.
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    Page:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {}
+        next:
+          type: [string, 'null']
+          description: Cursor of the next page, null on the last page.
+    JobRequest:
+      type: object
+      description: Body of a job creation. Exactly the spec matching `kind`.
+      required: [kind]
+      additionalProperties: false
+      properties:
+        kind:
+          $ref: '../messages/v1/defs.schema.json#/$defs/JobKind'
+        parentJobId:
+          $ref: '../messages/v1/defs.schema.json#/$defs/JobId'
+        backtest:
+          $ref: '../messages/v1/defs.schema.json#/$defs/BacktestSpec'
+        live:
+          $ref: '../messages/v1/defs.schema.json#/$defs/LiveSpec'
+        optimization:
+          $ref: '../messages/v1/defs.schema.json#/$defs/OptimizationSpec'
+        report:
+          $ref: '../messages/v1/defs.schema.json#/$defs/ReportSpec'
+      oneOf:
+        - properties: {kind: {const: backtest}}
+          required: [backtest]
+        - properties: {kind: {const: live}}
+          required: [live]
+        - properties: {kind: {const: optimization}}
+          required: [optimization]
+        - properties: {kind: {const: report}}
+          required: [report]
+    Job:
+      type: object
+      description: A job as owned by job-orchestrator (table `jobs`, ADR 0003).
+      required: [id, kind, status, attempt, createdAt, submittedBy]
+      properties:
+        id:
+          $ref: '../messages/v1/defs.schema.json#/$defs/JobId'
+        kind:
+          $ref: '../messages/v1/defs.schema.json#/$defs/JobKind'
+        status:
+          $ref: '../messages/v1/defs.schema.json#/$defs/JobStatus'
+        attempt:
+          $ref: '../messages/v1/defs.schema.json#/$defs/Attempt'
+        parentJobId:
+          oneOf:
+            - $ref: '../messages/v1/defs.schema.json#/$defs/JobId'
+            - type: 'null'
+        name:
+          type: string
+        submittedBy:
+          type: string
+        createdAt:
+          $ref: '../messages/v1/defs.schema.json#/$defs/Timestamp'
+        startedAt:
+          oneOf:
+            - $ref: '../messages/v1/defs.schema.json#/$defs/Timestamp'
+            - type: 'null'
+        finishedAt:
+          oneOf:
+            - $ref: '../messages/v1/defs.schema.json#/$defs/Timestamp'
+            - type: 'null'
+        deadline:
+          oneOf:
+            - $ref: '../messages/v1/defs.schema.json#/$defs/Timestamp'
+            - type: 'null'
+        progress:
+          type: number
+          minimum: 0
+          maximum: 1
+        leaseEpoch:
+          $ref: '../messages/v1/defs.schema.json#/$defs/LeaseEpoch'
+        workerId:
+          type: [string, 'null']
+        error:
+          oneOf:
+            - $ref: '../messages/v1/defs.schema.json#/$defs/ErrorInfo'
+            - type: 'null'
+        spec:
+          $ref: '#/components/schemas/JobRequest'
+    JobPage:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Job'
+    Health:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded, down]
+        checks:
+          type: object
+          description: Dependency name (postgres, rabbitmq, minio, lean-data) to status.
+          additionalProperties:
+            type: string
+            enum: [ok, degraded, down]
+  responses:
+    BadRequest:
+      description: Invalid request.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: Missing or invalid bearer token.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: No such resource.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: State conflict (e.g. job already terminal, lease held by another epoch).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unavailable:
+      description: A dependency (broker, database) is unavailable; retry with backoff.
+      headers:
+        Retry-After:
+          description: Seconds to wait.
+          schema:
+            type: integer
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Health:
+      description: Liveness/readiness.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Health'

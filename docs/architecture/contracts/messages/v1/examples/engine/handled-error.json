@@ -1,0 +1,7 @@
+{
+  "Message": "Order rejected",
+  "AlgorithmId": "BasicTemplateFuturesAlgorithm",
+  "StackTrace": "at Algo.OnData()",
+  "Type": "HandledError",
+  "Channel": ""
+}

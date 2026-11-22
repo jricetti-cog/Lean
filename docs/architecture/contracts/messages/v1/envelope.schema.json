@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.lean.local/messages/v1/envelope.schema.json",
+  "title": "AMQP envelope (v1)",
+  "description": "AMQP 0-9-1 basic properties every v1 message carries (ADR 0002 \"Message format\"). The envelope is not part of the JSON body; this schema describes the properties as a JSON object so publishers, consumers and the examples can be checked. Body schemas are selected by `type`.",
+  "type": "object",
+  "required": ["messageId", "correlationId", "type", "contentType", "deliveryMode", "timestamp", "headers"],
+  "additionalProperties": false,
+  "properties": {
+    "messageId": {
+      "$ref": "defs.schema.json#/$defs/Uuid",
+      "description": "AMQP `message_id`. New UUID per logical message; a re-publish of the same message (outbox relay retry, worker retry after an unconfirmed publish) reuses it. Consumers de-duplicate on it."
+    },
+    "correlationId": {
+      "$ref": "defs.schema.json#/$defs/JobId",
+      "description": "AMQP `correlation_id` = the job id the message is about."
+    },
+    "type": {
+      "type": "string",
+      "description": "AMQP `type`: `<family>.v<major>.<Name>`. Selects the body schema (see topology.md, message catalogue).",
+      "enum": [
+        "jobs.v1.BacktestRequested",
+        "jobs.v1.LiveRequested",
+        "jobs.v1.OptimizationRequested",
+        "jobs.v1.ReportRequested",
+        "jobs.v1.MarketDataFetchRequested",
+        "events.v1.JobStarted",
+        "events.v1.JobHeartbeat",
+        "events.v1.JobProgress",
+        "events.v1.JobCompleted",
+        "events.v1.JobFailed",
+        "events.v1.JobCancelled",
+        "control.v1.CancelJob",
+        "packets.v1.BacktestResult",
+        "packets.v1.LiveResult",
+        "packets.v1.Log",
+        "packets.v1.Debug",
+        "packets.v1.SystemDebug",
+        "packets.v1.OrderEvent",
+        "packets.v1.RuntimeError",
+        "packets.v1.HandledError",
+        "packets.v1.AlgorithmStatus",
+        "packets.v1.PacketRef"
+      ]
+    },
+    "contentType": { "const": "application/json" },
+    "contentEncoding": {
+      "const": "utf-8",
+      "description": "Optional; bodies are always UTF-8 JSON, never compressed in v1."
+    },
+    "deliveryMode": {
+      "type": "integer",
+      "enum": [1, 2],
+      "description": "2 (persistent) for everything on `lean.jobs`, `lean.jobs.dlx`, `lean.control` and for `status`/`result`/`order`/`error` events; 1 (transient) is allowed only for `heartbeat`, `progress` and `log` events."
+    },
+    "timestamp": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "AMQP `timestamp`, Unix seconds when the publisher created the message."
+    },
+    "appId": {
+      "type": "string",
+      "enum": ["api-gateway", "job-orchestrator", "backtest-worker", "live-worker", "market-data", "results", "optimizer", "report", "lean-engine"],
+      "description": "AMQP `app_id`: publishing service. `lean-engine` = the bus `Messaging` adapter inside the job's child Launcher process."
+    },
+    "expiration": {
+      "type": "string",
+      "pattern": "^[0-9]+$",
+      "description": "Per-message TTL in ms. Not used on `lean.jobs`; allowed for heartbeats/progress."
+    },
+    "headers": {
+      "type": "object",
+      "required": ["contract-version", "job-id", "attempt"],
+      "additionalProperties": true,
+      "description": "Application headers. Unknown headers must be ignored (additive evolution).",
+      "properties": {
+        "contract-version": {
+          "type": "string",
+          "pattern": "^1\\.[0-9]+$",
+          "description": "`<major>.<minor>` of the contract the publisher implements. Major must match the routing-key version (`v1`); consumers accept any minor."
+        },
+        "job-id": { "$ref": "defs.schema.json#/$defs/JobId" },
+        "attempt": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Attempt the message belongs to. On `lean.jobs` it is the attempt the orchestrator expected when it published (1 for a new job); redelivered messages keep it, and the worker claims the real attempt over REST."
+        },
+        "job-kind": { "$ref": "defs.schema.json#/$defs/JobKind" },
+        "parent-job-id": {
+          "$ref": "defs.schema.json#/$defs/JobId",
+          "description": "Optimization id for child backtests; lets the optimizer filter its children without parsing bodies."
+        },
+        "lease-epoch": { "$ref": "defs.schema.json#/$defs/LeaseEpoch" },
+        "packet-type": {
+          "type": "string",
+          "description": "LEAN `PacketType` name of the wrapped packet (packets.v1.* only), e.g. BacktestResult."
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Per job attempt and publisher, monotonically increasing. Consumers order by it (with packet time/progress), never by arrival (ADR 0002)."
+        },
+        "x-delivery-count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Set by the broker on quorum-queue redeliveries; read-only for publishers."
+        }
+      }
+    }
+  }
+}

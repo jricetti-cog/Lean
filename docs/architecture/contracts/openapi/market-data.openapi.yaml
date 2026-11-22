@@ -1,0 +1,296 @@
+openapi: 3.1.0
+info:
+  title: market-data internal API
+  version: 1.0.0
+  description: |
+    The only writer to the shared `lean-data` volume (ADR 0004). Owns the data catalog (`marketdata`
+    database), download / fetch-on-miss tasks (run-to-completion, dispatched through `marketdata.fetch`,
+    events with kind `marketdata`) and history queries for the gateway, console charts and research. Workers
+    mount `lean-data` read-only and call `POST /internal/v1/data/fetches` from the fetch-on-miss
+    `IDataProvider` only when the job set `fetchMissingData`. Private network only.
+  contact:
+    name: LEAN migration
+    url: https://github.com/jricetti-cog/Lean
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+  - url: http://market-data:8080
+    description: Compose / cluster service name
+tags:
+  - name: catalog
+    description: Coverage of `lean-data`.
+  - name: fetches
+    description: Download and fetch-on-miss tasks.
+  - name: history
+    description: History queries.
+  - name: ops
+    description: Health.
+paths:
+  /internal/v1/data/coverage:
+    get:
+      tags: [catalog]
+      operationId: getCoverage
+      summary: Data coverage
+      description: Which dates exist on `lean-data` for a symbol/resolution. The gateway calls it before dispatching a backtest so missing data is fetched ahead of time (ADR 0004 preferred workflow).
+      parameters:
+        - $ref: '#/components/parameters/SecurityType'
+        - $ref: '#/components/parameters/Market'
+        - $ref: '#/components/parameters/Ticker'
+        - $ref: '#/components/parameters/Resolution'
+        - $ref: '#/components/parameters/Start'
+        - $ref: '#/components/parameters/End'
+      responses:
+        '200':
+          description: Coverage.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Coverage'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+  /internal/v1/data/history:
+    get:
+      tags: [history]
+      operationId: getHistory
+      summary: History bars
+      description: Bars read from `lean-data` with LEAN's readers (`SubscriptionDataReaderHistoryProvider`), for console charts and research. Not used inside algorithms (history stays in-process).
+      parameters:
+        - $ref: '#/components/parameters/SecurityType'
+        - $ref: '#/components/parameters/Market'
+        - $ref: '#/components/parameters/Ticker'
+        - $ref: '#/components/parameters/Resolution'
+        - $ref: '#/components/parameters/Start'
+        - $ref: '#/components/parameters/End'
+        - name: tickType
+          in: query
+          required: false
+          description: LEAN `TickType`.
+          schema:
+            type: string
+            enum: [Trade, Quote, OpenInterest]
+            default: Trade
+      responses:
+        '200':
+          description: Bars in time order.
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 100000
+                items:
+                  $ref: '#/components/schemas/Bar'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+  /internal/v1/data/fetches:
+    post:
+      tags: [fetches]
+      operationId: createFetch
+      summary: Request a download / fetch
+      description: Stores the task and an outbox row, publishes `marketdata.fetch.requested` (`marketdata.fetch.v1`). Identical pending requests are coalesced and return the existing task. Files appear atomically on `lean-data` (staging + rename).
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fetch]
+              additionalProperties: false
+              properties:
+                fetch:
+                  $ref: '../messages/v1/defs.schema.json#/$defs/MarketDataFetchSpec'
+                requestingJobId:
+                  $ref: '../messages/v1/defs.schema.json#/$defs/JobId'
+      responses:
+        '202':
+          description: Task accepted (or an identical pending task returned).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FetchTask'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '503':
+          $ref: 'common.yaml#/components/responses/Unavailable'
+    get:
+      tags: [fetches]
+      operationId: listFetches
+      summary: List tasks
+      description: Newest first.
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/StatusFilter'
+        - $ref: 'common.yaml#/components/parameters/Cursor'
+        - $ref: 'common.yaml#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of tasks.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/FetchTask'
+  /internal/v1/data/fetches/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Task id.
+        schema:
+          $ref: '../messages/v1/defs.schema.json#/$defs/JobId'
+    get:
+      tags: [fetches]
+      operationId: getFetch
+      summary: Get a task
+      description: Task state; the fetch-on-miss provider polls this (or waits on the task's `status` event).
+      responses:
+        '200':
+          description: The task.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FetchTask'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+  /healthz:
+    get:
+      tags: [ops]
+      operationId: health
+      summary: Health
+      description: PostgreSQL, RabbitMQ and `lean-data` (writable) checks.
+      responses:
+        '200':
+          $ref: 'common.yaml#/components/responses/Health'
+components:
+  parameters:
+    SecurityType:
+      name: securityType
+      in: query
+      required: true
+      description: LEAN `SecurityType`.
+      schema:
+        type: string
+        enum: [Equity, Option, Forex, Cfd, Future, FutureOption, Crypto, CryptoFuture, Index, IndexOption]
+    Market:
+      name: market
+      in: query
+      required: true
+      description: LEAN market, e.g. usa, cme, oanda.
+      schema:
+        type: string
+        pattern: '^[a-z0-9]+$'
+    Ticker:
+      name: ticker
+      in: query
+      required: true
+      description: Ticker as on disk (lower-case for equities).
+      schema:
+        type: string
+        maxLength: 64
+    Resolution:
+      name: resolution
+      in: query
+      required: true
+      description: LEAN `Resolution`.
+      schema:
+        type: string
+        enum: [Tick, Second, Minute, Hour, Daily]
+    Start:
+      name: start
+      in: query
+      required: true
+      description: First date (inclusive).
+      schema:
+        $ref: '../messages/v1/defs.schema.json#/$defs/Date'
+    End:
+      name: end
+      in: query
+      required: true
+      description: Last date (inclusive).
+      schema:
+        $ref: '../messages/v1/defs.schema.json#/$defs/Date'
+  schemas:
+    Coverage:
+      type: object
+      required: [securityType, market, ticker, resolution, ranges, missing]
+      properties:
+        securityType:
+          type: string
+        market:
+          type: string
+        ticker:
+          type: string
+        resolution:
+          type: string
+        ranges:
+          type: array
+          description: Contiguous date ranges present on `lean-data`.
+          items:
+            $ref: '#/components/schemas/DateRange'
+        missing:
+          type: array
+          description: Requested trading days that are absent.
+          items:
+            $ref: '../messages/v1/defs.schema.json#/$defs/Date'
+    DateRange:
+      type: object
+      required: [start, end]
+      properties:
+        start:
+          $ref: '../messages/v1/defs.schema.json#/$defs/Date'
+        end:
+          $ref: '../messages/v1/defs.schema.json#/$defs/Date'
+    Bar:
+      type: object
+      required: [time, open, high, low, close]
+      properties:
+        time:
+          $ref: '../messages/v1/defs.schema.json#/$defs/Timestamp'
+        open:
+          type: number
+        high:
+          type: number
+        low:
+          type: number
+        close:
+          type: number
+        volume:
+          type: number
+    FetchTask:
+      type: object
+      required: [id, status, attempt, fetch, createdAt]
+      properties:
+        id:
+          $ref: '../messages/v1/defs.schema.json#/$defs/JobId'
+        status:
+          $ref: '../messages/v1/defs.schema.json#/$defs/JobStatus'
+        attempt:
+          $ref: '../messages/v1/defs.schema.json#/$defs/Attempt'
+        fetch:
+          $ref: '../messages/v1/defs.schema.json#/$defs/MarketDataFetchSpec'
+        requestingJobId:
+          oneOf:
+            - $ref: '../messages/v1/defs.schema.json#/$defs/JobId'
+            - type: 'null'
+        filesWritten:
+          type: integer
+          minimum: 0
+        error:
+          oneOf:
+            - $ref: '../messages/v1/defs.schema.json#/$defs/ErrorInfo'
+            - type: 'null'
+        createdAt:
+          $ref: '../messages/v1/defs.schema.json#/$defs/Timestamp'
+        finishedAt:
+          oneOf:
+            - $ref: '../messages/v1/defs.schema.json#/$defs/Timestamp'
+            - type: 'null'

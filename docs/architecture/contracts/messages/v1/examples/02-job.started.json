@@ -1,0 +1,33 @@
+{
+  "schema": "job.started",
+  "routingKey": "job.backtest.3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b.status.v1",
+  "exchange": "lean.events",
+  "envelope": {
+    "messageId": "0b5d1d8e-1111-4c1a-9a1e-000000000002",
+    "correlationId": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b",
+    "type": "events.v1.JobStarted",
+    "contentType": "application/json",
+    "deliveryMode": 2,
+    "timestamp": 1795858200,
+    "appId": "backtest-worker",
+    "headers": {
+      "contract-version": "1.0",
+      "job-id": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b",
+      "attempt": 1,
+      "job-kind": "backtest",
+      "sequence": 0
+    }
+  },
+  "body": {
+    "jobId": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b",
+    "kind": "backtest",
+    "attempt": 1,
+    "startedAt": "2026-11-22T13:30:02Z",
+    "workerId": "backtest-worker-7f9c/0",
+    "results": {
+      "bucket": "lean-results",
+      "prefix": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b/1/"
+    },
+    "engineVersion": "2.5.0.0"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.lean.local/messages/v1/marketdata.fetch.requested.schema.json",
+  "title": "marketdata.fetch.requested (v1)",
+  "description": "A market-data download/fetch task. Published by market-data itself (its own outbox, after `POST /internal/v1/data/fetches`) to `lean.jobs` with routing key `marketdata.fetch.v1`, AMQP type `jobs.v1.MarketDataFetchRequested`; consumed by market-data task runners (one task per process). Results are atomically published into `lean-data` (staging + rename, ADR 0004). Events use kind `marketdata`.",
+  "type": "object",
+  "required": ["jobId", "kind", "attempt", "submittedAt", "submittedBy", "fetch"],
+  "additionalProperties": false,
+  "properties": {
+    "jobId": { "$ref": "defs.schema.json#/$defs/JobId", "description": "Task id (market-data `marketdata` database)." },
+    "kind": { "const": "marketdata" },
+    "attempt": { "$ref": "defs.schema.json#/$defs/Attempt" },
+    "submittedAt": { "$ref": "defs.schema.json#/$defs/Timestamp" },
+    "submittedBy": { "type": "string", "description": "User id, or the job id of a fetch-on-miss backtest." },
+    "requestingJobId": { "$ref": "defs.schema.json#/$defs/JobId" },
+    "fetch": { "$ref": "defs.schema.json#/$defs/MarketDataFetchSpec" }
+  }
+}

@@ -1,0 +1,268 @@
+openapi: 3.1.0
+info:
+  title: job-orchestrator internal API
+  version: 1.0.0
+  description: |
+    Sole owner of the job lifecycle (ADR 0001): `queued → running → completed | failed | cancelled`, plus
+    `stale` for live deployments that lost their heartbeat. Creating a job writes the `jobs` row and an outbox
+    row in one transaction; the relay publishes `job.submitted` / `optimization.requested` /
+    `report.requested` to `lean.jobs` with publisher confirms (ADR 0002, topology.md). Status changes are
+    driven by `lean.events` (`job.*.*.status.v1`, `job.*.*.heartbeat.v1`); these endpoints are called by
+    api-gateway (on behalf of users), optimizer (child backtests) and the workers (attempts, leases).
+    Private network only.
+  contact:
+    name: LEAN migration
+    url: https://github.com/jricetti-cog/Lean
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+  - url: http://job-orchestrator:8080
+    description: Compose / cluster service name
+tags:
+  - name: jobs
+    description: Job lifecycle.
+  - name: workers
+    description: Calls made by worker hosts.
+  - name: ops
+    description: Health and scaling hints.
+paths:
+  /internal/v1/jobs:
+    post:
+      tags: [jobs]
+      operationId: createJob
+      summary: Create a job
+      description: Validates the spec, inserts the job (`queued`, attempt 1) and its outbox row. For `report` it resolves the source result from results (`GET /internal/v1/results/{jobId}`) and rejects with 409 when the source is not `completed`.
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'common.yaml#/components/schemas/JobRequest'
+      responses:
+        '201':
+          description: Created and queued for dispatch.
+          headers:
+            Location:
+              description: URL of the job.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: 'common.yaml#/components/schemas/Job'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '409':
+          $ref: 'common.yaml#/components/responses/Conflict'
+        '503':
+          $ref: 'common.yaml#/components/responses/Unavailable'
+    get:
+      tags: [jobs]
+      operationId: listJobs
+      summary: List jobs
+      description: Newest first. `parentJobId` lists an optimization's child backtests.
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/KindFilter'
+        - $ref: 'common.yaml#/components/parameters/StatusFilter'
+        - $ref: 'common.yaml#/components/parameters/ParentFilter'
+        - name: submittedBy
+          in: query
+          required: false
+          description: Owner filter (the gateway always sets it for non-admin callers).
+          schema:
+            type: string
+        - $ref: 'common.yaml#/components/parameters/Cursor'
+        - $ref: 'common.yaml#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of jobs.
+          content:
+            application/json:
+              schema:
+                $ref: 'common.yaml#/components/schemas/JobPage'
+  /internal/v1/jobs/{id}:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+    get:
+      tags: [jobs]
+      operationId: getJob
+      summary: Get a job
+      description: Current state, attempt and lease.
+      responses:
+        '200':
+          description: The job.
+          content:
+            application/json:
+              schema:
+                $ref: 'common.yaml#/components/schemas/Job'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+  /internal/v1/jobs/{id}/cancel:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+    post:
+      tags: [jobs]
+      operationId: cancelJob
+      summary: Request cancellation
+      description: A `queued` job is cancelled directly (its dispatch is dropped when a worker receives it). A `running` job gets `job.<jobId>.cancel.v1` on `lean.control`; the job becomes `cancelled` when the worker reports `job.cancelled`. Cancelling an optimization cancels its children. Idempotent.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                reason:
+                  type: string
+                  maxLength: 500
+      responses:
+        '202':
+          description: Cancellation accepted.
+          content:
+            application/json:
+              schema:
+                $ref: 'common.yaml#/components/schemas/Job'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '409':
+          $ref: 'common.yaml#/components/responses/Conflict'
+  /internal/v1/jobs/{id}/attempts:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+    post:
+      tags: [workers]
+      operationId: startAttempt
+      summary: Start an attempt
+      description: Called by a worker when it takes a dispatch. Returns the attempt to use (the body's attempt on first delivery, a new one when the delivery is a redelivery or the previous attempt is not terminal) and the per-attempt results prefix. 409 when the job is terminal or cancelled; the worker then acks and drops the dispatch.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [workerId, deliveryCount]
+              additionalProperties: false
+              properties:
+                workerId:
+                  type: string
+                deliveryCount:
+                  type: integer
+                  minimum: 0
+                  description: '`x-delivery-count` of the dispatch (0 on first delivery).'
+      responses:
+        '201':
+          description: Attempt granted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attempt'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '409':
+          $ref: 'common.yaml#/components/responses/Conflict'
+  /internal/v1/jobs/{id}/lease:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+    post:
+      tags: [workers]
+      operationId: acquireLease
+      summary: Acquire a live lease
+      description: Live jobs only. Grants lease epoch N and moves the job to `running`; the live-worker acks the dispatch right after (ADR 0002). 409 when another epoch holds a valid lease, so a live algorithm never runs twice.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [workerId]
+              additionalProperties: false
+              properties:
+                workerId:
+                  type: string
+      responses:
+        '201':
+          description: Lease granted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lease'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '409':
+          $ref: 'common.yaml#/components/responses/Conflict'
+  /internal/v1/queues:
+    get:
+      tags: [ops]
+      operationId: getQueueHints
+      summary: Queue-depth scaling hints
+      description: Ready/unacked counts per dispatch queue and the suggested worker replicas (used by Helm/KEDA and the console).
+      responses:
+        '200':
+          description: Hints.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QueueHint'
+  /healthz:
+    get:
+      tags: [ops]
+      operationId: health
+      summary: Health
+      description: PostgreSQL and RabbitMQ connectivity, outbox lag.
+      responses:
+        '200':
+          $ref: 'common.yaml#/components/responses/Health'
+components:
+  schemas:
+    Attempt:
+      type: object
+      required: [jobId, attempt, results]
+      properties:
+        jobId:
+          $ref: '../messages/v1/defs.schema.json#/$defs/JobId'
+        attempt:
+          $ref: '../messages/v1/defs.schema.json#/$defs/Attempt'
+        results:
+          $ref: '../messages/v1/defs.schema.json#/$defs/ResultsPrefix'
+        deadline:
+          $ref: '../messages/v1/defs.schema.json#/$defs/Timestamp'
+    Lease:
+      type: object
+      required: [jobId, attempt, leaseEpoch, heartbeatIntervalSeconds]
+      properties:
+        jobId:
+          $ref: '../messages/v1/defs.schema.json#/$defs/JobId'
+        attempt:
+          $ref: '../messages/v1/defs.schema.json#/$defs/Attempt'
+        leaseEpoch:
+          $ref: '../messages/v1/defs.schema.json#/$defs/LeaseEpoch'
+        heartbeatIntervalSeconds:
+          type: integer
+          const: 10
+        results:
+          $ref: '../messages/v1/defs.schema.json#/$defs/ResultsPrefix'
+    QueueHint:
+      type: object
+      required: [queue, ready, unacked, suggestedReplicas]
+      properties:
+        queue:
+          type: string
+          enum: [jobs.backtest, jobs.live, jobs.optimization, jobs.report, marketdata.fetch]
+        ready:
+          type: integer
+          minimum: 0
+        unacked:
+          type: integer
+          minimum: 0
+        dead:
+          type: integer
+          minimum: 0
+        suggestedReplicas:
+          type: integer
+          minimum: 0

@@ -1,0 +1,385 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.lean.local/messages/v1/defs.schema.json",
+  "title": "Shared definitions (v1)",
+  "description": "Types shared by every v1 message body and by the OpenAPI documents. Property names are camelCase; inline LEAN packets keep their own Newtonsoft (PascalCase) form, see result.packet.",
+  "$defs": {
+    "Uuid": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Lower-case RFC 4122 UUID."
+    },
+    "JobId": {
+      "$ref": "#/$defs/Uuid",
+      "description": "Job id, owned by job-orchestrator. Also the AMQP correlation_id and the `job-id` header of every message about the job."
+    },
+    "Timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC ISO-8601 timestamp, e.g. 2026-11-22T13:45:00Z."
+    },
+    "Date": {
+      "type": "string",
+      "format": "date",
+      "description": "Calendar date (yyyy-MM-dd)."
+    },
+    "JobKind": {
+      "type": "string",
+      "enum": ["backtest", "live", "optimization", "report", "marketdata"],
+      "description": "Kind of job. Also the `<kind>` segment of `lean.events` routing keys. `marketdata` is a market-data fetch/download task (queue `marketdata.fetch`)."
+    },
+    "JobStatus": {
+      "type": "string",
+      "enum": ["queued", "running", "completed", "failed", "cancelled", "stale"],
+      "description": "Job lifecycle owned by job-orchestrator: queued -> running -> completed | failed | cancelled. `stale` is live-only (heartbeats stopped, lease being revoked)."
+    },
+    "Attempt": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "1-based attempt number. Every attempt writes to its own artifact prefix `<jobId>/<attempt>/`, which makes retries idempotent."
+    },
+    "LeaseEpoch": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Live deployments only: lease epoch granted by job-orchestrator. A worker holding an older epoch must stop its engine process."
+    },
+    "Sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "Lower-case hex SHA-256 of the object bytes."
+    },
+    "ObjectRef": {
+      "type": "object",
+      "description": "Reference to an immutable object in MinIO (S3 API, path-style). Used instead of inline payloads for anything larger than the inline limit and always for final results (ADR 0005).",
+      "required": ["bucket", "key", "size", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "bucket": {
+          "type": "string",
+          "enum": ["lean-algorithms", "lean-results", "lean-reports"],
+          "description": "Bucket from ADR 0003."
+        },
+        "key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^[^/].*[^/]$",
+          "description": "Object key, e.g. `<jobId>/<attempt>/<algorithmId>.json`."
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Object size in bytes."
+        },
+        "sha256": { "$ref": "#/$defs/Sha256" },
+        "contentType": {
+          "type": "string",
+          "description": "MIME type of the object, e.g. application/json, text/plain, text/html, application/pdf, application/zip."
+        }
+      }
+    },
+    "ResultsPrefix": {
+      "type": "object",
+      "description": "Where an attempt uploads its whole `results-destination-folder` and object-store folder.",
+      "required": ["bucket", "prefix"],
+      "additionalProperties": false,
+      "properties": {
+        "bucket": { "const": "lean-results" },
+        "prefix": {
+          "type": "string",
+          "pattern": "^[0-9a-f-]{36}/[1-9][0-9]*/$",
+          "description": "`<jobId>/<attempt>/`."
+        }
+      }
+    },
+    "Language": {
+      "type": "string",
+      "enum": ["CSharp", "Python"],
+      "description": "Algorithm language, same names as LEAN's `Language` enum."
+    },
+    "AlgorithmRef": {
+      "description": "The algorithm a job runs: either a built-in class of `QuantConnect.Algorithm.CSharp.dll` in the worker image, or an uploaded Python file / prebuilt dll in `lean-algorithms` (ADR 0003).",
+      "oneOf": [
+        {
+          "type": "object",
+          "title": "Built-in algorithm",
+          "required": ["source", "language", "typeName"],
+          "additionalProperties": false,
+          "properties": {
+            "source": { "const": "builtin" },
+            "language": { "const": "CSharp" },
+            "typeName": {
+              "type": "string",
+              "pattern": "^[A-Za-z_][A-Za-z0-9_.]*$",
+              "description": "`algorithm-type-name`, e.g. BasicTemplateAlgorithm."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "title": "Uploaded algorithm",
+          "required": ["source", "language", "object"],
+          "additionalProperties": false,
+          "properties": {
+            "source": { "const": "upload" },
+            "language": { "$ref": "#/$defs/Language" },
+            "object": {
+              "$ref": "#/$defs/ObjectRef",
+              "description": "Content-addressed object in `lean-algorithms` (`sha256/<hash>/<file>`)."
+            },
+            "typeName": {
+              "type": "string",
+              "description": "`algorithm-type-name` for dlls with several algorithm classes; optional for Python."
+            }
+          }
+        }
+      ]
+    },
+    "Parameters": {
+      "type": "object",
+      "description": "Algorithm parameters (`GetParameter`), as in `config.json` `parameters`: string to string.",
+      "additionalProperties": { "type": "string" },
+      "maxProperties": 256
+    },
+    "Statistics": {
+      "type": "object",
+      "description": "LEAN statistics map (`Result.Statistics` / `RuntimeStatistics`): display name to formatted string, exactly as the engine produces them.",
+      "additionalProperties": { "type": "string" },
+      "maxProperties": 512
+    },
+    "ErrorInfo": {
+      "type": "object",
+      "required": ["code", "message"],
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": [
+            "invalid-request",
+            "algorithm-not-found",
+            "runtime-error",
+            "engine-crash",
+            "data-missing",
+            "timeout",
+            "lease-lost",
+            "upload-failed",
+            "max-attempts-exceeded",
+            "internal"
+          ],
+          "description": "Machine-readable failure class."
+        },
+        "message": { "type": "string", "maxLength": 8192 },
+        "stackTrace": { "type": "string", "maxLength": 65536 },
+        "exitCode": {
+          "type": "integer",
+          "description": "Engine process exit code, informational only: a worker judges success by \"result uploaded + terminal event confirmed\", never by exit code (ADR 0005 finding 5)."
+        }
+      }
+    },
+    "BacktestSpec": {
+      "type": "object",
+      "description": "What to run for a backtest. Dates and cash are optional overrides; the algorithm's own `Initialize` values apply otherwise.",
+      "required": ["algorithm"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "maxLength": 200 },
+        "algorithm": { "$ref": "#/$defs/AlgorithmRef" },
+        "parameters": { "$ref": "#/$defs/Parameters" },
+        "startDate": { "$ref": "#/$defs/Date" },
+        "endDate": { "$ref": "#/$defs/Date" },
+        "cash": { "type": "number", "exclusiveMinimum": 0 },
+        "fetchMissingData": {
+          "type": "boolean",
+          "default": false,
+          "description": "Select the fetch-on-miss data provider for this job (ADR 0004 decision 3). Default false: missing files stay missing, as in the monolith."
+        },
+        "maxRuntimeSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 21600,
+          "default": 3600,
+          "description": "Deadline enforced by job-orchestrator through heartbeats; capped at 6 h so it stays below the broker consumer_timeout (7 h)."
+        }
+      }
+    },
+    "LiveSpec": {
+      "type": "object",
+      "description": "What to deploy for a live/paper job.",
+      "required": ["algorithm", "brokerage"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "maxLength": 200 },
+        "algorithm": { "$ref": "#/$defs/AlgorithmRef" },
+        "parameters": { "$ref": "#/$defs/Parameters" },
+        "brokerage": {
+          "type": "string",
+          "description": "`live-mode-brokerage`, e.g. PaperBrokerage."
+        },
+        "dataQueueHandlers": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "`data-queue-handler` names; `bus` selects the bus-backed handler fed by `lean.marketdata.live` (ADR 0004 decision 5)."
+        },
+        "redeployOnStale": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether job-orchestrator may redeploy (epoch N+1) after the deployment went stale."
+        }
+      }
+    },
+    "OptimizationParameter": {
+      "description": "Mirrors LEAN `OptimizationStepParameter` / `StaticOptimizationParameter` JSON (`OptimizationParameterJsonConverter`).",
+      "oneOf": [
+        {
+          "type": "object",
+          "title": "Step parameter",
+          "required": ["name", "min", "max", "step"],
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string" },
+            "min": { "type": "number" },
+            "max": { "type": "number" },
+            "step": { "type": "number", "exclusiveMinimum": 0 },
+            "minStep": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        {
+          "type": "object",
+          "title": "Static parameter",
+          "required": ["name", "value"],
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string" },
+            "value": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "OptimizationSpec": {
+      "type": "object",
+      "description": "Mirrors the fields of LEAN `OptimizationNodePacket` the optimizer needs. Each generated parameter set becomes a child backtest job submitted through job-orchestrator (ADR 0001).",
+      "required": ["backtest", "criterion", "parameters"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "maxLength": 200 },
+        "backtest": {
+          "$ref": "#/$defs/BacktestSpec",
+          "description": "Template for every child backtest; the optimizer overlays each parameter set onto `parameters`."
+        },
+        "strategy": {
+          "type": "string",
+          "default": "QuantConnect.Optimizer.Strategies.GridSearchOptimizationStrategy",
+          "description": "`IOptimizationStrategy` type name."
+        },
+        "strategySettings": {
+          "type": "object",
+          "description": "Serialized `OptimizationStrategySettings` (or `StepBaseOptimizationStrategySettings`), passed through unchanged."
+        },
+        "criterion": {
+          "type": "object",
+          "description": "LEAN `Target`.",
+          "required": ["target", "extremum"],
+          "additionalProperties": false,
+          "properties": {
+            "target": {
+              "type": "string",
+              "description": "JSON path into the backtest result, e.g. `TotalPerformance.PortfolioStatistics.SharpeRatio`."
+            },
+            "extremum": { "type": "string", "enum": ["max", "min"] },
+            "targetValue": { "type": ["number", "null"] }
+          }
+        },
+        "constraints": {
+          "type": "array",
+          "description": "LEAN `Constraint`s.",
+          "items": {
+            "type": "object",
+            "required": ["target", "operator", "targetValue"],
+            "additionalProperties": false,
+            "properties": {
+              "target": { "type": "string" },
+              "operator": {
+                "type": "string",
+                "enum": ["Equals", "NotEqual", "Less", "LessOrEqual", "Greater", "GreaterOrEqual"]
+              },
+              "targetValue": { "type": "number" }
+            }
+          }
+        },
+        "parameters": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/OptimizationParameter" }
+        },
+        "maximumConcurrentBacktests": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 4
+        }
+      }
+    },
+    "ReportSpec": {
+      "type": "object",
+      "description": "What to render. Maps to `Report` config keys (`strategy-name`, `strategy-description`, `strategy-version`, `report-format`).",
+      "required": ["sourceJobId"],
+      "additionalProperties": false,
+      "properties": {
+        "sourceJobId": {
+          "$ref": "#/$defs/JobId",
+          "description": "Completed backtest (or live deployment) to report on."
+        },
+        "sourceAttempt": {
+          "$ref": "#/$defs/Attempt",
+          "description": "Defaults to the attempt that completed."
+        },
+        "liveJobId": {
+          "$ref": "#/$defs/JobId",
+          "description": "Optional live deployment whose result is passed as `live-data-source-file`."
+        },
+        "strategyName": { "type": "string", "maxLength": 200 },
+        "strategyDescription": { "type": "string", "maxLength": 4000 },
+        "strategyVersion": { "type": "string", "maxLength": 50 },
+        "formats": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["html", "pdf"] },
+          "minItems": 1,
+          "uniqueItems": true,
+          "default": ["html"]
+        }
+      }
+    },
+    "MarketDataFetchSpec": {
+      "type": "object",
+      "description": "A download/conversion task for market-data, the only writer of `lean-data` (ADR 0004).",
+      "required": ["mode", "securityType", "market", "resolution"],
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["download", "fetch-files", "generate-synthetic"],
+          "description": "`download`: run `DownloaderDataProvider` for tickers/dates; `fetch-files`: make specific data files exist (fetch-on-miss); `generate-synthetic`: ToolBox RandomDataGenerator (synthetic tickers only)."
+        },
+        "securityType": {
+          "type": "string",
+          "enum": ["Equity", "Option", "Forex", "Cfd", "Future", "FutureOption", "Crypto", "CryptoFuture", "Index", "IndexOption"]
+        },
+        "market": { "type": "string", "description": "LEAN market, e.g. usa, cme, oanda." },
+        "tickers": { "type": "array", "items": { "type": "string" }, "maxItems": 1000 },
+        "resolution": { "type": "string", "enum": ["Tick", "Second", "Minute", "Hour", "Daily"] },
+        "tickType": { "type": "string", "enum": ["Trade", "Quote", "OpenInterest"] },
+        "startDate": { "$ref": "#/$defs/Date" },
+        "endDate": { "$ref": "#/$defs/Date" },
+        "paths": {
+          "type": "array",
+          "description": "`fetch-files` mode: data paths relative to the data folder (as `IDataProvider.Fetch` keys minus `Globals.DataFolder`).",
+          "items": { "type": "string", "pattern": "^(?!/)(?!.*\\.\\.).+$" },
+          "maxItems": 1000
+        },
+        "downloader": {
+          "type": "string",
+          "description": "`data-downloader` type name for `download` mode."
+        }
+      }
+    }
+  }
+}

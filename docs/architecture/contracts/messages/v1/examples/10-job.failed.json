@@ -1,0 +1,31 @@
+{
+  "schema": "job.failed",
+  "routingKey": "job.backtest.3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b.status.v1",
+  "exchange": "lean.events",
+  "envelope": {
+    "messageId": "0b5d1d8e-1111-4c1a-9a1e-000000000010",
+    "correlationId": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b",
+    "type": "events.v1.JobFailed",
+    "contentType": "application/json",
+    "deliveryMode": 2,
+    "timestamp": 1795858200,
+    "appId": "job-orchestrator",
+    "headers": {
+      "contract-version": "1.0",
+      "job-id": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b",
+      "attempt": 1,
+      "job-kind": "backtest"
+    }
+  },
+  "body": {
+    "jobId": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b",
+    "kind": "backtest",
+    "attempt": 3,
+    "failedAt": "2026-11-22T14:00:00Z",
+    "final": true,
+    "error": {
+      "code": "max-attempts-exceeded",
+      "message": "Dispatch dead-lettered to jobs.backtest.dead after 3 deliveries"
+    }
+  }
+}

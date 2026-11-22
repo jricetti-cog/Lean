@@ -1,0 +1,43 @@
+{
+  "schema": "result.packet",
+  "routingKey": "job.backtest.3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b.result.v1",
+  "exchange": "lean.events",
+  "envelope": {
+    "messageId": "0b5d1d8e-1111-4c1a-9a1e-000000000006",
+    "correlationId": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b",
+    "type": "packets.v1.PacketRef",
+    "contentType": "application/json",
+    "deliveryMode": 2,
+    "timestamp": 1795858200,
+    "appId": "backtest-worker",
+    "headers": {
+      "contract-version": "1.0",
+      "job-id": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b",
+      "attempt": 1,
+      "job-kind": "backtest",
+      "packet-type": "BacktestResult",
+      "sequence": 2711
+    }
+  },
+  "body": {
+    "packetType": "BacktestResult",
+    "jobId": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b",
+    "attempt": 1,
+    "algorithmId": "BasicTemplateFuturesAlgorithm",
+    "final": true,
+    "progress": 1,
+    "format": "lean-result-file",
+    "object": {
+      "bucket": "lean-results",
+      "key": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b/1/BasicTemplateFuturesAlgorithm.json",
+      "size": 3869245,
+      "sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+      "contentType": "application/json"
+    },
+    "statistics": {
+      "Total Orders": "2700",
+      "Net Profit": "-8.950%",
+      "Sharpe Ratio": "-2.247"
+    }
+  }
+}

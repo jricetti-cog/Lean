@@ -1,0 +1,9 @@
+{
+  "Message": "Engine: initialized",
+  "AlgorithmId": "BasicTemplateFuturesAlgorithm",
+  "CompileId": "c1",
+  "ProjectId": 1,
+  "Toast": false,
+  "Type": "SystemDebug",
+  "Channel": ""
+}

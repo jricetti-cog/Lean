@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.lean.local/messages/v1/job.started.schema.json",
+  "title": "job.started (v1)",
+  "description": "A worker started an attempt (engine process spawned). Published by the worker host to `lean.events` with routing key `job.<kind>.<jobId>.status.v1`, AMQP type `events.v1.JobStarted`, persistent, with confirms. Consumed by job-orchestrator (queued -> running), optimizer (children), gateway SSE.",
+  "type": "object",
+  "required": [
+    "jobId",
+    "kind",
+    "attempt",
+    "startedAt",
+    "workerId",
+    "results"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "jobId": {
+      "$ref": "defs.schema.json#/$defs/JobId"
+    },
+    "kind": {
+      "$ref": "defs.schema.json#/$defs/JobKind"
+    },
+    "attempt": {
+      "$ref": "defs.schema.json#/$defs/Attempt"
+    },
+    "parentJobId": {
+      "$ref": "defs.schema.json#/$defs/JobId"
+    },
+    "startedAt": {
+      "$ref": "defs.schema.json#/$defs/Timestamp"
+    },
+    "workerId": {
+      "type": "string",
+      "description": "Worker replica + slot, e.g. `backtest-worker-7f9c/2`."
+    },
+    "leaseEpoch": {
+      "$ref": "defs.schema.json#/$defs/LeaseEpoch",
+      "description": "Live only: epoch granted by `POST /internal/v1/jobs/{jobId}/lease` before the dispatch was acked."
+    },
+    "results": {
+      "$ref": "defs.schema.json#/$defs/ResultsPrefix"
+    },
+    "engineVersion": {
+      "type": "string",
+      "description": "LEAN build the worker image runs (`Globals.Version`)."
+    }
+  },
+  "if": {
+    "properties": {
+      "kind": {
+        "const": "live"
+      }
+    }
+  },
+  "then": {
+    "required": [
+      "leaseEpoch"
+    ],
+    "properties": {
+      "leaseEpoch": true
+    }
+  }
+}

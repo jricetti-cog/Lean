@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.lean.local/messages/v1/optimization.requested.schema.json",
+  "title": "optimization.requested (v1)",
+  "description": "Dispatch of an optimization job. Published by job-orchestrator's outbox relay to `lean.jobs` with routing key `jobs.optimization.v1`, AMQP type `jobs.v1.OptimizationRequested`. Consumed by the optimizer, which runs LEAN's `IOptimizationStrategy` and submits every parameter set as a child backtest through `POST /internal/v1/jobs` (ADR 0001); children carry `parentJobId` = this job id. Acked after the optimization's terminal event is confirmed.",
+  "type": "object",
+  "required": ["jobId", "kind", "attempt", "submittedAt", "submittedBy", "optimization", "results"],
+  "additionalProperties": false,
+  "properties": {
+    "jobId": { "$ref": "defs.schema.json#/$defs/JobId", "description": "Also the optimization id (`OptimizationId` in child packets)." },
+    "kind": { "const": "optimization" },
+    "attempt": { "$ref": "defs.schema.json#/$defs/Attempt" },
+    "submittedAt": { "$ref": "defs.schema.json#/$defs/Timestamp" },
+    "submittedBy": { "type": "string" },
+    "results": { "$ref": "defs.schema.json#/$defs/ResultsPrefix" },
+    "optimization": { "$ref": "defs.schema.json#/$defs/OptimizationSpec" }
+  }
+}

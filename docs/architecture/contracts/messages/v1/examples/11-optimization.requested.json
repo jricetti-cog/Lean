@@ -1,0 +1,70 @@
+{
+  "schema": "optimization.requested",
+  "routingKey": "jobs.optimization.v1",
+  "exchange": "lean.jobs",
+  "envelope": {
+    "messageId": "0b5d1d8e-1111-4c1a-9a1e-000000000011",
+    "correlationId": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+    "type": "jobs.v1.OptimizationRequested",
+    "contentType": "application/json",
+    "deliveryMode": 2,
+    "timestamp": 1795858200,
+    "appId": "job-orchestrator",
+    "headers": {
+      "contract-version": "1.0",
+      "job-id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      "attempt": 1,
+      "job-kind": "optimization"
+    }
+  },
+  "body": {
+    "jobId": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+    "kind": "optimization",
+    "attempt": 1,
+    "submittedAt": "2026-11-22T13:40:00Z",
+    "submittedBy": "user-42",
+    "results": {
+      "bucket": "lean-results",
+      "prefix": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/1/"
+    },
+    "optimization": {
+      "name": "EMA grid",
+      "backtest": {
+        "algorithm": {
+          "source": "builtin",
+          "language": "CSharp",
+          "typeName": "ParameterizedAlgorithm"
+        },
+        "startDate": "2013-10-07",
+        "endDate": "2013-10-11"
+      },
+      "strategy": "QuantConnect.Optimizer.Strategies.GridSearchOptimizationStrategy",
+      "criterion": {
+        "target": "TotalPerformance.PortfolioStatistics.SharpeRatio",
+        "extremum": "max"
+      },
+      "constraints": [
+        {
+          "target": "TotalPerformance.PortfolioStatistics.Drawdown",
+          "operator": "LessOrEqual",
+          "targetValue": 0.15
+        }
+      ],
+      "parameters": [
+        {
+          "name": "ema-fast",
+          "min": 10,
+          "max": 50,
+          "step": 10
+        },
+        {
+          "name": "ema-slow",
+          "min": 100,
+          "max": 200,
+          "step": 50
+        }
+      ],
+      "maximumConcurrentBacktests": 4
+    }
+  }
+}

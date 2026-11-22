@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.lean.local/messages/v1/job.heartbeat.schema.json",
+  "title": "job.heartbeat (v1)",
+  "description": "Liveness of a running attempt, every 10 s (live) / 30 s (other kinds). Routing key `job.<kind>.<jobId>.heartbeat.v1`, AMQP type `events.v1.JobHeartbeat`, transient, `expiration` = 2 x interval. Consumed by job-orchestrator: 3 missed heartbeats mark a live deployment `stale` and revoke its lease epoch; for backtests they enforce `deadline`.",
+  "type": "object",
+  "required": [
+    "jobId",
+    "kind",
+    "attempt",
+    "at",
+    "workerId"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "jobId": {
+      "$ref": "defs.schema.json#/$defs/JobId"
+    },
+    "kind": {
+      "$ref": "defs.schema.json#/$defs/JobKind"
+    },
+    "attempt": {
+      "$ref": "defs.schema.json#/$defs/Attempt"
+    },
+    "at": {
+      "$ref": "defs.schema.json#/$defs/Timestamp"
+    },
+    "workerId": {
+      "type": "string"
+    },
+    "leaseEpoch": {
+      "$ref": "defs.schema.json#/$defs/LeaseEpoch"
+    },
+    "engineAlive": {
+      "type": "boolean",
+      "description": "Whether the child engine process is still running."
+    },
+    "rssBytes": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "if": {
+    "properties": {
+      "kind": {
+        "const": "live"
+      }
+    }
+  },
+  "then": {
+    "required": [
+      "leaseEpoch"
+    ],
+    "properties": {
+      "leaseEpoch": true
+    }
+  }
+}

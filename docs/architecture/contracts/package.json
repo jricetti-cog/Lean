@@ -1,0 +1,16 @@
+{
+  "name": "lean-contracts",
+  "private": true,
+  "description": "Lint for the v1 service contracts (docs only, not shipped).",
+  "type": "module",
+  "scripts": {
+    "lint:openapi": "spectral lint --fail-severity=warn --ruleset .spectral.yaml openapi/gateway.openapi.yaml openapi/orchestrator.openapi.yaml openapi/market-data.openapi.yaml openapi/results.openapi.yaml openapi/optimizer.openapi.yaml openapi/report.openapi.yaml",
+    "lint:schemas": "node validate.mjs",
+    "lint": "npm run lint:openapi && npm run lint:schemas"
+  },
+  "devDependencies": {
+    "@stoplight/spectral-cli": "6.15.0",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1"
+  }
+}

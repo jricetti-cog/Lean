@@ -1,0 +1,660 @@
+openapi: 3.1.0
+info:
+  title: LEAN public API (api-gateway)
+  version: 1.0.0
+  description: |
+    The only public HTTP surface (ADR 0002). Authenticates the caller (bearer JWT), validates, and forwards to
+    the owning service: job-orchestrator (jobs, submit, cancel), results (results, charts, orders, logs),
+    market-data (coverage, history, fetches), optimizer (optimization state), report (report files). It owns
+    no job state. Live progress reaches the browser as Server-Sent Events from `GET /api/v1/jobs/{id}/events`,
+    backed by a server-named, exclusive, auto-delete queue bound to `job.*.<jobId>.#` on `lean.events`; the
+    browser never talks to RabbitMQ. Downloads are 302 redirects to short-lived MinIO presigned URLs. The
+    console's TypeScript client is generated from this document. Errors are RFC 9457 problem details, ids are
+    UUIDs, timestamps UTC ISO-8601.
+  contact:
+    name: LEAN migration
+    url: https://github.com/jricetti-cog/Lean
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+  - url: http://localhost:8080
+    description: Docker Compose
+security:
+  - bearer: []
+tags:
+  - name: algorithms
+    description: Algorithm uploads (lean-algorithms).
+  - name: jobs
+    description: Submit, inspect and cancel backtests, live deployments, optimizations and reports.
+  - name: events
+    description: Live progress (SSE).
+  - name: results
+    description: Stored results.
+  - name: reports
+    description: Rendered reports.
+  - name: data
+    description: Market data.
+  - name: ops
+    description: Health.
+paths:
+  /api/v1/algorithms:
+    post:
+      tags: [algorithms]
+      operationId: uploadAlgorithm
+      summary: Upload an algorithm
+      description: Stores a Python file or prebuilt dll content-addressed at `lean-algorithms/sha256/<hash>/<file>` and returns the reference to put in a job spec. Idempotent on content.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, language]
+              properties:
+                file:
+                  type: string
+                  contentMediaType: application/octet-stream
+                  description: main.py or a compiled algorithm dll (max 50 MiB).
+                language:
+                  $ref: '../messages/v1/defs.schema.json#/$defs/Language'
+                typeName:
+                  type: string
+                  description: Algorithm class (dll uploads).
+      responses:
+        '201':
+          description: Stored.
+          content:
+            application/json:
+              schema:
+                $ref: '../messages/v1/defs.schema.json#/$defs/AlgorithmRef'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+  /api/v1/backtests:
+    post:
+      tags: [jobs]
+      operationId: submitBacktest
+      summary: Submit a backtest
+      description: Checks data coverage with market-data (queues a fetch when `fetchMissingData` is set and data is missing), then creates the job through job-orchestrator, which publishes `job.submitted` on `jobs.backtest.v1`.
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../messages/v1/defs.schema.json#/$defs/BacktestSpec'
+      responses:
+        '201':
+          $ref: '#/components/responses/JobCreated'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '503':
+          $ref: 'common.yaml#/components/responses/Unavailable'
+  /api/v1/live:
+    post:
+      tags: [jobs]
+      operationId: deployLive
+      summary: Deploy a live / paper algorithm
+      description: Creates a live job (`jobs.live.v1`). The deployment runs until cancelled; a live algorithm never runs twice (lease epochs, ADR 0002).
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../messages/v1/defs.schema.json#/$defs/LiveSpec'
+      responses:
+        '201':
+          $ref: '#/components/responses/JobCreated'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '503':
+          $ref: 'common.yaml#/components/responses/Unavailable'
+  /api/v1/optimizations:
+    post:
+      tags: [jobs]
+      operationId: submitOptimization
+      summary: Submit an optimization
+      description: Creates an optimization job (`optimization.requested` on `jobs.optimization.v1`); the optimizer fans out child backtests.
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../messages/v1/defs.schema.json#/$defs/OptimizationSpec'
+      responses:
+        '201':
+          $ref: '#/components/responses/JobCreated'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '503':
+          $ref: 'common.yaml#/components/responses/Unavailable'
+  /api/v1/optimizations/estimate:
+    post:
+      tags: [jobs]
+      operationId: estimateOptimization
+      summary: Estimate an optimization
+      description: Forwards to optimizer; number of backtests the spec would run.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../messages/v1/defs.schema.json#/$defs/OptimizationSpec'
+      responses:
+        '200':
+          description: Estimate.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [totalBacktests]
+                properties:
+                  totalBacktests:
+                    type: integer
+                    minimum: 0
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+  /api/v1/optimizations/{id}:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+    get:
+      tags: [jobs]
+      operationId: getOptimization
+      summary: Optimization state
+      description: Forwards to optimizer.
+      responses:
+        '200':
+          description: State.
+          content:
+            application/json:
+              schema:
+                $ref: 'optimizer.openapi.yaml#/components/schemas/OptimizationState'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+  /api/v1/reports:
+    post:
+      tags: [reports]
+      operationId: requestReport
+      summary: Request a report
+      description: Creates a report job (`report.requested` on `jobs.report.v1`) for a completed backtest.
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../messages/v1/defs.schema.json#/$defs/ReportSpec'
+      responses:
+        '201':
+          $ref: '#/components/responses/JobCreated'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '409':
+          $ref: 'common.yaml#/components/responses/Conflict'
+  /api/v1/reports/{id}:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+    get:
+      tags: [reports]
+      operationId: getReport
+      summary: Report metadata
+      description: Forwards to report.
+      responses:
+        '200':
+          description: The report.
+          content:
+            application/json:
+              schema:
+                $ref: 'report.openapi.yaml#/components/schemas/Report'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+  /api/v1/reports/{id}/{format}:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+      - name: format
+        in: path
+        required: true
+        description: Rendered file.
+        schema:
+          type: string
+          enum: [html, pdf]
+    get:
+      tags: [reports]
+      operationId: downloadReport
+      summary: Download a report
+      description: Redirects to a presigned `lean-reports` URL (5 min).
+      responses:
+        '302':
+          $ref: '#/components/responses/PresignedRedirect'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+  /api/v1/jobs:
+    get:
+      tags: [jobs]
+      operationId: listJobs
+      summary: List jobs
+      description: The caller's jobs (all jobs for admins), newest first.
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/KindFilter'
+        - $ref: 'common.yaml#/components/parameters/StatusFilter'
+        - $ref: 'common.yaml#/components/parameters/ParentFilter'
+        - $ref: 'common.yaml#/components/parameters/Cursor'
+        - $ref: 'common.yaml#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of jobs.
+          content:
+            application/json:
+              schema:
+                $ref: 'common.yaml#/components/schemas/JobPage'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+  /api/v1/jobs/{id}:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+    get:
+      tags: [jobs]
+      operationId: getJob
+      summary: Get a job
+      description: Forwards to job-orchestrator.
+      responses:
+        '200':
+          description: The job.
+          content:
+            application/json:
+              schema:
+                $ref: 'common.yaml#/components/schemas/Job'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+  /api/v1/jobs/{id}/cancel:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+    post:
+      tags: [jobs]
+      operationId: cancelJob
+      summary: Cancel a job
+      description: Forwards to job-orchestrator, which publishes `job.<jobId>.cancel.v1` on `lean.control` for a running job. The job turns `cancelled` when the worker reports it (watch the SSE stream).
+      responses:
+        '202':
+          description: Cancellation accepted.
+          content:
+            application/json:
+              schema:
+                $ref: 'common.yaml#/components/schemas/Job'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+        '409':
+          $ref: 'common.yaml#/components/responses/Conflict'
+  /api/v1/jobs/{id}/events:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+    get:
+      tags: [events]
+      operationId: streamJobEvents
+      summary: Live job events (Server-Sent Events)
+      description: |
+        `text/event-stream` (ADR 0002). On connect the gateway declares a server-named, exclusive, auto-delete
+        queue bound to `job.*.<jobId>.#` on `lean.events`, first sends one `snapshot` event with the current job
+        (from job-orchestrator), then relays every bus message as one SSE event and deletes the queue when the
+        client disconnects. Each SSE frame is
+
+            id: <attempt>:<sequence>
+            event: <routing-key event: status|heartbeat|progress|result|log|order|error>
+            data: <SseEvent JSON on one line>
+
+        followed by a blank line. Inline packets are relayed as is (always below the 256 KiB inline limit);
+        `PacketRef`/`job.completed` carry MinIO references, never the full result; the browser fetches results
+        from `/api/v1/jobs/{id}/result`. A comment line `: keep-alive` is sent every 15 s. Events published
+        while no client was connected are not replayed: after reconnecting (with `Last-Event-ID`) the client
+        gets a fresh `snapshot` and reloads results over REST. The stream ends after the terminal status event.
+        Browsers' `EventSource` cannot send headers, so the token may also be passed as `access_token`.
+      parameters:
+        - name: Last-Event-ID
+          in: header
+          required: false
+          description: Sent by EventSource on reconnect; echoed in the `snapshot` event.
+          schema:
+            type: string
+        - name: access_token
+          in: query
+          required: false
+          description: Bearer token for EventSource clients.
+          schema:
+            type: string
+        - name: events
+          in: query
+          required: false
+          description: Comma-separated subset of event names (default all but `heartbeat`).
+          schema:
+            type: string
+            pattern: '^(snapshot|status|heartbeat|progress|result|log|order|error)(,(snapshot|status|heartbeat|progress|result|log|order|error))*$'
+      responses:
+        '200':
+          description: Event stream, open until the job is terminal or the client disconnects.
+          headers:
+            Cache-Control:
+              description: Always `no-cache`.
+              schema:
+                type: string
+                const: no-cache
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: SSE frames; the `data` of each frame is an `SseEvent` (`x-sse-data`; OpenAPI 3.1 has no item schema for streams).
+              x-sse-data:
+                $ref: '#/components/schemas/SseEvent'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+  /api/v1/jobs/{id}/result:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+      - $ref: 'results.openapi.yaml#/components/parameters/AttemptQuery'
+    get:
+      tags: [results]
+      operationId: getResult
+      summary: Result summary
+      description: Forwards to results.
+      responses:
+        '200':
+          description: Summary.
+          content:
+            application/json:
+              schema:
+                $ref: 'results.openapi.yaml#/components/schemas/ResultSummary'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+  /api/v1/jobs/{id}/result/download:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+      - $ref: 'results.openapi.yaml#/components/parameters/AttemptQuery'
+    get:
+      tags: [results]
+      operationId: downloadResult
+      summary: Download the full result JSON
+      description: Redirects to a presigned URL of `lean-results/<jobId>/<attempt>/<algorithmId>.json` (5 min).
+      responses:
+        '302':
+          $ref: '#/components/responses/PresignedRedirect'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+  /api/v1/jobs/{id}/charts/{chart}:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+      - $ref: 'results.openapi.yaml#/components/parameters/AttemptQuery'
+      - name: chart
+        in: path
+        required: true
+        description: Chart name.
+        schema:
+          type: string
+    get:
+      tags: [results]
+      operationId: getChart
+      summary: One chart
+      description: Forwards to results.
+      parameters:
+        - name: maxPoints
+          in: query
+          required: false
+          description: Downsample each series.
+          schema:
+            type: integer
+            minimum: 10
+            maximum: 100000
+      responses:
+        '200':
+          description: LEAN chart JSON.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+  /api/v1/jobs/{id}/orders:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+      - $ref: 'results.openapi.yaml#/components/parameters/AttemptQuery'
+      - $ref: 'common.yaml#/components/parameters/Cursor'
+      - $ref: 'common.yaml#/components/parameters/Limit'
+    get:
+      tags: [results]
+      operationId: listOrders
+      summary: Orders
+      description: Forwards to results.
+      responses:
+        '200':
+          description: A page of orders.
+          content:
+            application/json:
+              schema:
+                $ref: 'results.openapi.yaml#/components/schemas/LeanObjectPage'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+  /api/v1/jobs/{id}/logs:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+      - $ref: 'results.openapi.yaml#/components/parameters/AttemptQuery'
+      - $ref: 'common.yaml#/components/parameters/Cursor'
+      - $ref: 'common.yaml#/components/parameters/Limit'
+    get:
+      tags: [results]
+      operationId: listLogs
+      summary: Logs
+      description: Forwards to results.
+      responses:
+        '200':
+          description: A page of log lines.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          $ref: 'results.openapi.yaml#/components/schemas/LogLine'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+  /api/v1/data/coverage:
+    get:
+      tags: [data]
+      operationId: getCoverage
+      summary: Data coverage
+      description: Forwards to market-data.
+      parameters:
+        - $ref: 'market-data.openapi.yaml#/components/parameters/SecurityType'
+        - $ref: 'market-data.openapi.yaml#/components/parameters/Market'
+        - $ref: 'market-data.openapi.yaml#/components/parameters/Ticker'
+        - $ref: 'market-data.openapi.yaml#/components/parameters/Resolution'
+        - $ref: 'market-data.openapi.yaml#/components/parameters/Start'
+        - $ref: 'market-data.openapi.yaml#/components/parameters/End'
+      responses:
+        '200':
+          description: Coverage.
+          content:
+            application/json:
+              schema:
+                $ref: 'market-data.openapi.yaml#/components/schemas/Coverage'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+  /api/v1/data/history:
+    get:
+      tags: [data]
+      operationId: getHistory
+      summary: History bars
+      description: Forwards to market-data.
+      parameters:
+        - $ref: 'market-data.openapi.yaml#/components/parameters/SecurityType'
+        - $ref: 'market-data.openapi.yaml#/components/parameters/Market'
+        - $ref: 'market-data.openapi.yaml#/components/parameters/Ticker'
+        - $ref: 'market-data.openapi.yaml#/components/parameters/Resolution'
+        - $ref: 'market-data.openapi.yaml#/components/parameters/Start'
+        - $ref: 'market-data.openapi.yaml#/components/parameters/End'
+      responses:
+        '200':
+          description: Bars.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: 'market-data.openapi.yaml#/components/schemas/Bar'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+  /api/v1/data/fetches:
+    post:
+      tags: [data]
+      operationId: createFetch
+      summary: Request a data download
+      description: Forwards to market-data (`marketdata.fetch.v1`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../messages/v1/defs.schema.json#/$defs/MarketDataFetchSpec'
+      responses:
+        '202':
+          description: Task accepted.
+          content:
+            application/json:
+              schema:
+                $ref: 'market-data.openapi.yaml#/components/schemas/FetchTask'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+  /api/v1/data/fetches/{id}:
+    parameters:
+      - $ref: 'common.yaml#/components/parameters/JobIdPath'
+    get:
+      tags: [data]
+      operationId: getFetch
+      summary: Data download state
+      description: Forwards to market-data.
+      responses:
+        '200':
+          description: The task.
+          content:
+            application/json:
+              schema:
+                $ref: 'market-data.openapi.yaml#/components/schemas/FetchTask'
+        '401':
+          $ref: 'common.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+  /healthz:
+    get:
+      tags: [ops]
+      operationId: health
+      summary: Health
+      description: Unauthenticated; checks reachability of the internal services and RabbitMQ.
+      security: []
+      responses:
+        '200':
+          $ref: 'common.yaml#/components/responses/Health'
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: OIDC access token (Phase 3 decides the issuer; Compose uses a static dev issuer).
+  responses:
+    JobCreated:
+      description: Job created and queued.
+      headers:
+        Location:
+          description: '`/api/v1/jobs/{id}`.'
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: 'common.yaml#/components/schemas/Job'
+    PresignedRedirect:
+      description: Redirect to a MinIO presigned URL.
+      headers:
+        Location:
+          description: Presigned URL.
+          schema:
+            type: string
+            format: uri
+  schemas:
+    SseEvent:
+      type: object
+      description: '`data` of one SSE frame: the AMQP type and headers plus the unchanged message body.'
+      required: [event, type, jobId, attempt, body]
+      properties:
+        event:
+          type: string
+          enum: [snapshot, status, heartbeat, progress, result, log, order, error]
+        type:
+          type: string
+          description: AMQP `type`, e.g. `events.v1.JobProgress`, `packets.v1.OrderEvent`; `gateway.v1.Snapshot` for `snapshot`.
+        jobId:
+          $ref: '../messages/v1/defs.schema.json#/$defs/JobId'
+        attempt:
+          $ref: '../messages/v1/defs.schema.json#/$defs/Attempt'
+        sequence:
+          type: integer
+          minimum: 0
+        body:
+          description: The message body as published (schema chosen by `type`), or the `Job` for `snapshot`.
+          oneOf:
+            - $ref: 'common.yaml#/components/schemas/Job'
+            - $ref: '../messages/v1/job.started.schema.json'
+            - $ref: '../messages/v1/job.heartbeat.schema.json'
+            - $ref: '../messages/v1/job.progress.schema.json'
+            - $ref: '../messages/v1/job.completed.schema.json'
+            - $ref: '../messages/v1/job.failed.schema.json'
+            - $ref: '../messages/v1/job.cancelled.schema.json'
+            - $ref: '../messages/v1/result.packet.schema.json'

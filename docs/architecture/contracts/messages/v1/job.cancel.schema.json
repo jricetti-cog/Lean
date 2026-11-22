@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.lean.local/messages/v1/job.cancel.schema.json",
+  "title": "job.cancel (v1)",
+  "description": "Command to the worker running a job. Published by job-orchestrator to `lean.control` with routing key `job.<jobId>.cancel.v1`, AMQP type `control.v1.CancelJob`, persistent. The worker binds one exclusive queue per running job. A worker that holds a different `leaseEpoch` than the one named ignores it for live jobs only if its epoch is newer.",
+  "type": "object",
+  "required": ["jobId", "requestedAt", "reason"],
+  "additionalProperties": false,
+  "properties": {
+    "jobId": { "$ref": "defs.schema.json#/$defs/JobId" },
+    "attempt": {
+      "$ref": "defs.schema.json#/$defs/Attempt",
+      "description": "Attempt to stop; absent = whatever attempt is running."
+    },
+    "requestedAt": { "$ref": "defs.schema.json#/$defs/Timestamp" },
+    "requestedBy": { "type": "string" },
+    "reason": {
+      "type": "string",
+      "enum": ["user", "deadline", "optimization-finished", "lease-revoked"]
+    },
+    "leaseEpoch": {
+      "$ref": "defs.schema.json#/$defs/LeaseEpoch",
+      "description": "Live only: the epoch being revoked. Workers holding this or an older epoch stop their engine process."
+    }
+  }
+}

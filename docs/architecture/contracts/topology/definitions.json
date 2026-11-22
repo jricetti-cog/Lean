@@ -1,0 +1,436 @@
+{
+  "rabbit_version": "3.13.7",
+  "rabbitmq_version": "3.13.7",
+  "product_name": "RabbitMQ",
+  "product_version": "3.13.7",
+  "vhosts": [
+    {
+      "name": "lean",
+      "metadata": {
+        "description": "LEAN services, contract v1",
+        "tags": []
+      }
+    }
+  ],
+  "users": [],
+  "permissions": [],
+  "topic_permissions": [],
+  "parameters": [],
+  "global_parameters": [],
+  "policies": [
+    {
+      "vhost": "lean",
+      "name": "sse-and-control-transient",
+      "pattern": "^(sse|control|md)\\.",
+      "apply-to": "queues",
+      "priority": 0,
+      "definition": {
+        "max-length-bytes": 67108864,
+        "overflow": "drop-head"
+      }
+    }
+  ],
+  "queues": [
+    {
+      "name": "jobs.backtest",
+      "vhost": "lean",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "lean.jobs.dlx",
+        "x-dead-letter-routing-key": "jobs.backtest.dead.v1",
+        "x-dead-letter-strategy": "at-least-once",
+        "x-overflow": "reject-publish",
+        "x-delivery-limit": 3
+      }
+    },
+    {
+      "name": "jobs.backtest.dead",
+      "vhost": "lean",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    },
+    {
+      "name": "jobs.live",
+      "vhost": "lean",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "lean.jobs.dlx",
+        "x-dead-letter-routing-key": "jobs.live.dead.v1",
+        "x-dead-letter-strategy": "at-least-once",
+        "x-overflow": "reject-publish",
+        "x-delivery-limit": 3
+      }
+    },
+    {
+      "name": "jobs.live.dead",
+      "vhost": "lean",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    },
+    {
+      "name": "jobs.report",
+      "vhost": "lean",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "lean.jobs.dlx",
+        "x-dead-letter-routing-key": "jobs.report.dead.v1",
+        "x-dead-letter-strategy": "at-least-once",
+        "x-overflow": "reject-publish",
+        "x-delivery-limit": 3
+      }
+    },
+    {
+      "name": "jobs.report.dead",
+      "vhost": "lean",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    },
+    {
+      "name": "jobs.optimization",
+      "vhost": "lean",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "lean.jobs.dlx",
+        "x-dead-letter-routing-key": "jobs.optimization.dead.v1",
+        "x-dead-letter-strategy": "at-least-once",
+        "x-overflow": "reject-publish",
+        "x-delivery-limit": 3
+      }
+    },
+    {
+      "name": "jobs.optimization.dead",
+      "vhost": "lean",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    },
+    {
+      "name": "marketdata.fetch",
+      "vhost": "lean",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "lean.jobs.dlx",
+        "x-dead-letter-routing-key": "marketdata.fetch.dead.v1",
+        "x-dead-letter-strategy": "at-least-once",
+        "x-overflow": "reject-publish",
+        "x-delivery-limit": 3
+      }
+    },
+    {
+      "name": "marketdata.fetch.dead",
+      "vhost": "lean",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    },
+    {
+      "name": "results.packets",
+      "vhost": "lean",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "lean.jobs.dlx",
+        "x-dead-letter-routing-key": "results.packets.dead.v1",
+        "x-dead-letter-strategy": "at-least-once",
+        "x-overflow": "reject-publish",
+        "x-delivery-limit": 5
+      }
+    },
+    {
+      "name": "results.packets.dead",
+      "vhost": "lean",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    },
+    {
+      "name": "orchestrator.status",
+      "vhost": "lean",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "lean.jobs.dlx",
+        "x-dead-letter-routing-key": "orchestrator.status.dead.v1",
+        "x-dead-letter-strategy": "at-least-once",
+        "x-overflow": "reject-publish",
+        "x-delivery-limit": 5
+      }
+    },
+    {
+      "name": "orchestrator.status.dead",
+      "vhost": "lean",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    },
+    {
+      "name": "optimizer.children",
+      "vhost": "lean",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "lean.jobs.dlx",
+        "x-dead-letter-routing-key": "optimizer.children.dead.v1",
+        "x-dead-letter-strategy": "at-least-once",
+        "x-overflow": "reject-publish",
+        "x-delivery-limit": 5
+      }
+    },
+    {
+      "name": "optimizer.children.dead",
+      "vhost": "lean",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    }
+  ],
+  "exchanges": [
+    {
+      "vhost": "lean",
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {},
+      "name": "lean.jobs",
+      "type": "direct",
+      "durable": true
+    },
+    {
+      "vhost": "lean",
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {},
+      "name": "lean.jobs.dlx",
+      "type": "direct",
+      "durable": true
+    },
+    {
+      "vhost": "lean",
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {},
+      "name": "lean.events",
+      "type": "topic",
+      "durable": true
+    },
+    {
+      "vhost": "lean",
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {},
+      "name": "lean.control",
+      "type": "topic",
+      "durable": true
+    },
+    {
+      "vhost": "lean",
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {},
+      "name": "lean.marketdata.live",
+      "type": "topic",
+      "durable": false
+    }
+  ],
+  "bindings": [
+    {
+      "source": "lean.jobs",
+      "vhost": "lean",
+      "destination": "jobs.backtest",
+      "destination_type": "queue",
+      "routing_key": "jobs.backtest.v1",
+      "arguments": {}
+    },
+    {
+      "source": "lean.jobs.dlx",
+      "vhost": "lean",
+      "destination": "jobs.backtest.dead",
+      "destination_type": "queue",
+      "routing_key": "jobs.backtest.dead.v1",
+      "arguments": {}
+    },
+    {
+      "source": "lean.jobs",
+      "vhost": "lean",
+      "destination": "jobs.live",
+      "destination_type": "queue",
+      "routing_key": "jobs.live.v1",
+      "arguments": {}
+    },
+    {
+      "source": "lean.jobs.dlx",
+      "vhost": "lean",
+      "destination": "jobs.live.dead",
+      "destination_type": "queue",
+      "routing_key": "jobs.live.dead.v1",
+      "arguments": {}
+    },
+    {
+      "source": "lean.jobs",
+      "vhost": "lean",
+      "destination": "jobs.report",
+      "destination_type": "queue",
+      "routing_key": "jobs.report.v1",
+      "arguments": {}
+    },
+    {
+      "source": "lean.jobs.dlx",
+      "vhost": "lean",
+      "destination": "jobs.report.dead",
+      "destination_type": "queue",
+      "routing_key": "jobs.report.dead.v1",
+      "arguments": {}
+    },
+    {
+      "source": "lean.jobs",
+      "vhost": "lean",
+      "destination": "jobs.optimization",
+      "destination_type": "queue",
+      "routing_key": "jobs.optimization.v1",
+      "arguments": {}
+    },
+    {
+      "source": "lean.jobs.dlx",
+      "vhost": "lean",
+      "destination": "jobs.optimization.dead",
+      "destination_type": "queue",
+      "routing_key": "jobs.optimization.dead.v1",
+      "arguments": {}
+    },
+    {
+      "source": "lean.jobs",
+      "vhost": "lean",
+      "destination": "marketdata.fetch",
+      "destination_type": "queue",
+      "routing_key": "marketdata.fetch.v1",
+      "arguments": {}
+    },
+    {
+      "source": "lean.jobs.dlx",
+      "vhost": "lean",
+      "destination": "marketdata.fetch.dead",
+      "destination_type": "queue",
+      "routing_key": "marketdata.fetch.dead.v1",
+      "arguments": {}
+    },
+    {
+      "source": "lean.events",
+      "vhost": "lean",
+      "destination": "results.packets",
+      "destination_type": "queue",
+      "routing_key": "job.*.*.result.v1",
+      "arguments": {}
+    },
+    {
+      "source": "lean.events",
+      "vhost": "lean",
+      "destination": "results.packets",
+      "destination_type": "queue",
+      "routing_key": "job.*.*.order.v1",
+      "arguments": {}
+    },
+    {
+      "source": "lean.events",
+      "vhost": "lean",
+      "destination": "results.packets",
+      "destination_type": "queue",
+      "routing_key": "job.*.*.log.v1",
+      "arguments": {}
+    },
+    {
+      "source": "lean.events",
+      "vhost": "lean",
+      "destination": "results.packets",
+      "destination_type": "queue",
+      "routing_key": "job.*.*.error.v1",
+      "arguments": {}
+    },
+    {
+      "source": "lean.events",
+      "vhost": "lean",
+      "destination": "results.packets",
+      "destination_type": "queue",
+      "routing_key": "job.*.*.status.v1",
+      "arguments": {}
+    },
+    {
+      "source": "lean.jobs.dlx",
+      "vhost": "lean",
+      "destination": "results.packets.dead",
+      "destination_type": "queue",
+      "routing_key": "results.packets.dead.v1",
+      "arguments": {}
+    },
+    {
+      "source": "lean.events",
+      "vhost": "lean",
+      "destination": "orchestrator.status",
+      "destination_type": "queue",
+      "routing_key": "job.*.*.status.v1",
+      "arguments": {}
+    },
+    {
+      "source": "lean.events",
+      "vhost": "lean",
+      "destination": "orchestrator.status",
+      "destination_type": "queue",
+      "routing_key": "job.*.*.heartbeat.v1",
+      "arguments": {}
+    },
+    {
+      "source": "lean.jobs.dlx",
+      "vhost": "lean",
+      "destination": "orchestrator.status.dead",
+      "destination_type": "queue",
+      "routing_key": "orchestrator.status.dead.v1",
+      "arguments": {}
+    },
+    {
+      "source": "lean.events",
+      "vhost": "lean",
+      "destination": "optimizer.children",
+      "destination_type": "queue",
+      "routing_key": "job.backtest.*.status.v1",
+      "arguments": {}
+    },
+    {
+      "source": "lean.jobs.dlx",
+      "vhost": "lean",
+      "destination": "optimizer.children.dead",
+      "destination_type": "queue",
+      "routing_key": "optimizer.children.dead.v1",
+      "arguments": {}
+    }
+  ]
+}

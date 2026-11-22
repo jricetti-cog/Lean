@@ -1,0 +1,25 @@
+{
+  "UserId": 1,
+  "ProjectId": 1,
+  "SessionId": "",
+  "BacktestId": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b",
+  "OptimizationId": null,
+  "CompileId": "c1",
+  "PeriodStart": "2013-10-07T00:00:00",
+  "PeriodFinish": "2013-10-11T00:00:00",
+  "DateRequested": "2026-11-22T13:43:45.7502454Z",
+  "DateFinished": "2026-11-22T13:43:45.7502454Z",
+  "Progress": 0.42,
+  "Name": "Basic futures",
+  "Results": {
+    "RollingWindow": {},
+    "RuntimeStatistics": {
+      "Equity": "$1,012,345.67",
+      "Net Profit": "$12,345.67"
+    }
+  },
+  "ProcessingTime": 0.0,
+  "TradeableDates": 0,
+  "Type": "BacktestResult",
+  "Channel": ""
+}

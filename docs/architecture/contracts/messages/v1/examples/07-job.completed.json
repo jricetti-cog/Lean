@@ -1,0 +1,57 @@
+{
+  "schema": "job.completed",
+  "routingKey": "job.backtest.3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b.status.v1",
+  "exchange": "lean.events",
+  "envelope": {
+    "messageId": "0b5d1d8e-1111-4c1a-9a1e-000000000007",
+    "correlationId": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b",
+    "type": "events.v1.JobCompleted",
+    "contentType": "application/json",
+    "deliveryMode": 2,
+    "timestamp": 1795858200,
+    "appId": "backtest-worker",
+    "headers": {
+      "contract-version": "1.0",
+      "job-id": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b",
+      "attempt": 1,
+      "job-kind": "backtest",
+      "sequence": 2712
+    }
+  },
+  "body": {
+    "jobId": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b",
+    "kind": "backtest",
+    "attempt": 1,
+    "completedAt": "2026-11-22T13:30:06Z",
+    "algorithmId": "BasicTemplateFuturesAlgorithm",
+    "exitCode": 0,
+    "result": {
+      "bucket": "lean-results",
+      "key": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b/1/BasicTemplateFuturesAlgorithm.json",
+      "size": 3869245,
+      "sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+      "contentType": "application/json"
+    },
+    "artifacts": [
+      {
+        "bucket": "lean-results",
+        "key": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b/1/BasicTemplateFuturesAlgorithm-log.txt",
+        "size": 48211,
+        "sha256": "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
+        "contentType": "text/plain"
+      },
+      {
+        "bucket": "lean-results",
+        "key": "3f2b8c1e-6a4d-4e5f-9b7a-1c2d3e4f5a6b/1/BasicTemplateFuturesAlgorithm-order-events.json",
+        "size": 1203344,
+        "sha256": "fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9",
+        "contentType": "application/json"
+      }
+    ],
+    "statistics": {
+      "Total Orders": "2700",
+      "Net Profit": "-8.950%",
+      "Sharpe Ratio": "-2.247"
+    }
+  }
+}

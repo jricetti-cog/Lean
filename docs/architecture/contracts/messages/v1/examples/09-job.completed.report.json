@@ -1,0 +1,42 @@
+{
+  "schema": "job.completed",
+  "routingKey": "job.report.7d9e0f1a-2b3c-4d5e-8f6a-7b8c9d0e1f2a.status.v1",
+  "exchange": "lean.events",
+  "envelope": {
+    "messageId": "0b5d1d8e-1111-4c1a-9a1e-000000000009",
+    "correlationId": "7d9e0f1a-2b3c-4d5e-8f6a-7b8c9d0e1f2a",
+    "type": "events.v1.JobCompleted",
+    "contentType": "application/json",
+    "deliveryMode": 2,
+    "timestamp": 1795858200,
+    "appId": "report",
+    "headers": {
+      "contract-version": "1.0",
+      "job-id": "7d9e0f1a-2b3c-4d5e-8f6a-7b8c9d0e1f2a",
+      "attempt": 1,
+      "job-kind": "report"
+    }
+  },
+  "body": {
+    "jobId": "7d9e0f1a-2b3c-4d5e-8f6a-7b8c9d0e1f2a",
+    "kind": "report",
+    "attempt": 1,
+    "completedAt": "2026-11-22T13:31:40Z",
+    "result": {
+      "bucket": "lean-reports",
+      "key": "7d9e0f1a-2b3c-4d5e-8f6a-7b8c9d0e1f2a/1/report.html",
+      "size": 812233,
+      "sha256": "b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c",
+      "contentType": "text/html"
+    },
+    "artifacts": [
+      {
+        "bucket": "lean-reports",
+        "key": "7d9e0f1a-2b3c-4d5e-8f6a-7b8c9d0e1f2a/1/report.pdf",
+        "size": 1533001,
+        "sha256": "7d865e959b2466918c9863afca942d0fb89d7c9ac0c99bafc3749504ded97730",
+        "contentType": "application/pdf"
+      }
+    ]
+  }
+}

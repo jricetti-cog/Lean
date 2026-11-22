@@ -1,0 +1,11 @@
+{
+  "Status": "Completed",
+  "ChartSubscription": null,
+  "Message": "",
+  "AlgorithmId": "BasicTemplateFuturesAlgorithm",
+  "OptimizationId": null,
+  "ProjectId": 1,
+  "ChannelStatus": null,
+  "Type": "AlgorithmStatus",
+  "Channel": ""
+}
