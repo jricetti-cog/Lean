@@ -12,7 +12,10 @@ public class ParityCatalogTests
         var all = ParityCatalog.All;
         TestContext.Out.WriteLine($"{all.Count} cases: " + string.Join(", ", all.GroupBy(c => (c.Language, c.SkipReason == null))
             .Select(g => $"{g.Key.Language} {(g.Key.Item2 ? "runnable" : "skipped")} {g.Count()}")));
-        Assert.That(all.Where(c => c.SkipReason == null).Select(c => c.Language).Distinct(), Is.EquivalentTo(ParitySettings.Languages));
+        if (ParitySettings.Only.Count == 0)
+        {
+            Assert.That(all.Where(c => c.SkipReason == null).Select(c => c.Language).Distinct(), Is.EquivalentTo(ParitySettings.Languages));
+        }
         Assert.That(all.Where(c => c.SkipReason != null), Has.All.Matches<ParityCase>(c => c.SkipReason!.Length > 10));
         Assert.That(all.Select(c => c.Name), Is.Unique);
     }
