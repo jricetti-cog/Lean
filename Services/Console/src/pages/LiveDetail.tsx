@@ -21,7 +21,8 @@ export default function LiveDetail() {
   const positions = useMemo(() => positionsFromOrders(orders.data ?? []), [orders.data]);
   const [error, setError] = useState<Error>();
 
-  if (job.error) return <ErrorBox error={job.error} />;
+  // Keep the last job on screen while the gateway is unreachable; the stream and polling recover it.
+  if (job.error && !job.data) return <ErrorBox error={job.error} />;
   if (!job.data) return <p className="muted">Loading…</p>;
   const spec = job.data.spec?.live;
 
@@ -48,6 +49,7 @@ export default function LiveDetail() {
         }
       />
       <StreamBadge events={events} />
+      <ErrorBox error={job.error} />
       <ErrorBox error={error} />
       {spec && (
         <p className="muted small">

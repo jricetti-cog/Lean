@@ -139,7 +139,8 @@ export default function JobDetail() {
   const orders = usePolling(() => fetchOrders(id), [id, streaming], 5000, () => pollWhile(live, events));
   useLiveUpdates(events, job, result, orders);
 
-  if (job.error) return <ErrorBox error={job.error} />;
+  // Keep the last job on screen while the gateway is unreachable; the stream and polling recover it.
+  if (job.error && !job.data) return <ErrorBox error={job.error} />;
   if (!job.data) return <p className="muted">Loading…</p>;
   const j = job.data;
   const stats = result.data?.statistics;
@@ -166,6 +167,7 @@ export default function JobDetail() {
         }
       />
       <StreamBadge events={events} />
+      <ErrorBox error={job.error} />
       {!TERMINAL.has(j.status) && <Progress value={result.data?.progress ?? j.progress} />}
       {j.spec?.backtest?.parameters && Object.keys(j.spec.backtest.parameters).length > 0 && (
         <p>
