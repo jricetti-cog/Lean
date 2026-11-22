@@ -757,6 +757,19 @@ components:
         sequence:
           type: integer
           minimum: 0
+        dropped:
+          type: integer
+          minimum: 1
+          description: |
+            Earlier frames of this event the gateway dropped for this client (backpressure: `progress`,
+            `heartbeat` and `result` are latest-wins, `log`/`order` keep a bounded buffer). The client reloads that
+            data over REST (`/charts`, `/orders`, `/logs`) instead of relying on the missed deltas.
+        lastEventId:
+          type: string
+          description: '`snapshot` only: the `Last-Event-ID` the client reconnected with.'
+        traceparent:
+          type: string
+          description: W3C trace context of the published message, when it carried one.
         body:
           description: The message body as published (schema chosen by `type`), or the `Job` for `snapshot`.
           oneOf:

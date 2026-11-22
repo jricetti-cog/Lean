@@ -640,6 +640,16 @@ export interface components {
             jobId: components["schemas"]["Uuid"];
             attempt: components["schemas"]["Attempt"];
             sequence?: number;
+            /**
+             * @description Earlier frames of this event the gateway dropped for this client (backpressure: `progress`,
+             *     `heartbeat` and `result` are latest-wins, `log`/`order` keep a bounded buffer). The client reloads that
+             *     data over REST (`/charts`, `/orders`, `/logs`) instead of relying on the missed deltas.
+             */
+            dropped?: number;
+            /** @description `snapshot` only: the `Last-Event-ID` the client reconnected with. */
+            lastEventId?: string;
+            /** @description W3C trace context of the published message, when it carried one. */
+            traceparent?: string;
             /** @description The message body as published (schema chosen by `type`), or the `Job` for `snapshot`. */
             body: components["schemas"]["Job"] | components["schemas"]["job.started.schema"] | components["schemas"]["job.heartbeat.schema"] | components["schemas"]["job.progress.schema"] | components["schemas"]["job.completed.schema"] | components["schemas"]["job.failed.schema"] | components["schemas"]["job.cancelled.schema"] | components["schemas"]["result.packet.schema"];
         };

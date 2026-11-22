@@ -1,23 +1,29 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router';
 import { api, ok, TERMINAL } from '../api/client';
-import { usePolling } from '../components/hooks';
-import { ChartPanel, fetchOrders, LogsPanel, OrdersTable } from '../components/ResultPanels';
+import { useFinalRefresh, useJobEvents, usePolling } from '../components/hooks';
+import { ChartPanel, fetchOrders, LogsPanel, OrdersTable, pollWhile, StreamBadge } from '../components/ResultPanels';
 import { Card, ErrorBox, StatGrid } from '../components/ui';
 import { positionsFromOrders } from '../lean';
-import { fetchResult, JobHeader } from './JobDetail';
+import { fetchResult, JobHeader, useLiveUpdates } from './JobDetail';
 import { stopLive } from './Live';
 
 export default function LiveDetail() {
   const { id = '' } = useParams();
-  const job = usePolling(async () => ok(await api.GET('/api/v1/jobs/{id}', { params: { path: { id } } })), [id], 3000, (j) => !j || !TERMINAL.has(j.status));
-  const live = !job.data || !TERMINAL.has(job.data.status);
-  const result = usePolling(() => fetchResult(id), [id], 5000, () => live);
-  const orders = usePolling(() => fetchOrders(id), [id], 5000, () => live);
+  const [live, setLive] = useState(true);
+  const events = useJobEvents(id, live);
+  const streaming = events.state === 'live';
+  const job = usePolling(async () => ok(await api.GET('/api/v1/jobs/{id}', { params: { path: { id } } })), [id, streaming], 3000, (j) => (!j || !TERMINAL.has(j.status)) && !streaming);
+  useEffect(() => setLive(!job.data || !TERMINAL.has(job.data.status)), [job.data]);
+  const final = useFinalRefresh(job.data?.status, !!job.data && TERMINAL.has(job.data.status));
+  const result = usePolling(() => fetchResult(id), [id, streaming, final], 5000, () => pollWhile(live, events));
+  const orders = usePolling(() => fetchOrders(id), [id, streaming, final], 5000, () => pollWhile(live, events));
+  useLiveUpdates(events, job, result, orders);
   const positions = useMemo(() => positionsFromOrders(orders.data ?? []), [orders.data]);
   const [error, setError] = useState<Error>();
 
-  if (job.error) return <ErrorBox error={job.error} />;
+  // Keep the last job on screen while the gateway is unreachable; the stream and polling recover it.
+  if (job.error && !job.data) return <ErrorBox error={job.error} />;
   if (!job.data) return <p className="muted">Loading…</p>;
   const spec = job.data.spec?.live;
 
@@ -43,7 +49,14 @@ export default function LiveDetail() {
           )
         }
       />
+      <StreamBadge events={events} />
+      <ErrorBox error={job.error} />
       <ErrorBox error={error} />
+      {(job.data.status === 'queued' || job.data.status === 'dispatched') && !result.data && (
+        <p className="muted pending" data-testid="pending">
+          {job.data.status === 'queued' ? 'Queued — waiting for a worker.' : 'Starting on a worker…'} Results appear here as soon as the job runs.
+        </p>
+      )}
       {spec && (
         <p className="muted small">
           Brokerage {spec.brokerage}
@@ -87,9 +100,9 @@ export default function LiveDetail() {
           <p className="muted small">Net of filled orders from /api/v1/jobs/{'{id}'}/orders.</p>
         </Card>
       </div>
-      <ChartPanel id={id} chart="Strategy Equity" title="Equity" live={live} />
+      <ChartPanel id={id} chart="Strategy Equity" title="Equity" live={live} events={events} refresh={final} />
       <OrdersTable orders={orders.data} error={orders.error} />
-      <LogsPanel id={id} live={live} />
+      <LogsPanel id={id} live={live} events={events} refresh={final} />
     </div>
   );
 }

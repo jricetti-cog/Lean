@@ -15,6 +15,7 @@
     <PackageReference Include="YamlDotNet" Version="16.3.0" />
     <ProjectReference Include="..\QuantConnect.Services.Contracts\QuantConnect.Services.Contracts.csproj" />
     <ProjectReference Include="..\QuantConnect.Services.Defaults\QuantConnect.Services.Defaults.csproj" />
+    <ProjectReference Include="..\QuantConnect.Services.Messaging\QuantConnect.Services.Messaging.csproj" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="..\..\docs\architecture\contracts\openapi\*.yaml" LogicalName="contracts/openapi/%(Filename)%(Extension)" />
