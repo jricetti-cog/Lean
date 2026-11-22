@@ -53,14 +53,22 @@ public static class WorkerTelemetry
         return activity;
     }
 
-    public static void EndRun(Activity? activity, string terminalType, TimeSpan elapsed)
+    public static void EndRun(Activity? activity, string terminalType, TimeSpan elapsed, ErrorCode? errorCode = null)
     {
         Interlocked.Exchange(ref _busy, 0);
-        var outcome = terminalType == MessageTypes.JobCompleted ? "completed" : "failed";
+        var outcome = terminalType switch
+        {
+            MessageTypes.JobCompleted => "completed",
+            MessageTypes.JobCancelled => "cancelled",
+            _ => "failed",
+        };
         if (activity != null)
         {
             activity.SetTag("lean.job.outcome", outcome);
-            if (outcome != "completed") activity.SetStatus(ActivityStatusCode.Error, terminalType);
+            if (errorCode is { } code) activity.SetTag("lean.job.error.code", ContractJson.Serialize(code).Trim('"'));
+            // A cancel is a requested, clean stop; compile errors and other failures are errors of the attempt.
+            if (outcome == "cancelled") activity.SetStatus(ActivityStatusCode.Ok, "cancelled");
+            else if (outcome != "completed") activity.SetStatus(ActivityStatusCode.Error, errorCode is { } c ? ContractJson.Serialize(c).Trim('"') : terminalType);
         }
         var tag = new KeyValuePair<string, object?>("lean.job.outcome", outcome);
         Jobs.Add(1, tag);

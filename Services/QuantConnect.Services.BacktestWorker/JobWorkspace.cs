@@ -97,6 +97,17 @@ public sealed class JobWorkspace
         ["bus-traceparent"] = System.Diagnostics.Activity.Current?.Id ?? "",
     };
 
+    /// <summary>Points the engine at the worker-compiled assembly of an uploaded C# algorithm (<c>BusJobQueueHandler</c> reads these keys).</summary>
+    public void SetCompiledAlgorithm(string assemblyPath, string typeName) =>
+        File.WriteAllText(ConfigPath, BuildConfig(File.ReadAllText(ConfigPath), new Dictionary<string, JsonNode?>
+        {
+            [CompiledAlgorithmLocation] = assemblyPath,
+            [CompiledAlgorithmTypeName] = typeName,
+        }));
+
+    public const string CompiledAlgorithmLocation = "bus-compiled-algorithm-location";
+    public const string CompiledAlgorithmTypeName = "bus-compiled-algorithm-type-name";
+
     public void Delete()
     {
         try

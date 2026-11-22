@@ -15,7 +15,8 @@ the console talks only to the public gateway API.
 
 Samples: `npm run samples` (run by `dev`/`build`) copies every standalone algorithm of `Algorithm.CSharp` and
 `Algorithm.Python` into `public/samples/` with an `index.json`. An unedited C# sample runs as a `builtin` class from
-the worker image; Python (and edited C#) source is uploaded through `POST /api/v1/algorithms` first.
+the worker image; Python (and edited C#) source is uploaded through `POST /api/v1/algorithms` first, and the worker
+compiles uploaded C# with Roslyn before starting the engine (errors fail the job with `compile-error`).
 
 ## Typed client
 

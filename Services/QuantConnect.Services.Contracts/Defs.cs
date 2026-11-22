@@ -53,6 +53,7 @@ public enum ErrorCode
     [JsonStringEnumMemberName("upload-failed")] UploadFailed,
     [JsonStringEnumMemberName("max-attempts-exceeded")] MaxAttemptsExceeded,
     [JsonStringEnumMemberName("internal")] Internal,
+    [JsonStringEnumMemberName("compile-error")] CompileError,
 }
 
 /// <summary>MinIO buckets (ADR 0003).</summary>

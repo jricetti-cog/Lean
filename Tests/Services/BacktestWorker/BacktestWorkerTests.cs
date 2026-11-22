@@ -18,6 +18,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Diagnostics;
+using System.IO.Compression;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Nodes;
 using System.Threading;
@@ -29,6 +32,7 @@ using QuantConnect.Services.BacktestWorker;
 using QuantConnect.Services.Contracts;
 using QuantConnect.Services.Contracts.Http;
 using QuantConnect.Services.Messaging;
+using QuantConnect.Services.Messaging.InMemory;
 
 namespace QuantConnect.Tests.Services.BacktestWorker
 {
@@ -84,9 +88,9 @@ namespace QuantConnect.Tests.Services.BacktestWorker
             if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
         }
 
-        private BacktestJobRunner Runner() => new(_publisher, _attempts, _store, _launcher,
+        private BacktestJobRunner Runner(ITransientSubscriber control = null) => new(_publisher, _attempts, _store, _launcher,
             new EngineEnvironment(new Dictionary<string, string> { ["LEAN_BUS_RABBITMQ_URI"] = "amqp://rabbitmq/lean" }),
-            Options.Create(_options), TimeProvider.System, NullLogger<BacktestJobRunner>.Instance);
+            Options.Create(_options), TimeProvider.System, NullLogger<BacktestJobRunner>.Instance, control);
 
         private static JobSubmitted Job(int? maxRuntimeSeconds = null, int? maxRamMb = null) => new()
         {
@@ -304,6 +308,229 @@ namespace QuantConnect.Tests.Services.BacktestWorker
             CollectionAssert.IsEmpty(_attempts.Calls);
         }
 
+        private static OutgoingMessage Cancel(Guid jobId, int? attempt, string reason = "cancelled by tests") => OutgoingMessage.Create(Exchanges.Control, RoutingKeys.Cancel(jobId),
+            MessageEnvelope.Create(MessageTypes.CancelJob, jobId, attempt ?? 1, AppIds.Orchestrator, JobKind.Backtest),
+            new CancelJob { JobId = jobId, Attempt = attempt, RequestedAt = DateTimeOffset.UtcNow, RequestedBy = "tests", Reason = reason }) with { Mandatory = false };
+
+        private static async Task WaitFor(Func<bool> condition)
+        {
+            var until = DateTime.UtcNow.AddSeconds(10);
+            while (!condition())
+            {
+                if (DateTime.UtcNow > until) Assert.Fail("Timed out");
+                await Task.Delay(10);
+            }
+        }
+
+        /// <summary>Collects the worker's <c>backtest run</c> spans of one job.</summary>
+        private static ActivityListener RunSpans(Guid jobId, List<Activity> spans)
+        {
+            var listener = new ActivityListener
+            {
+                ShouldListenTo = source => source.Name == WorkerTelemetry.Name,
+                Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
+                ActivityStopped = activity =>
+                {
+                    if ((string)activity.GetTagItem("lean.job.id") == jobId.ToString("D")) lock (spans) spans.Add(activity);
+                },
+            };
+            ActivitySource.AddActivityListener(listener);
+            return listener;
+        }
+
+        [Test]
+        public async Task CancelCommandKillsTheRunningEngineReportsCancelledAndTakesTheNextJob()
+        {
+            var bus = new InMemoryMessageBus();
+            var runner = Runner(bus);
+            _launcher.OnStart = _ => null;
+            var job = Job();
+            var spans = new List<Activity>();
+            using var listener = RunSpans(job.JobId, spans);
+
+            var handling = runner.HandleAsync(Delivery(job), CancellationToken.None);
+            await WaitFor(() => _launcher.Process != null);
+            await bus.PublishAsync(Cancel(job.JobId, attempt: 0));
+            await bus.DeliverAllAsync();
+            await Task.Delay(100);
+            Assert.IsFalse(_launcher.Process!.Killed, "a cancel for an older attempt must not stop the running attempt");
+
+            await bus.PublishAsync(Cancel(job.JobId, attempt: 1, reason: "Cancelled by user"));
+            await bus.DeliverAllAsync();
+            Assert.AreEqual(MessageDisposition.Ack, await handling.WaitAsync(TimeSpan.FromSeconds(5)));
+
+            Assert.IsTrue(_launcher.Process.Killed);
+            var types = _publisher.Types.Where(t => t != MessageTypes.JobHeartbeat).ToList();
+            CollectionAssert.AreEqual(new[] { MessageTypes.JobStarted, MessageTypes.JobCancelled }, types);
+            var cancelled = ContractJson.Deserialize<JobCancelled>(_publisher.Messages.Last().Body.Span);
+            Assert.AreEqual(job.JobId, cancelled.JobId);
+            Assert.AreEqual("Cancelled by user", cancelled.Reason);
+            Assert.AreEqual(1, runner.Status.JobsCancelled);
+            Assert.AreEqual(0, runner.Status.JobsFailed);
+            Assert.IsNull(runner.Status.CurrentJobId);
+            var span = spans.Single();
+            Assert.AreEqual("cancelled", span.GetTagItem("lean.job.outcome"));
+            Assert.AreNotEqual(ActivityStatusCode.Error, span.Status);
+
+            // The per-job control queue is gone and the worker runs the next delivery.
+            await bus.PublishAsync(Cancel(job.JobId, attempt: 1));
+            Assert.AreEqual(0, await bus.DeliverAllAsync());
+            EngineStoresResult("Completed", 0);
+            _publisher.Messages.Clear();
+            Assert.AreEqual(MessageDisposition.Ack, await runner.HandleAsync(Delivery(Job()), CancellationToken.None));
+            Assert.AreEqual(MessageTypes.JobCompleted, _publisher.Types.Last());
+            Assert.AreEqual(1, runner.Status.JobsCompleted);
+        }
+
+        [Test]
+        public async Task CancelReceivedBeforeTheEngineStartsNeverStartsIt()
+        {
+            var bus = new InMemoryMessageBus();
+            var job = Job();
+            _attempts.OnStart = () =>
+            {
+                bus.PublishAsync(Cancel(job.JobId, attempt: null)).GetAwaiter().GetResult();
+                bus.DeliverAllAsync().GetAwaiter().GetResult();
+            };
+
+            Assert.AreEqual(MessageDisposition.Ack, await Runner(bus).HandleAsync(Delivery(job), CancellationToken.None));
+
+            Assert.IsNull(_launcher.Info);
+            CollectionAssert.AreEqual(new[] { MessageTypes.JobStarted, MessageTypes.JobCancelled }, _publisher.Types);
+        }
+
+        private const string EditedAlgorithm = @"using QuantConnect.Data;
+namespace QuantConnect.Algorithm.CSharp
+{
+    public class EditedAlgorithm : QCAlgorithm
+    {
+        public override void Initialize()
+        {
+            SetStartDate(2013, 10, 7);
+            SetEndDate(2013, 10, 11);
+            AddEquity(""SPY"");
+        }
+
+        public override void OnData(Slice slice)
+        {
+            if (!Portfolio.Invested) SetHoldings(""SPY"", 0.5);
+        }
+    }
+}";
+
+        /// <summary>Points the worker at the test output folder, which holds the LEAN assemblies uploaded C# compiles against.</summary>
+        private void UseLeanAssemblies()
+        {
+            foreach (var dll in Directory.EnumerateFiles(AppContext.BaseDirectory, "*.dll"))
+            {
+                File.CreateSymbolicLink(Path.Combine(_options.LauncherDirectory, Path.GetFileName(dll)), dll);
+            }
+        }
+
+        private UploadedAlgorithmRef Upload(string key, byte[] content, string typeName = null)
+        {
+            _store.Objects[(Buckets.Algorithms, key)] = content;
+            return new UploadedAlgorithmRef
+            {
+                Language = AlgorithmLanguage.CSharp, TypeName = typeName,
+                Object = new ObjectRef { Bucket = Buckets.Algorithms, Key = key, Size = content.Length, Sha256 = Convert.ToHexStringLower(SHA256.HashData(content)) },
+            };
+        }
+
+        [Test]
+        public async Task UploadedCSharpSourceIsCompiledAndHandedToTheEngine()
+        {
+            UseLeanAssemblies();
+            EngineStoresResult("Completed", 0);
+            var job = Job() with { Backtest = Job().Backtest! with { Algorithm = Upload("tests/Main.cs", Encoding.UTF8.GetBytes(EditedAlgorithm)) } };
+
+            Assert.AreEqual(MessageDisposition.Ack, await Runner().HandleAsync(Delivery(job), CancellationToken.None));
+
+            Assert.AreEqual(MessageTypes.JobCompleted, _publisher.Types.Last());
+            var location = (string)_launcher.Config[JobWorkspace.CompiledAlgorithmLocation];
+            Assert.AreEqual("QuantConnect.Algorithm.CSharp.EditedAlgorithm", (string)_launcher.Config[JobWorkspace.CompiledAlgorithmTypeName]);
+            StringAssert.StartsWith(Path.Combine(_launcher.Info!.WorkingDirectory, "algorithm"), location);
+            StringAssert.EndsWith(".dll", location);
+        }
+
+        [Test]
+        public async Task UploadedCSharpWithASyntaxErrorFailsWithCompileErrorAndDiagnosticsInTheLogs()
+        {
+            UseLeanAssemblies();
+            var broken = EditedAlgorithm.Replace("AddEquity(\"SPY\");", "AddEquity(\"SPY\")", StringComparison.Ordinal);
+            var job = Job() with { Backtest = Job().Backtest! with { Algorithm = Upload("tests/Main.cs", Encoding.UTF8.GetBytes(broken)) } };
+            var spans = new List<Activity>();
+            using var listener = RunSpans(job.JobId, spans);
+
+            Assert.AreEqual(MessageDisposition.Ack, await Runner().HandleAsync(Delivery(job), CancellationToken.None));
+
+            var span = spans.Single();
+            Assert.AreEqual(ActivityStatusCode.Error, span.Status);
+            Assert.AreEqual("compile-error", span.StatusDescription);
+            Assert.AreEqual("failed", span.GetTagItem("lean.job.outcome"));
+            Assert.AreEqual("compile-error", span.GetTagItem("lean.job.error.code"));
+
+            Assert.IsNull(_launcher.Info, "no engine is started for code that does not compile");
+            var failed = ContractJson.Deserialize<JobFailed>(_publisher.Messages.Last().Body.Span);
+            Assert.AreEqual(ErrorCode.CompileError, failed.Error.Code);
+            Assert.IsTrue(failed.Final);
+            StringAssert.Contains("Main.cs(10,29): error CS1002: ; expected", failed.Error.Message);
+            var logs = _publisher.Messages.Where(m => m.Envelope.Type == MessageTypes.PacketPrefix + "Log")
+                .Select(m => (string)JsonNode.Parse(m.Body.Span)!["Message"]).ToList();
+            Assert.IsTrue(logs.Any(l => l.Contains("CS1002", StringComparison.Ordinal)), string.Join("\n", logs));
+            CollectionAssert.AreEqual(Enumerable.Range(1, logs.Count).Select(i => (long?)i),
+                _publisher.Messages.Where(m => m.Envelope.Type == MessageTypes.PacketPrefix + "Log").Select(m => m.Envelope.Headers.Sequence));
+            var log = _store.Objects[(job.Results?.Bucket ?? Buckets.Results, $"{ResultsPrefix.For(job.JobId, 1).Prefix.TrimEnd('/')}/engine.log")];
+            StringAssert.Contains("CS1002", Encoding.UTF8.GetString(log));
+            Assert.AreEqual("\"compile-error\"", ContractJson.Serialize(ErrorCode.CompileError));
+        }
+
+        [Test]
+        public void ProjectZipsCompileEverySourceOutsideBinAndObj()
+        {
+            byte[] zip;
+            using (var buffer = new MemoryStream())
+            {
+                using (var archive = new ZipArchive(buffer, ZipArchiveMode.Create, leaveOpen: true))
+                {
+                    void Add(string name, string text)
+                    {
+                        using var writer = new StreamWriter(archive.CreateEntry(name).Open());
+                        writer.Write(text);
+                    }
+                    Add("MyProject/Main.cs", EditedAlgorithm.Replace("SetHoldings(\"SPY\", 0.5)", "SetHoldings(\"SPY\", Sizing.Weight)", StringComparison.Ordinal));
+                    Add("MyProject/Sizing.cs", "namespace QuantConnect.Algorithm.CSharp { public static class Sizing { public const decimal Weight = 0.5m; } }");
+                    Add("MyProject/MyProject.csproj", "<Project />");
+                    Add("MyProject/obj/Generated.cs", "this does not compile");
+                }
+                zip = buffer.ToArray();
+            }
+
+            var sources = CSharpAlgorithmCompiler.ReadSources("project.zip", zip);
+            CollectionAssert.AreEqual(new[] { "MyProject/Main.cs", "MyProject/Sizing.cs" }, sources.Select(s => s.Path));
+            var result = CSharpAlgorithmCompiler.Compile(sources, AppContext.BaseDirectory, Path.Combine(_root, "out"), "ZipAlgorithm");
+            Assert.IsTrue(result.Success, string.Join("\n", result.Diagnostics));
+            Assert.AreEqual("QuantConnect.Algorithm.CSharp.EditedAlgorithm", result.TypeName);
+            Assert.IsTrue(File.Exists(result.AssemblyPath));
+        }
+
+        [Test]
+        public void SourcesWithSeveralAlgorithmsNeedATypeName()
+        {
+            var second = EditedAlgorithm.Replace("EditedAlgorithm", "OtherAlgorithm", StringComparison.Ordinal);
+            var sources = new List<(string, string)> { ("A.cs", EditedAlgorithm), ("B.cs", second) };
+
+            var ambiguous = CSharpAlgorithmCompiler.Compile(sources, AppContext.BaseDirectory, Path.Combine(_root, "a"), "Ambiguous");
+            Assert.IsFalse(ambiguous.Success);
+            StringAssert.Contains("several algorithm classes", ambiguous.Diagnostics.Single());
+
+            var named = CSharpAlgorithmCompiler.Compile(sources, AppContext.BaseDirectory, Path.Combine(_root, "b"), "Named", typeName: "OtherAlgorithm");
+            Assert.AreEqual("QuantConnect.Algorithm.CSharp.OtherAlgorithm", named.TypeName);
+
+            var missing = CSharpAlgorithmCompiler.Compile(sources, AppContext.BaseDirectory, Path.Combine(_root, "c"), "Missing", typeName: "Nope");
+            StringAssert.Contains("'Nope' not found", missing.Diagnostics.Single());
+        }
+
         [Test]
         public void WorkersTakeOneJobAtATime()
         {
@@ -326,10 +553,12 @@ namespace QuantConnect.Tests.Services.BacktestWorker
         {
             public AttemptGrant Grant { get; set; }
             public List<(Guid, string, long, int?)> Calls { get; } = new();
+            public Action OnStart { get; set; }
 
             public Task<AttemptGrant> StartAttemptAsync(Guid jobId, string workerId, long deliveryCount, int? attempt, CancellationToken cancellationToken)
             {
                 Calls.Add((jobId, workerId, deliveryCount, attempt));
+                OnStart?.Invoke();
                 return Task.FromResult(Grant ?? new AttemptGrant(AttemptOutcome.Granted,
                     new JobAttempt { JobId = jobId, Attempt = attempt ?? 1, Results = ResultsPrefix.For(jobId, attempt ?? 1) }));
             }

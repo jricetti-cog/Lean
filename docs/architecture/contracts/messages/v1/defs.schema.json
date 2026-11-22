@@ -164,7 +164,8 @@
             "lease-lost",
             "upload-failed",
             "max-attempts-exceeded",
-            "internal"
+            "internal",
+            "compile-error"
           ],
           "description": "Machine-readable failure class."
         },
