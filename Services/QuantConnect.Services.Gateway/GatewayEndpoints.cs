@@ -67,6 +67,8 @@ public static class GatewayEndpoints
         api.MapPost("/jobs/{id:guid}/cancel", (HttpContext http, Guid id) => CancelAsync(http, id, null))
             .WithName("cancelJob").WithTags("jobs");
 
+        api.MapGet("/jobs/{id:guid}/events", JobEventsEndpoint.StreamAsync);
+
         api.MapGet("/jobs/{id:guid}/result/download", async Task<IResult> (HttpContext http, Guid id, int? attempt) =>
         {
             if (await JobAccess.CheckAsync(http, id) is { } denied) return denied;

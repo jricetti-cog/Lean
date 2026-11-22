@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { allPages, api, ok, type LeanObject, type LogLine } from '../api/client';
-import { chartSeries, orderRow, type OrderRow } from '../lean';
-import { usePolling } from './hooks';
+import { chartSeries, mergeChart, orderRow, packetChart, packetLogLine, type OrderRow } from '../lean';
+import { useJobEvent, usePolling, type JobEvents } from './hooks';
 import { Card, ErrorBox, fmtTime } from './ui';
 import { TimeChart } from './TimeChart';
 
@@ -17,8 +17,19 @@ async function fetchChart(id: string, chart: string) {
   return r.response.status === 404 ? undefined : ok(r);
 }
 
-export function ChartPanel({ id, chart, title, negative, live }: { id: string; chart: string; title: string; negative?: boolean; live: boolean }) {
-  const data = usePolling(() => fetchChart(id, chart), [id, chart], 5000, () => live);
+/** Polls only while the event stream is not delivering (initial load, reconnects, gateway without a bus). */
+export const pollWhile = (live: boolean, events?: JobEvents) => live && events?.state !== 'live';
+
+export function ChartPanel({ id, chart, title, negative, live, events }: { id: string; chart: string; title: string; negative?: boolean; live: boolean; events?: JobEvents }) {
+  const streaming = events?.state === 'live';
+  const data = usePolling(() => fetchChart(id, chart), [id, chart, streaming], 5000, () => pollWhile(live, events));
+  // Partial result packets carry only the new points: append them, or reload when the gateway dropped some
+  // (`dropped`, latest-wins backpressure) or the packet went by reference.
+  useJobEvent(events, ['result', 'status'], (e) => {
+    const delta = e.event === 'result' ? packetChart(e.body, chart) : undefined;
+    if (e.event === 'status' || e.dropped || e.type === 'packets.v1.PacketRef') data.reload();
+    else if (delta) data.mutate((base) => mergeChart(base, delta));
+  });
   const series = useMemo(() => chartSeries(data.data), [data.data]);
   return (
     <Card title={title}>
@@ -90,13 +101,19 @@ export function OrdersTable({ orders, error }: { orders?: OrderRow[]; error?: Er
   );
 }
 
-export function LogsPanel({ id, live }: { id: string; live: boolean }) {
+export function LogsPanel({ id, live, events }: { id: string; live: boolean; events?: JobEvents }) {
+  const streaming = events?.state === 'live';
   const logs = usePolling(
     async () => allPages<LogLine>(async (cursor) => ok(await api.GET('/api/v1/jobs/{id}/logs', { params: { path: { id }, query: { cursor, limit: 1000 } } }))),
-    [id],
+    [id, streaming],
     5000,
-    () => live,
+    () => pollWhile(live, events),
   );
+  useJobEvent(events, ['log', 'error', 'status'], (e) => {
+    const line = e.event === 'status' ? undefined : packetLogLine(e.type, e.body);
+    if (!line || e.dropped) logs.reload();
+    else logs.mutate((lines) => [...(lines ?? []), line as LogLine]);
+  });
   return (
     <Card title={`Logs (${logs.data?.length ?? 0})`}>
       <ErrorBox error={logs.error} />
@@ -106,5 +123,17 @@ export function LogsPanel({ id, live }: { id: string; live: boolean }) {
           : 'No log lines yet.'}
       </pre>
     </Card>
+  );
+}
+
+const STREAM_LABEL = { live: 'live', connecting: 'connecting…', polling: 'polling', closed: '' } as const;
+
+/** Whether the page is fed by the SSE stream or has fallen back to polling. */
+export function StreamBadge({ events }: { events: JobEvents }) {
+  if (events.state === 'closed') return null;
+  return (
+    <span className={`stream stream-${events.state}`} data-testid="stream-state" title="GET /api/v1/jobs/{id}/events">
+      ● {STREAM_LABEL[events.state]}
+    </span>
   );
 }

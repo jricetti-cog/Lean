@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using QuantConnect.Services.Defaults;
 
 namespace QuantConnect.Services.Gateway;
@@ -20,6 +21,8 @@ public static class GatewayHost
         builder.Services.AddGatewayProxy(options);
         builder.Services.AddSingleton<OpenApiMerger>();
         builder.Services.AddSingleton<PresignedUrls>();
+        builder.Services.Configure<QuantConnect.Services.Messaging.RabbitMq.RabbitMqOptions>(builder.Configuration.GetSection("RabbitMQ"));
+        builder.Services.TryAddSingleton<IJobEventSource, RabbitMqJobEventSource>();
 
         var app = builder.Build();
         if (options.ApiKeys.Count == 0 && !options.Jwt.Enabled)

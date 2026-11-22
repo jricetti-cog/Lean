@@ -44,6 +44,54 @@ export function chartSeries(chart: unknown): { name: string; points: Point[] }[]
     .filter((s) => s.points.length > 0);
 }
 
+/**
+ * Appends the points of a partial result packet's chart (LEAN sends only the new points, PascalCase) to the chart
+ * loaded over REST; the result is camelCase like the results service and `seriesPoints` drops duplicate times.
+ */
+export function mergeChart(base: unknown, delta: unknown): LeanObject | undefined {
+  if (!delta || typeof delta !== 'object') return base as LeanObject | undefined;
+  const baseSeries = field<Record<string, unknown>>(base, 'series') ?? {};
+  const series: Record<string, unknown> = { ...baseSeries };
+  for (const [name, s] of Object.entries(field<Record<string, unknown>>(delta, 'series') ?? {})) {
+    const key = Object.keys(baseSeries).find((k) => k.toLowerCase() === name.toLowerCase()) ?? name;
+    const old = baseSeries[key];
+    series[key] = {
+      ...(old && typeof old === 'object' ? (old as LeanObject) : {}),
+      name: field<string>(old, 'name') ?? field<string>(s, 'name') ?? name,
+      values: [...(field<unknown[]>(old, 'values') ?? []), ...(field<unknown[]>(s, 'values') ?? [])],
+    };
+  }
+  return { ...((base as LeanObject) ?? {}), name: field<string>(base, 'name') ?? field<string>(delta, 'name'), series };
+}
+
+/** The chart named `chart` inside an inline `BacktestResult`/`LiveResult` packet body (`Results.Charts`). */
+export function packetChart(packet: unknown, chart: string): unknown {
+  const charts = field<Record<string, unknown>>(field(packet, 'results', 'oResults'), 'charts');
+  return charts ? field(charts, chart) : undefined;
+}
+
+/** `Progress`, `RuntimeStatistics` and whether an inline result packet carries new `Orders`. */
+export function packetSummary(packet: unknown): { progress?: number; runtimeStatistics?: Record<string, string>; newOrders: boolean } {
+  const results = field(packet, 'results', 'oResults');
+  const progress = Number(field(packet, 'progress'));
+  const orders = field<Record<string, unknown>>(results, 'orders');
+  return {
+    progress: Number.isFinite(progress) && field(packet, 'progress') !== undefined ? progress : undefined,
+    runtimeStatistics: field<Record<string, string>>(results, 'runtimeStatistics'),
+    newOrders: !!orders && Object.keys(orders).length > 0,
+  };
+}
+
+const LOG_TYPES = ['Log', 'Debug', 'SystemDebug', 'RuntimeError', 'HandledError'] as const;
+
+/** A `log`/`error` SSE event (`packets.v1.Log`, `Debug`, `RuntimeError`, ...) as a `/logs` line. */
+export function packetLogLine(type: string, packet: unknown, now = new Date()) {
+  const kind = type.slice(type.lastIndexOf('.') + 1) as (typeof LOG_TYPES)[number];
+  const message = field<string>(packet, 'message');
+  if (!LOG_TYPES.includes(kind) || message === undefined) return undefined;
+  return { time: now.toISOString(), type: kind, message: String(message), stackTrace: field<string>(packet, 'stackTrace') ?? null };
+}
+
 const ORDER_TYPES = ['Market', 'Limit', 'StopMarket', 'StopLimit', 'MarketOnOpen', 'MarketOnClose', 'OptionExercise', 'LimitIfTouched', 'ComboMarket', 'ComboLimit', 'ComboLegLimit', 'TrailingStop'];
 const ORDER_STATUS: Record<number, string> = { 0: 'New', 1: 'Submitted', 2: 'PartiallyFilled', 3: 'Filled', 5: 'Canceled', 6: 'None', 7: 'Invalid', 8: 'CancelPending', 9: 'UpdateSubmitted' };
 

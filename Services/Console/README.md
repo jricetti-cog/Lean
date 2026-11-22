@@ -29,6 +29,15 @@ npm run gen:api:live   # or from a running gateway's merged /openapi (GATEWAY_OP
 npm run check:api      # fails when schema.d.ts is stale (run by the image build)
 ```
 
+## Live updates
+
+The backtest and live pages subscribe to `GET /api/v1/jobs/{id}/events` (Server-Sent Events, ADR 0002) through
+nginx with `EventSource`: the snapshot and `progress` frames update the job, `result` packets append their new
+`Strategy Equity`/`Drawdown` points to the charts and refresh the runtime statistics, `order` frames reload the
+orders and `log` frames append log lines. A badge shows `live` while frames arrive; while EventSource reconnects
+(it sends `Last-Event-ID` itself) or after the gateway refused the stream, the pages poll the REST endpoints and
+retry the stream with backoff. A frame with `dropped` (gateway backpressure) reloads over REST.
+
 ## Run
 
 ```bash
@@ -36,6 +45,7 @@ npm run check:api      # fails when schema.d.ts is stale (run by the image build
 docker compose --profile infra --profile orchestrator --profile results --profile report --profile workers \
   --profile optimizer --profile gateway --profile console up -d --build --wait
 deploy/compose/verify-console.sh
+deploy/compose/verify-events.sh   # live SSE frames of a slow backtest (GET /api/v1/jobs/{id}/events)
 
 # dev server with HMR against a running gateway (proxy adds the key like nginx does)
 npm ci && LEAN_GATEWAY_URL=http://127.0.0.1:5080 LEAN_API_KEY=lean-dev-api-key npm run dev

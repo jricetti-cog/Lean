@@ -20,6 +20,9 @@ public sealed class GatewayOptions
     public string? PublicS3Url { get; set; }
 
     public int PresignedUrlSeconds { get; set; } = 900;
+
+    /// <summary>Live job events (<c>GET /api/v1/jobs/{id}/events</c>).</summary>
+    public EventStreamOptions Events { get; set; } = new();
 }
 
 /// <summary>Base URLs of the internal services the gateway fronts.</summary>

@@ -10,6 +10,7 @@ The only public entry point (ADR 0001/0002). Compose publishes it on `127.0.0.1:
 | `POST /api/v1/optimizations`, `POST /api/v1/reports` (`ReportSpec`; the source job must be the caller's) | gateway -> orchestrator, which dispatches `jobs.v1.ReportRequested` to the report service |
 | `GET /api/v1/jobs`, `GET /api/v1/jobs/{id}`, `POST /api/v1/jobs/{id}/cancel` | gateway -> orchestrator (non-admins see only their jobs) |
 | `GET /api/v1/jobs/{id}/result`, `/charts[/{chart}]`, `/orders`, `/order-events`, `/logs`, `/artifacts` | YARP -> results `/internal/v1/results/{id}/...` |
+| `GET /api/v1/jobs/{id}/events` | Server-Sent Events (ADR 0002): per-request `sse.<instance>.<uuid>` exclusive auto-delete queue bound to `job.*.<jobId>.#` on `lean.events`; `snapshot` first, then every bus message of the job, `: keep-alive` every `Gateway:Events:KeepAliveSeconds` (15), closed after the terminal status. Per client, `progress`/`heartbeat`/`result` are latest-wins and `log`/`order` keep `Gateway:Events:LogBuffer`/`OrderBuffer` (500/1000) frames; frames after a drop carry `dropped` so the console reloads over REST. `?access_token=` is accepted on this route only (EventSource cannot send headers). |
 | `GET /api/v1/jobs/{id}/result/download`, `GET /api/v1/reports/{id}/{html,pdf}` | gateway: 302 to a presigned MinIO URL |
 | `/api/v1/data/**` | YARP -> market-data `/internal/v1/data/**` |
 | `/api/v1/optimizations/**` (estimate, state, children) | YARP -> optimizer `/internal/v1/optimizations/**` |

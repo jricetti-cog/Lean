@@ -48,6 +48,11 @@ public static class GatewayAuth
                 };
                 o.Events = new JwtBearerEvents
                 {
+                    OnMessageReceived = ctx =>
+                    {
+                        ctx.Token ??= BearerToken(ctx.Request);
+                        return Task.CompletedTask;
+                    },
                     OnTokenValidated = ctx =>
                     {
                         var identity = (ClaimsIdentity)ctx.Principal!.Identity!;
@@ -105,8 +110,13 @@ public static class GatewayAuth
     public static string? BearerToken(HttpRequest request)
     {
         var header = request.Headers.Authorization.ToString();
-        return header.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) ? header["Bearer ".Length..].Trim() : null;
+        if (header.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)) return header["Bearer ".Length..].Trim();
+        // EventSource cannot send headers, so the SSE endpoint also takes the token as ?access_token=.
+        return IsEventStream(request.Path) && request.Query.TryGetValue("access_token", out var token) && !string.IsNullOrEmpty(token) ? token.ToString() : null;
     }
+
+    private static bool IsEventStream(PathString path) =>
+        path.StartsWithSegments("/api/v1/jobs") && path.Value!.EndsWith("/events", StringComparison.Ordinal);
 
     private static bool LooksLikeJwt(string? token) => token != null && token.Count(c => c == '.') == 2;
 
