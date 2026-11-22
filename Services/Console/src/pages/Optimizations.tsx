@@ -4,7 +4,7 @@ import { api, listJobs, ok, type OptimizationSpec } from '../api/client';
 import { AlgorithmPicker, resolveAlgorithm, type AlgorithmChoice } from '../components/AlgorithmPicker';
 import { usePolling } from '../components/hooks';
 import { Card, ErrorBox, fmtTime, JobLink, Progress, StatusBadge } from '../components/ui';
-import { BacktestFieldsForm, backtestSpec, emptyFields } from './SubmitBacktest';
+import { BacktestFieldsForm, backtestSpec, emptyFields, fieldsError } from './SubmitBacktest';
 
 type Range = { name: string; min: string; max: string; step: string };
 
@@ -129,10 +129,10 @@ function OptimizationForm() {
       <ErrorBox error={error} />
       <div className="row end">
         {estimate !== undefined && <span className="muted">{estimate} backtests</span>}
-        <button type="button" className="ghost" disabled={busy || !algorithm} onClick={() => run('estimate')}>
+        <button type="button" className="ghost" disabled={busy || !algorithm?.source.trim() || !!fieldsError(fields)} onClick={() => run('estimate')}>
           Estimate
         </button>
-        <button type="submit" className="primary" disabled={busy || !algorithm}>
+        <button type="submit" className="primary" disabled={busy || !algorithm?.source.trim() || !!fieldsError(fields)}>
           {busy ? 'Submitting…' : 'Start optimization'}
         </button>
       </div>

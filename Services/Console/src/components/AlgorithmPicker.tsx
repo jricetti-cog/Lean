@@ -55,8 +55,11 @@ export function AlgorithmPicker({ value, onChange, height = 420 }: { value?: Alg
   }, [samples]);
 
   const options = useMemo(
-    () => samples.filter((s) => s.language === language && s.name.toLowerCase().includes(filter.toLowerCase())),
-    [samples, language, filter],
+    () =>
+      samples.filter(
+        (s) => s.language === language && (s.file === value?.sample?.file || s.name.toLowerCase().includes(filter.toLowerCase())),
+      ),
+    [samples, language, filter, value?.sample?.file],
   );
 
   return (

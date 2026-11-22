@@ -128,7 +128,7 @@ export default function Live() {
         </Card>
         <ErrorBox error={error} />
         <div className="row end">
-          <button type="submit" className="primary" disabled={busy || !algorithm}>
+          <button type="submit" className="primary" disabled={busy || !algorithm?.source.trim()}>
             {busy ? 'Deploying…' : 'Start deployment'}
           </button>
         </div>

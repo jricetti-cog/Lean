@@ -16,6 +16,10 @@ export interface BacktestFields {
 
 export const emptyFields: BacktestFields = { name: '', startDate: '', endDate: '', cash: '', maxRuntimeSeconds: '3600', fetchMissingData: false };
 
+/** Client-side check run before anything is uploaded; the gateway validates the full spec again. */
+export const fieldsError = (f: BacktestFields) =>
+  f.startDate && f.endDate && f.startDate > f.endDate ? 'End date must be on or after the start date.' : undefined;
+
 export function backtestSpec(fields: BacktestFields, algorithm: BacktestSpec['algorithm'], params: ParamRow[]): BacktestSpec {
   return {
     name: fields.name || undefined,
@@ -31,8 +35,14 @@ export function backtestSpec(fields: BacktestFields, algorithm: BacktestSpec['al
 
 export function BacktestFieldsForm({ fields, onChange }: { fields: BacktestFields; onChange: (f: BacktestFields) => void }) {
   const set = (patch: Partial<BacktestFields>) => onChange({ ...fields, ...patch });
+  const invalid = fieldsError(fields);
   return (
     <div className="grid-form">
+      {invalid && (
+        <div className="error" role="alert" style={{ gridColumn: '1 / -1' }}>
+          {invalid}
+        </div>
+      )}
       <label>
         Name <input value={fields.name} onChange={(e) => set({ name: e.target.value })} placeholder="optional" />
       </label>
@@ -92,7 +102,7 @@ export default function SubmitBacktest() {
       </Card>
       <ErrorBox error={error} />
       <div className="row end">
-        <button type="submit" className="primary" disabled={busy || !algorithm}>
+        <button type="submit" className="primary" disabled={busy || !algorithm?.source.trim() || !!fieldsError(fields)}>
           {busy ? 'Submitting…' : 'Run backtest'}
         </button>
       </div>
