@@ -72,6 +72,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QuantConnect.Services.Marke
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QuantConnect.Services.Results", "Services\QuantConnect.Services.Results\QuantConnect.Services.Results.csproj", "{8C4E2B71-3D5A-4F96-B0E8-6A1D9C27F534}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QuantConnect.Services.Report", "Services\QuantConnect.Services.Report\QuantConnect.Services.Report.csproj", "{5B3E9F14-7A2C-4D81-9E6B-2F0C8D4A1E73}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -200,6 +202,10 @@ Global
 		{8C4E2B71-3D5A-4F96-B0E8-6A1D9C27F534}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8C4E2B71-3D5A-4F96-B0E8-6A1D9C27F534}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8C4E2B71-3D5A-4F96-B0E8-6A1D9C27F534}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5B3E9F14-7A2C-4D81-9E6B-2F0C8D4A1E73}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B3E9F14-7A2C-4D81-9E6B-2F0C8D4A1E73}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B3E9F14-7A2C-4D81-9E6B-2F0C8D4A1E73}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B3E9F14-7A2C-4D81-9E6B-2F0C8D4A1E73}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

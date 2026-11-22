@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <AssemblyName>QuantConnect.Services.Report</AssemblyName>
+    <RootNamespace>QuantConnect.Services.Report</RootNamespace>
+    <Description>QuantConnect LEAN services: report service (consumes report.requested, renders LEAN's Report into lean-reports, report API)</Description>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <UseAppHost>false</UseAppHost>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\QuantConnect.Services.Contracts\QuantConnect.Services.Contracts.csproj" />
+    <ProjectReference Include="..\QuantConnect.Services.Defaults\QuantConnect.Services.Defaults.csproj" />
+    <ProjectReference Include="..\QuantConnect.Services.Messaging\QuantConnect.Services.Messaging.csproj" />
+    <ProjectReference Include="..\QuantConnect.Services.Results\QuantConnect.Services.Results.csproj" />
+  </ItemGroup>
+</Project>
