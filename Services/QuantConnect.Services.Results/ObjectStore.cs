@@ -11,6 +11,8 @@ namespace QuantConnect.Services.Results;
 public interface IResultObjectStore
 {
     Task<byte[]> GetAsync(string bucket, string key, CancellationToken cancellationToken = default);
+    /// <summary>The object, or null when it does not exist.</summary>
+    Task<byte[]?> TryGetAsync(string bucket, string key, CancellationToken cancellationToken = default);
     Task PutAsync(string bucket, string key, byte[] content, string contentType, CancellationToken cancellationToken = default);
     /// <summary>Objects under <paramref name="prefix"/>; <paramref name="known"/> references (by key, same size) are reused instead of re-hashing.</summary>
     Task<List<ObjectRef>> ListAsync(string bucket, string prefix, IReadOnlyDictionary<string, ObjectRef>? known = null, CancellationToken cancellationToken = default);
@@ -68,6 +70,18 @@ public sealed class S3ResultObjectStore : IResultObjectStore, IDisposable
         using var buffer = new MemoryStream();
         await response.ResponseStream.CopyToAsync(buffer, cancellationToken).ConfigureAwait(false);
         return buffer.ToArray();
+    }
+
+    public async Task<byte[]?> TryGetAsync(string bucket, string key, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await GetAsync(bucket, key, cancellationToken).ConfigureAwait(false);
+        }
+        catch (AmazonS3Exception e) when (e.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
     }
 
     public async Task PutAsync(string bucket, string key, byte[] content, string contentType, CancellationToken cancellationToken = default)
@@ -140,6 +154,9 @@ public sealed class FileSystemResultObjectStore(string root) : IResultObjectStor
         }
         return await File.ReadAllBytesAsync(path, cancellationToken).ConfigureAwait(false);
     }
+
+    public async Task<byte[]?> TryGetAsync(string bucket, string key, CancellationToken cancellationToken = default) =>
+        File.Exists(PathOf(bucket, key)) ? await GetAsync(bucket, key, cancellationToken).ConfigureAwait(false) : null;
 
     public async Task PutAsync(string bucket, string key, byte[] content, string contentType, CancellationToken cancellationToken = default)
     {

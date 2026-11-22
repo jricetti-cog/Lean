@@ -149,7 +149,8 @@ namespace QuantConnect.Tests.Services.Results
 
             var events = await GetJson($"/internal/v1/results/{job:D}/order-events?limit=500");
             Assert.AreEqual(6, events["items"].AsArray().Count, "submitted + filled per order, inline and final copies merged");
-            CollectionAssert.IsOrdered(events["items"].AsArray().Select(e => (string)e["utcTime"]).ToList());
+            CollectionAssert.IsOrdered(events["items"].AsArray().Select(e => (double)e["time"]).ToList());
+            Assert.AreEqual("filled", (string)events["items"].AsArray().Last(e => (int)e["orderId"] == 1)["status"]);
 
             var logs = await GetJson($"/internal/v1/results/{job:D}/logs");
             CollectionAssert.AreEqual(new[] { "Log", "Debug", "RuntimeError" }, logs["items"].AsArray().Select(l => (string)l["type"]).ToArray());
@@ -166,7 +167,9 @@ namespace QuantConnect.Tests.Services.Results
             Assert.AreEqual(job.ToString("D"), (string)listed["items"][0]["jobId"]);
 
             var artifacts = await GetJson($"/internal/v1/results/{job:D}/artifacts");
-            Assert.AreEqual($"{job:D}/1/algo-{job:N}.json", (string)artifacts[0]["key"]);
+            CollectionAssert.AreEquivalent(new[] { $"{job:D}/1/algo-{job:N}.json", $"{job:D}/1/algo-{job:N}-order-events.json" },
+                artifacts.AsArray().Select(a => (string)a["key"]).ToArray());
+            Assert.AreEqual((string)summary["result"]["sha256"], (string)artifacts.AsArray().Single(a => (string)a["key"] == $"{job:D}/1/algo-{job:N}.json")["sha256"]);
         }
 
         [Test]
@@ -244,7 +247,7 @@ namespace QuantConnect.Tests.Services.Results
             do
             {
                 var page = await GetJson($"/internal/v1/results/{job:D}/order-events?limit=4" + (cursor == null ? "" : $"&cursor={cursor}"));
-                eventIds.AddRange(page["items"].AsArray().Select(e => $"{e["orderId"]}-{e["id"]}"));
+                eventIds.AddRange(page["items"].AsArray().Select(e => (string)e["id"]));
                 cursor = (string)page["next"];
             } while (cursor != null);
             Assert.AreEqual(14, eventIds.Count);
@@ -403,12 +406,14 @@ namespace QuantConnect.Tests.Services.Results
             {
                 ["charts"] = CamelCharts(Charts(chartPoints)),
                 ["orders"] = LeanJson.ToCamelCase(Orders(orders, 3)),
-                ["orderEvents"] = LeanJson.ToCamelCase(Events(orders, 1, 1, 0).Concat(Events(orders, 2, 3, 1)).ToJsonArray()),
                 ["statistics"] = JsonSerializer.SerializeToNode(statistics),
                 ["runtimeStatistics"] = new JsonObject { ["Equity"] = "$101,000.00" },
                 ["algorithmConfiguration"] = new JsonObject { ["name"] = "BasicTemplateAlgorithm" },
             };
             var key = $"{job:D}/{attempt}/algo-{job:N}.json";
+            _store.PutAsync(Buckets.Results, $"{job:D}/{attempt}/algo-{job:N}-order-events.json",
+                Encoding.UTF8.GetBytes(LeanJson.ToCamelCase(Events(orders, 1, 1, 0).Concat(Events(orders, 2, 3, 1)).ToJsonArray())!.ToJsonString()),
+                "application/json").GetAwaiter().GetResult();
             var resultRef = _store.PutRefAsync(Buckets.Results, key, Encoding.UTF8.GetBytes(resultFile.ToJsonString()), "application/json").GetAwaiter().GetResult();
             var packetStatistics = new Dictionary<string, string>(statistics) { ["OrderListHash"] = Hash };
             messages.Add(Message(MessageTypes.PacketRef, job, attempt, ++sequence, new PacketRef
@@ -455,11 +460,13 @@ namespace QuantConnect.Tests.Services.Results
             return orders;
         }
 
+        /// <summary>Order events as LEAN's OrderEventJsonConverter writes them (inline packets and the order-events file).</summary>
         private static JsonArray Events(int orders, int eventId, int status, int minuteOffset) =>
             Enumerable.Range(1, orders).Select(id => (JsonNode)new JsonObject
             {
-                ["OrderId"] = id, ["Id"] = eventId, ["Status"] = status, ["FillQuantity"] = status == 3 ? 10 * id : 0,
-                ["UtcTime"] = $"2013-10-07T14:{id:00}:{minuteOffset:00}Z",
+                ["id"] = $"algo-{id}-{eventId}", ["algorithmId"] = "algo", ["orderId"] = id, ["orderEventId"] = eventId,
+                ["symbol"] = "SPY R735QTJ8XC9X", ["symbolValue"] = "SPY", ["status"] = status == 3 ? "filled" : "submitted",
+                ["fillQuantity"] = status == 3 ? 10 * id : 0, ["time"] = Start + id * 60 + minuteOffset,
             }).ToJsonArray();
 
         private static JsonObject CamelCharts(JsonObject charts) =>

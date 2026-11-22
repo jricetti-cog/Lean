@@ -134,6 +134,12 @@ public class BusMessagingHandler : QuantConnect.Messaging.Messaging
 
         if (packet is BacktestResultPacket { Progress: 1m } final && ReadResultFile(final.BacktestId) is { } resultFile)
         {
+            // The result file has no order events: the engine stores them in <algorithmId>-order-events.json next to it.
+            // Upload that file first so it is in MinIO when the final PacketRef is consumed.
+            if (ReadResultFile($"{final.BacktestId}-order-events") is { } orderEvents)
+            {
+                EnqueueUpload(job, $"{final.BacktestId}-order-events.json", orderEvents);
+            }
             EnqueueByReference(job, packetType, sequence, resultFile, $"{final.BacktestId}.json", PacketFormats.ResultFile, true,
                 final.Progress, final.Results?.Statistics, packet);
         }
@@ -154,9 +160,9 @@ public class BusMessagingHandler : QuantConnect.Messaging.Messaging
     /// The engine's own result file, which <c>BacktestingResultHandler.SendFinalResult</c> writes to
     /// <c>results-destination-folder</c> just before it sends the final packet; null if it is not there.
     /// </summary>
-    private static byte[]? ReadResultFile(string algorithmId)
+    private static byte[]? ReadResultFile(string name)
     {
-        var path = Path.Combine(Globals.ResultsDestinationFolder ?? Directory.GetCurrentDirectory(), $"{algorithmId}.json");
+        var path = Path.Combine(Globals.ResultsDestinationFolder ?? Directory.GetCurrentDirectory(), $"{name}.json");
         try
         {
             return File.Exists(path) ? File.ReadAllBytes(path) : null;
@@ -166,6 +172,14 @@ public class BusMessagingHandler : QuantConnect.Messaging.Messaging
             Log.Error(exception, $"BusMessagingHandler: cannot read result file {path}");
             return null;
         }
+    }
+
+    /// <summary>Uploads a result artifact under the attempt's prefix, in outbox order (before later publishes).</summary>
+    private void EnqueueUpload(BusJobContext job, string name, byte[] body)
+    {
+        var key = $"{job.Results.Prefix.TrimEnd('/')}/{name}";
+        Interlocked.Increment(ref _pending);
+        Write(() => EngineBus.Store.PutObjectAsync(job.Results.Bucket, key, body));
     }
 
     private void EnqueueByReference(BusJobContext job, string packetType, long sequence, byte[] body, string name, string format,

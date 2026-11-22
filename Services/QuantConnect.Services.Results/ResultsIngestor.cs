@@ -128,7 +128,7 @@ public sealed class ResultsIngestor(ResultsDatabase database, IResultObjectStore
                 JsonObject? resultFile = null;
                 if (!await IsFinalIndexedAsync(context, cancellationToken).ConfigureAwait(false))
                 {
-                    resultFile = ResultFileRoot(LeanJson.ParseObject(await store.GetVerifiedAsync(completed.Result, cancellationToken).ConfigureAwait(false)));
+                    resultFile = await ReadResultFileAsync(completed.Result, cancellationToken).ConfigureAwait(false);
                 }
                 return async session =>
                 {
@@ -163,7 +163,7 @@ public sealed class ResultsIngestor(ResultsDatabase database, IResultObjectStore
                 var content = LeanJson.ParseObject(await store.GetVerifiedAsync(reference.Object, cancellationToken).ConfigureAwait(false));
                 if (reference.Final && reference.Format == PacketRef.FinalFormat)
                 {
-                    var root = ResultFileRoot(content);
+                    var root = await WithOrderEventsAsync(reference.Object, ResultFileRoot(content), cancellationToken).ConfigureAwait(false);
                     return session => ApplyResultAsync(session, root, final: true, reference.Progress ?? 1, reference.AlgorithmId, reference.Statistics, reference.Object);
                 }
                 return await PreparePacketAsync(context, reference.PacketType, content, cancellationToken).ConfigureAwait(false);
@@ -356,14 +356,15 @@ public sealed class ResultsIngestor(ResultsDatabase database, IResultObjectStore
         var bodies = new List<string>();
         foreach (var orderEvent in orderEvents)
         {
+            // OrderEventJsonConverter form: "id" is "<algorithmId>-<orderId>-<orderEventId>", "time" is unix seconds.
             var camel = (JsonObject)LeanJson.ToCamelCase(orderEvent)!;
-            if (camel.GetInt("orderId") is not { } orderId || camel.GetInt("id") is not { } eventId)
+            if (camel.GetInt("orderId") is not { } orderId || (camel.GetInt("orderEventId") ?? camel.GetInt("id")) is not { } eventId)
             {
                 continue;
             }
             orderIds.Add(orderId);
             eventIds.Add(eventId);
-            times.Add((LeanJson.AsTime(camel.Get("utcTime")) ?? session.Context.Time).UtcDateTime);
+            times.Add((LeanJson.AsTime(camel.Get("time")) ?? LeanJson.AsTime(camel.Get("utcTime")) ?? session.Context.Time).UtcDateTime);
             bodies.Add(camel.ToJsonString());
         }
         if (orderIds.Count == 0)
@@ -398,6 +399,30 @@ public sealed class ResultsIngestor(ResultsDatabase database, IResultObjectStore
         UPDATE results SET status = @status, error = @error, updated_at = now()
         WHERE job_id = @job AND attempt = @attempt AND status <> 'completed'
         """, c => c.With("status", Sql.Name(status)).WithJson("error", error));
+
+    /// <summary>The final result file with its order events (see <see cref="WithOrderEventsAsync"/>).</summary>
+    private async Task<JsonObject> ReadResultFileAsync(ObjectRef reference, CancellationToken cancellationToken) =>
+        await WithOrderEventsAsync(reference, ResultFileRoot(LeanJson.ParseObject(await store.GetVerifiedAsync(reference, cancellationToken).ConfigureAwait(false))),
+            cancellationToken).ConfigureAwait(false);
+
+    /// <summary>
+    /// LEAN writes the final result file without order events and stores them in <c>&lt;algorithmId&gt;-order-events.json</c>
+    /// next to it (<c>BacktestingResultHandler.StoreResult</c>); the bus handler uploads that file before the final PacketRef.
+    /// </summary>
+    private async Task<JsonObject> WithOrderEventsAsync(ObjectRef resultRef, JsonObject results, CancellationToken cancellationToken)
+    {
+        if (results.GetArray("OrderEvents") is { Count: > 0 } || !resultRef.Key.EndsWith(".json", StringComparison.Ordinal))
+        {
+            return results;
+        }
+        var key = resultRef.Key[..^".json".Length] + "-order-events.json";
+        if (await store.TryGetAsync(resultRef.Bucket, key, cancellationToken).ConfigureAwait(false) is { } content
+            && JsonNode.Parse(content) is JsonArray orderEvents)
+        {
+            results["orderEvents"] = orderEvents;
+        }
+        return results;
+    }
 
     private async Task<bool> IsFinalIndexedAsync(IngestContext context, CancellationToken cancellationToken)
     {
