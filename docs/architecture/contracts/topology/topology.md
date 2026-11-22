@@ -95,7 +95,9 @@ browser drops old progress rather than growing the broker.
 
 Routing key `md.<securityType>.<market>.<ticker>.v1` (lower-case, e.g. `md.equity.usa.spy.v1`), transient
 messages, consumer queues `md.<workerId>.<uuid>` are classic, exclusive, auto-delete with
-`x-message-ttl: 5000`. Payloads are owned by ADR 0004's live data contract (Phase 4) and are not part of v1.
+`x-message-ttl: 5000`. Body: [marketdata.live](../messages/v1/marketdata.live.schema.json), AMQP type
+`marketdata.v1.LiveData`, a batch of ticks/bars for one symbol; the envelope `job-id` is the market-data feed id.
+Published without `mandatory` (no bound worker = dropped).
 
 ## Envelope
 
@@ -148,6 +150,7 @@ AMQP basic properties, schema [`envelope.schema.json`](../messages/v1/envelope.s
 | `job.cancelled` | [job.cancelled](../messages/v1/job.cancelled.schema.json) | `events.v1.JobCancelled` | `lean.events` / `job.<kind>.<jobId>.status.v1` |
 | `job.cancel` | [job.cancel](../messages/v1/job.cancel.schema.json) | `control.v1.CancelJob` | `lean.control` / `job.<jobId>.cancel.v1` |
 | `marketdata.fetch.requested` | [marketdata.fetch.requested](../messages/v1/marketdata.fetch.requested.schema.json) | `jobs.v1.MarketDataFetchRequested` | `lean.jobs` / `marketdata.fetch.v1` |
+| `marketdata.live` | [marketdata.live](../messages/v1/marketdata.live.schema.json) | `marketdata.v1.LiveData` | `lean.marketdata.live` / `md.<securityType>.<market>.<ticker>.v1` |
 
 The last four complete ADR 0002's event set (heartbeat, cancellation, fetch tasks) beyond the eight contracts
 named in plan step s1.4.

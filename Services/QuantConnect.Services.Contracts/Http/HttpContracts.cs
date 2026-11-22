@@ -131,6 +131,19 @@ public sealed record DateRange
     public required DateOnly End { get; init; }
 }
 
+/// <summary><c>market-data.openapi.yaml#/components/schemas/CatalogEntry</c>.</summary>
+public sealed record CatalogEntry
+{
+    public required string SecurityType { get; init; }
+    public required string Market { get; init; }
+    public required string Ticker { get; init; }
+    public required string Resolution { get; init; }
+    public required List<ContractTickType> TickTypes { get; init; }
+    public required int Files { get; init; }
+    public DateOnly? Start { get; init; }
+    public DateOnly? End { get; init; }
+}
+
 /// <summary><c>market-data.openapi.yaml#/components/schemas/Coverage</c>.</summary>
 public sealed record Coverage
 {

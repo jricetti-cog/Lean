@@ -191,6 +191,34 @@ services:
         condition: service_healthy
     networks: [lean]
 
+  # Market data (ADR 0004, plan step s3.1): the only writer of lean-data (catalog, downloads, history, live fan-out).
+  #   docker compose --profile infra --profile market-data up -d --wait market-data
+  market-data:
+    image: ${LEAN_IMAGE_REGISTRY:-lean}/market-data:${LEAN_IMAGE_TAG:-dev}
+    build:
+      context: .
+      dockerfile: Services/Dockerfile
+      target: market-data
+    profiles: [market-data]
+    restart: unless-stopped
+    depends_on:
+      infra-ready:
+        condition: service_healthy
+    environment:
+      <<: *lean-service-env
+      ConnectionStrings__Marketdata: Host=postgres;Database=marketdata;Username=marketdata;Password=${POSTGRES_MARKETDATA_PASSWORD:-lean-dev-marketdata}
+      # Simulated live feed (LEAN FakeDataQueue; no data vendor is connected) published on lean.marketdata.live.
+      MarketData__Live__Symbols: ${MARKET_DATA_LIVE_SYMBOLS:-Equity/usa/SPY,Forex/oanda/EURUSD}
+      MarketData__Live__Resolution: ${MARKET_DATA_LIVE_RESOLUTION:-Second}
+    volumes:
+      - lean-data:/Lean/Data
+    ports:
+      - 127.0.0.1:${MARKET_DATA_PORT:-5082}:8080
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "lean-healthcheck", "8080", "/readyz"]
+    networks: [lean]
+
 volumes:
   rabbitmq-data:
   postgres-data:

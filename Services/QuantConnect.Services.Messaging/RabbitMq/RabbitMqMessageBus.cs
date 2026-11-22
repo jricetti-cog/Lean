@@ -27,6 +27,7 @@ public sealed class RabbitMqMessageBus : IMessageBus, IAsyncDisposable
     private readonly RabbitMqOptions _options;
     private readonly ILogger _logger;
     private readonly SemaphoreSlim _connectLock = new(1, 1);
+    private int _disposed;
     private readonly SemaphoreSlim _publishLock = new(1, 1);
     private IConnection? _connection;
     private IChannel? _publishChannel;
@@ -221,6 +222,11 @@ public sealed class RabbitMqMessageBus : IMessageBus, IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        // DI disposes the bus once per registration that resolves it (concrete type and each interface).
+        if (Interlocked.Exchange(ref _disposed, 1) == 1)
+        {
+            return;
+        }
         if (_publishChannel != null)
         {
             await _publishChannel.DisposeAsync().ConfigureAwait(false);

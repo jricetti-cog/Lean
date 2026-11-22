@@ -56,6 +56,45 @@ public sealed record MarketDataFetchRequested
     public required MarketDataFetchSpec Fetch { get; init; }
 }
 
+/// <summary><c>marketdata.live.schema.json</c>: <c>marketdata.v1.LiveData</c> (transient), one symbol's batch on <c>lean.marketdata.live</c>.</summary>
+public sealed record LiveDataBatch
+{
+    public required Guid FeedId { get; init; }
+    public required LiveDataSymbol Symbol { get; init; }
+    public required long Sequence { get; init; }
+    public required List<LiveDataPoint> Points { get; init; }
+}
+
+public sealed record LiveDataSymbol
+{
+    public required ContractSecurityType SecurityType { get; init; }
+    public required string Market { get; init; }
+    public required string Ticker { get; init; }
+    /// <summary>LEAN <c>SecurityIdentifier</c> string.</summary>
+    public required string Id { get; init; }
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter<LiveDataType>))]
+public enum LiveDataType { Tick, TradeBar, QuoteBar }
+
+public sealed record LiveDataPoint
+{
+    public required LiveDataType DataType { get; init; }
+    public ContractTickType? TickType { get; init; }
+    public required DateTimeOffset Time { get; init; }
+    public DateTimeOffset? EndTime { get; init; }
+    public required decimal Value { get; init; }
+    public decimal? Open { get; init; }
+    public decimal? High { get; init; }
+    public decimal? Low { get; init; }
+    public decimal? Close { get; init; }
+    public decimal? Volume { get; init; }
+    public decimal? BidPrice { get; init; }
+    public decimal? AskPrice { get; init; }
+    public decimal? BidSize { get; init; }
+    public decimal? AskSize { get; init; }
+}
+
 /// <summary><c>job.started.schema.json</c>: <c>events.v1.JobStarted</c>.</summary>
 public sealed record JobStarted
 {

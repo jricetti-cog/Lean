@@ -24,6 +24,7 @@
         "jobs.v1.OptimizationRequested",
         "jobs.v1.ReportRequested",
         "jobs.v1.MarketDataFetchRequested",
+        "marketdata.v1.LiveData",
         "events.v1.JobStarted",
         "events.v1.JobHeartbeat",
         "events.v1.JobProgress",
@@ -51,7 +52,7 @@
     "deliveryMode": {
       "type": "integer",
       "enum": [1, 2],
-      "description": "2 (persistent) for everything on `lean.jobs`, `lean.jobs.dlx`, `lean.control` and for `status`/`result`/`order`/`error` events; 1 (transient) is allowed only for `heartbeat`, `progress` and `log` events."
+      "description": "2 (persistent) for everything on `lean.jobs`, `lean.jobs.dlx`, `lean.control` and for `status`/`result`/`order`/`error` events; 1 (transient) is allowed only for `heartbeat`, `progress` and `log` events and `lean.marketdata.live` batches."
     },
     "timestamp": {
       "type": "integer",

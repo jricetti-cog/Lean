@@ -8,6 +8,8 @@ public static class MessageTypes
     public const string OptimizationRequested = "jobs.v1.OptimizationRequested";
     public const string ReportRequested = "jobs.v1.ReportRequested";
     public const string MarketDataFetchRequested = "jobs.v1.MarketDataFetchRequested";
+    /// <summary>Live data batch on <c>lean.marketdata.live</c> (transient).</summary>
+    public const string LiveData = "marketdata.v1.LiveData";
     public const string JobStarted = "events.v1.JobStarted";
     public const string JobHeartbeat = "events.v1.JobHeartbeat";
     public const string JobProgress = "events.v1.JobProgress";
@@ -31,6 +33,7 @@ public static class MessageTypes
         [OptimizationRequested] = (typeof(Contracts.OptimizationRequested), "optimization.requested.schema.json"),
         [ReportRequested] = (typeof(Contracts.ReportRequested), "report.requested.schema.json"),
         [MarketDataFetchRequested] = (typeof(Contracts.MarketDataFetchRequested), "marketdata.fetch.requested.schema.json"),
+        [LiveData] = (typeof(LiveDataBatch), "marketdata.live.schema.json"),
         [JobStarted] = (typeof(Contracts.JobStarted), "job.started.schema.json"),
         [JobHeartbeat] = (typeof(Contracts.JobHeartbeat), "job.heartbeat.schema.json"),
         [JobProgress] = (typeof(Contracts.JobProgress), "job.progress.schema.json"),
@@ -63,7 +66,7 @@ public static class MessageTypes
         Catalogue.TryGetValue(type, out var entry) ? entry.Schema : throw new ArgumentException($"Unknown v1 message type '{type}'", nameof(type));
 
     /// <summary>Heartbeats and progress are published transient (<c>deliveryMode</c> 1); everything else is persistent.</summary>
-    public static bool IsTransient(string type) => type is JobHeartbeat or JobProgress;
+    public static bool IsTransient(string type) => type is JobHeartbeat or JobProgress or LiveData;
 
     /// <summary>The <c>&lt;event&gt;</c> segment of <c>job.&lt;kind&gt;.&lt;jobId&gt;.&lt;event&gt;.v1</c> for event types.</summary>
     public static string? EventSegment(string type) => type switch

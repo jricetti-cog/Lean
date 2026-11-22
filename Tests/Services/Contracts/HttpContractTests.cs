@@ -61,6 +61,11 @@ namespace QuantConnect.Tests.Services.Contracts
             yield return Case("orchestrator.openapi.yaml", "Attempt", new JobAttempt { JobId = JobId, Attempt = 2, Results = ResultsPrefix.For(JobId, 2), Deadline = At });
             yield return Case("orchestrator.openapi.yaml", "Lease", new Lease { JobId = JobId, Attempt = 2, LeaseEpoch = 4, HeartbeatIntervalSeconds = 10, Results = ResultsPrefix.For(JobId, 2) });
             yield return Case("orchestrator.openapi.yaml", "QueueHint", new QueueHint { Queue = "jobs.backtest", Ready = 3, Unacked = 1, Dead = 0, SuggestedReplicas = 2 });
+            yield return Case("market-data.openapi.yaml", "CatalogEntry", new CatalogEntry
+            {
+                SecurityType = "Equity", Market = "usa", Ticker = "SYNA", Resolution = "Minute", TickTypes = new() { ContractTickType.Trade, ContractTickType.Quote },
+                Files = 2, Start = new DateOnly(2013, 10, 7), End = new DateOnly(2013, 10, 8),
+            });
             yield return Case("market-data.openapi.yaml", "Coverage", new Coverage
             {
                 SecurityType = "Equity", Market = "usa", Ticker = "SPY", Resolution = "Minute",
