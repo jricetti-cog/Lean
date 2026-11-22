@@ -66,6 +66,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QuantConnect.Services.Place
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QuantConnect.Services.EngineHandlers", "Services\QuantConnect.Services.EngineHandlers\QuantConnect.Services.EngineHandlers.csproj", "{5E1D3B5A-7C2E-4B8F-9A61-3F0C2D8E4B17}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QuantConnect.Services.Orchestrator", "Services\QuantConnect.Services.Orchestrator\QuantConnect.Services.Orchestrator.csproj", "{7C4E2A91-3B5D-4F68-9E1A-2D6B8C0F4A35}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -182,6 +184,10 @@ Global
 		{5E1D3B5A-7C2E-4B8F-9A61-3F0C2D8E4B17}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5E1D3B5A-7C2E-4B8F-9A61-3F0C2D8E4B17}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5E1D3B5A-7C2E-4B8F-9A61-3F0C2D8E4B17}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7C4E2A91-3B5D-4F68-9E1A-2D6B8C0F4A35}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C4E2A91-3B5D-4F68-9E1A-2D6B8C0F4A35}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C4E2A91-3B5D-4F68-9E1A-2D6B8C0F4A35}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C4E2A91-3B5D-4F68-9E1A-2D6B8C0F4A35}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

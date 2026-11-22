@@ -155,7 +155,7 @@ for (const q of dispatch) {
 }
 for (const [q, keys] of Object.entries({
   'results.packets': ['result', 'order', 'log', 'error', 'status'],
-  'orchestrator.status': ['status', 'heartbeat'],
+  'orchestrator.status': ['status', 'heartbeat', 'progress'],
 })) {
   const missing = keys.filter((k) => !defs.bindings.some((b) => b.source === 'lean.events' && b.destination === q && b.routing_key === `job.*.*.${k}.v1`));
   missing.length ? fail(`${q} missing ${missing}`) : ok(`${q} bound to ${keys.map((k) => `job.*.*.${k}.v1`).join(', ')}`);

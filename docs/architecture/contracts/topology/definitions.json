@@ -409,6 +409,14 @@
       "arguments": {}
     },
     {
+      "source": "lean.events",
+      "vhost": "lean",
+      "destination": "orchestrator.status",
+      "destination_type": "queue",
+      "routing_key": "job.*.*.progress.v1",
+      "arguments": {}
+    },
+    {
       "source": "lean.jobs.dlx",
       "vhost": "lean",
       "destination": "orchestrator.status.dead",

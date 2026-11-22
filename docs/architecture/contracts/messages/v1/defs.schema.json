@@ -30,8 +30,8 @@
     },
     "JobStatus": {
       "type": "string",
-      "enum": ["queued", "running", "completed", "failed", "cancelled", "stale"],
-      "description": "Job lifecycle owned by job-orchestrator: queued -> running -> completed | failed | cancelled. `stale` is live-only (heartbeats stopped, lease being revoked)."
+      "enum": ["queued", "dispatched", "running", "completed", "failed", "cancelled", "stale"],
+      "description": "Job lifecycle owned by job-orchestrator: queued -> dispatched (job.submitted confirmed by the broker) -> running -> completed | failed | cancelled. `stale` is live-only (heartbeats stopped, lease being revoked)."
     },
     "Attempt": {
       "type": "integer",

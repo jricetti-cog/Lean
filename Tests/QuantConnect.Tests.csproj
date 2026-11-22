@@ -428,6 +428,7 @@
     <ProjectReference Include="..\Services\QuantConnect.Services.Defaults\QuantConnect.Services.Defaults.csproj" />
     <ProjectReference Include="..\Services\QuantConnect.Services.Messaging\QuantConnect.Services.Messaging.csproj" />
     <ProjectReference Include="..\Services\QuantConnect.Services.EngineHandlers\QuantConnect.Services.EngineHandlers.csproj" />
+    <ProjectReference Include="..\Services\QuantConnect.Services.Orchestrator\QuantConnect.Services.Orchestrator.csproj" />
     <ProjectReference Include="..\Compression\QuantConnect.Compression.csproj" />
     <ProjectReference Include="..\Configuration\QuantConnect.Configuration.csproj" />
     <ProjectReference Include="..\DownloaderDataProvider\QuantConnect.DownloaderDataProvider.Launcher.csproj" />
