@@ -50,7 +50,7 @@ terminal_event() { # terminal_event JOB_ID -> first job.completed / job.failed m
     for _ in $(seq 1 180); do
         msg=$(mq -X POST "$MQ/queues/$RABBITMQ_VHOST/verify-report.$1/get" -d '{"count":50,"ackmode":"ack_requeue_false","encoding":"auto"}' \
             | jq -c '[.[] | select(.properties.type == "events.v1.JobCompleted" or .properties.type == "events.v1.JobFailed")][0] // empty | {type:.properties.type, payload:(.payload|fromjson)}')
-        [ -n "$msg" ] && { mq -X DELETE "$MQ/queues/$RABBITMQ_VHOST/verify-report.$1" >/dev/null; echo "$msg"; return 0; }
+        [ -n "$msg" ] && { mq -X DELETE "$MQ/queues/$RABBITMQ_VHOST/verify-report.$1" >/dev/null; printf "%s" "$msg"; return 0; }
         sleep 1
     done
     fail "no terminal event for report $1"
