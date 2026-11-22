@@ -54,7 +54,8 @@ tree() {
   curl -fsS "$TEMPO/api/traces/$trace" > /tmp/obs-trace.json 2>/dev/null || return 1
   jq -e --arg s "$SERVICES" '[.batches[] | .resource.attributes[] | select(.key=="service.name") | .value.stringValue] | unique as $have
     | ($s | split(" ")) - $have | length == 0' /tmp/obs-trace.json >/dev/null &&
-  jq -e '[.batches[] | select(any(.resource.attributes[]; .value.stringValue=="results")) | .scopeSpans[].spans[].name] | any(test("results"))' /tmp/obs-trace.json >/dev/null
+  jq -e '[.batches[].scopeSpans[].spans[].name] as $n | ["POST /api/v1/backtests", "lean.jobs publish", "jobs.backtest process", "backtest run", "lean.events publish", "results.packets process"]
+    | all(. as $want | $n | index($want))' /tmp/obs-trace.json >/dev/null
 }
 retry 45 tree || fail "trace $trace incomplete: $(jq -c '[.batches[]?.resource.attributes[]|select(.key=="service.name")|.value.stringValue]|unique' /tmp/obs-trace.json 2>/dev/null)"
 jq -r '[.batches[] | (.resource.attributes[] | select(.key=="service.name") | .value.stringValue) as $svc | .scopeSpans[].spans[] | {svc:$svc, name, start:(.startTimeUnixNano|tonumber), kind}]
