@@ -4,7 +4,9 @@
 #     --profile gateway --profile console up -d --build --wait
 #   deploy/compose/verify-events.sh
 # Submits a deliberately slow Python backtest (BAR_SLEEP seconds per minute bar) through the console's /api proxy,
-# reads GET /api/v1/jobs/{id}/events while it runs and checks the frames the console pages consume.
+# reads GET /api/v1/jobs/{id}/events while it runs and checks the frames the console pages consume. With LIVE=1 (default)
+# it then deploys LiveWorkerDemoAlgorithm on the real live worker (needs the market-data profile too and
+# DOCKER_SOCKET_GID, see verify-live-worker.sh), streams it for LIVE_SECONDS and stops it through the API.
 set -eu
 [ -f .env ] && set -a && . ./.env && set +a
 
@@ -101,3 +103,41 @@ curl -sS -N --max-time 20 "$UI/api/v1/jobs/$JOB/events" > "$OUT/sse.done.txt"
 [ "$(grep -c '^event: ' "$OUT/sse.done.txt")" = 1 ] && grep -q '^event: snapshot' "$OUT/sse.done.txt" || fail "terminal job stream: $(cat "$OUT/sse.done.txt")"
 pass "a completed job's stream is its snapshot only"
 echo "JOB=$JOB"
+
+[ "${LIVE:-1}" = 1 ] || exit 0
+spec='{"name":"live-events","algorithm":{"source":"builtin","typeName":"LiveWorkerDemoAlgorithm"},"brokerage":"PaperBrokerage","dataQueueHandlers":["bus"]}'
+ui POST /api/v1/live -H 'content-type: application/json' --data "$spec" | grep -q "^20[12]$" || fail "live deploy: $(cat "$OUT/body")"
+LIVE_JOB=$(js "d['id']")
+pass "live deployment $LIVE_JOB submitted (LiveWorkerDemoAlgorithm, PaperBrokerage, bus feed)"
+deadline=$(( $(date +%s) + TIMEOUT ))
+until [ "$(ui GET "/api/v1/jobs/$LIVE_JOB")" = 200 ] && [ "$(js "d['status']")" = running ]; do
+  [ "$(date +%s)" -lt "$deadline" ] || fail "live job not running: $(cat "$OUT/body")"; sleep 3
+done
+pass "live job running in $(js "d.get('workerId')")"
+
+curl -sS -N --max-time "$TIMEOUT" "$UI/api/v1/jobs/$LIVE_JOB/events" > "$OUT/live.txt" &
+stream=$!
+sleep "${LIVE_SECONDS:-90}"
+ui POST "/api/v1/live/$LIVE_JOB/stop" -H 'content-type: application/json' --data '{"reason":"verify-events done","liquidate":true}' | grep -q "^20[02]$" || fail "stop: $(cat "$OUT/body")"
+wait "$stream" || fail "live stream did not end after the stop"
+pass "live stream ended by the gateway after the stop ($(wc -c < "$OUT/live.txt") bytes)"
+
+python3 - "$OUT/live.txt" "$LIVE_JOB" <<'PY'
+import json, sys
+events = [json.loads(l[6:]) for l in open(sys.argv[1]) if l.startswith("data: ")]
+names = [e["event"] for e in events]
+def get(o, k):
+    return next((v for kk, v in (o or {}).items() if kk.lower() == k.lower()), None) if isinstance(o, dict) else None
+def check(ok, msg):
+    print(("PASS  " if ok else "FAIL  ") + msg)
+    if not ok: sys.exit(1)
+check(names[0] == "snapshot" and all(e["jobId"] == sys.argv[2] for e in events), f"{len(events)} live frames: " + ", ".join(f"{n}={names.count(n)}" for n in dict.fromkeys(names)))
+live = [e for e in events if e["type"] == "packets.v1.LiveResult"]
+points = sum(len(get(get(get(get(get(get(e["body"], "Results"), "Charts"), "Strategy Equity"), "Series"), "Equity"), "values") or []) for e in live)
+check(len(live) >= 2 and points > 0, f"{len(live)} LiveResult packets carried {points} Strategy Equity points")
+check(any(e["event"] == "log" and "LiveWorkerDemo" in str(get(e["body"], "Message")) for e in events), "LiveWorkerDemo log lines are relayed")
+orders = [e for e in events if e["event"] == "order"]
+check(len(orders) > 0, f"{len(orders)} order frames (packets.v1.OrderEvent) from PaperBrokerage")
+check(names[-1] == "status" and events[-1]["type"] in ("events.v1.JobCompleted", "events.v1.JobCancelled", "events.v1.JobFailed"), f"last frame is {events[-1]['type']}")
+PY
+echo "LIVE_JOB=$LIVE_JOB"
