@@ -34,6 +34,14 @@ Results (plan step s3.2): `docker compose --profile infra --profile results up -
 JSON from MinIO `lean-results` and serves the results API (`/internal/v1/results/...`); see
 [`Services/QuantConnect.Services.Results/README.md`](../../Services/QuantConnect.Services.Results/README.md).
 
+Report (plan step s3.3): `docker compose --profile infra --profile report up -d --wait --build` adds `report` on
+127.0.0.1:5084 (`REPORT_PORT`). It consumes `jobs.report` one render at a time, verifies the backtest (and optional live)
+result JSON from `lean-results` against its `ObjectRef`, runs LEAN's `QuantConnect.Report.dll` (HTML, PDF via
+`xvfb-run wkhtmltopdf`) with the absolute `data-folder` `/Lean/Data/` (read-only `lean-data`), writes
+`lean-reports/<jobId>/<attempt>/report.{html,pdf,log}`, publishes `job.completed` / `job.failed` and serves
+`/internal/v1/reports`. `sh deploy/compose/verify-report.sh` renders the stored fixture
+`Tests/TestData/test_report_data.json` through the bus (no backtest) and checks a tampered `ObjectRef` fails.
+
 | Service | What | Host port (127.0.0.1 only) | Files |
 |---|---|---|---|
 | `rabbitmq` | RabbitMQ 3.13 + management UI, v1 topology from `docs/architecture/contracts/topology/` | 5672, UI 15672 | `rabbitmq/entrypoint.sh` adds the compose user to the topology definitions |

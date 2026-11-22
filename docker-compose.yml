@@ -241,6 +241,30 @@ services:
         condition: service_healthy
     networks: [lean]
 
+  # Report (plan step s3.3): renders LEAN's Report from stored result JSON (lean-results) into lean-reports.
+  # Engine image (pythonnet); data-folder is the absolute lean-data mount (market-hours database).
+  report:
+    image: ${LEAN_IMAGE_REGISTRY:-lean}/report:${LEAN_IMAGE_TAG:-dev}
+    build:
+      context: .
+      dockerfile: Services/Dockerfile
+      target: report
+    profiles: [report]
+    restart: unless-stopped
+    environment:
+      <<: *lean-service-env
+      Report__DataFolder: /Lean/Data/
+      Report__WorkDirectory: /work/reports
+      Report__ResultsApiUrl: http://results:8080/
+    volumes:
+      - lean-data:/Lean/Data:ro
+    ports:
+      - 127.0.0.1:${REPORT_PORT:-5084}:8080
+    depends_on:
+      infra-ready:
+        condition: service_healthy
+    networks: [lean]
+
 volumes:
   rabbitmq-data:
   postgres-data:
