@@ -1,7 +1,7 @@
 #!/bin/sh
 # End-to-end check of api-gateway (plan step s4.5) against the compose stack. Run from the repository root:
 #
-#   docker compose up -d --wait --build api-gateway report    # no backtest-worker: this script plays the worker
+#   docker compose up -d --wait --build api-gateway report    # no backtest-worker/optimizer: the script stops them
 #   deploy/compose/verify-gateway.sh
 #
 # Submits a backtest through the gateway (multipart Python source -> orchestrator), plays the worker over the
@@ -49,6 +49,8 @@ code=$(curl -sS -o /tmp/gw.body -w '%{http_code}' "$GW/api/v1/jobs")
 code=$(curl -sS -o /tmp/gw.body -w '%{http_code}' -H 'Authorization: Bearer wrong-key' "$GW/api/v1/jobs")
 [ "$code" = 401 ] && pass "wrong key -> 401 $(jq -r .detail /tmp/gw.body)" || fail "expected 401, got $code"
 
+# Plays the worker (a real one would race it) and checks the 503 for an unavailable upstream (optimizer): stop both.
+$DC stop backtest-worker optimizer >/dev/null 2>&1 || true
 echo "== submit a backtest through the gateway (multipart Python source)"
 mq -X DELETE "$MQ/queues/$RABBITMQ_VHOST/jobs.backtest/contents" >/dev/null
 printf 'from AlgorithmImports import *\nclass GatewaySmoke(QCAlgorithm):\n    def initialize(self):\n        self.add_equity("SPY")\n' > /tmp/main.py
@@ -65,8 +67,6 @@ code=$(gw GET "/api/v1/jobs/$job")
 code=$(gw GET "/api/v1/jobs?kind=backtest&limit=3")
 [ "$code" = 200 ] && pass "GET /api/v1/jobs -> $(jq '.items | length' /tmp/gw.body) items, first $(jq -r '.items[0].id' /tmp/gw.body)" || fail "list returned $code"
 
-# This script plays the worker: a real one (started by default since the platform has no profiles) would race it.
-$DC stop backtest-worker >/dev/null 2>&1 || true
 echo "== worker side (no worker image): dispatch -> attempt -> started -> result in MinIO -> completed"
 for _ in $(seq 1 30); do [ "$(curl -fsS "$ORCH/internal/v1/jobs/$job" | jq -r .status)" = dispatched ] && break; sleep 1; done
 msg=$(mq -X POST "$MQ/queues/$RABBITMQ_VHOST/jobs.backtest/get" -d '{"count":1,"ackmode":"ack_requeue_false","encoding":"auto"}' | jq -c '.[0]')
@@ -88,7 +88,7 @@ done
 [ "$code" = 200 ] || fail "result returned $code $(cat /tmp/gw.body)"
 echo "      $(jq -c '{jobId, attempt, status, statistics, result: .result.key}' /tmp/gw.body)"
 [ "$(jq -r '.statistics["Net Profit"]' /tmp/gw.body)" = "$(jq -r '.Statistics["Net Profit"]' /tmp/result.json)" ] && pass "GET /api/v1/jobs/$job/result -> results summary with statistics" || fail "statistics missing"
-code=$(gw GET "/api/v1/jobs/$job")
+for _ in $(seq 1 15); do code=$(gw GET "/api/v1/jobs/$job"); [ "$(jq -r .status /tmp/gw.body)" = completed ] && break; sleep 1; done
 [ "$(jq -r .status /tmp/gw.body)" = completed ] && pass "job is completed via the gateway" || fail "job status $(jq -r .status /tmp/gw.body)"
 code=$(gw GET "/api/v1/jobs/$job/result/download")
 loc=$(grep -i '^location:' /tmp/gw.headers | tr -d '\r' | cut -d' ' -f2)
