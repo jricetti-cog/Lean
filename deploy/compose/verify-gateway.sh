@@ -1,7 +1,7 @@
 #!/bin/sh
 # End-to-end check of api-gateway (plan step s4.5) against the compose stack. Run from the repository root:
 #
-#   docker compose --profile infra --profile orchestrator --profile results --profile report --profile gateway up -d --wait --build
+#   docker compose up -d --wait --build api-gateway report    # no backtest-worker: this script plays the worker
 #   deploy/compose/verify-gateway.sh
 #
 # Submits a backtest through the gateway (multipart Python source -> orchestrator), plays the worker over the

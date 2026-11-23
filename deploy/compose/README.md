@@ -1,3 +1,7 @@
+> Whole platform: `docker compose up` (or `make up`) then `make smoke`; Kubernetes: the Helm chart. See [deploy/README.md](../README.md).
+> Service-specific commands below that list `--profile` flags predate the default profile: with no profile every
+> platform service starts, and `docker compose up -d --wait <service>` starts a subset.
+
 # Compose infrastructure (plan step s2.3)
 
 The root [`docker-compose.yml`](../../docker-compose.yml) runs the infrastructure every LEAN service needs
