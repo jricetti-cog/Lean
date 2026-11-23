@@ -66,7 +66,7 @@ smoke() {
         kubectl -n "$NAMESPACE" port-forward "svc/$1" "$2" >/dev/null &
         pids+=($!)
     done
-    for _ in $(seq 1 30); do curl -fsS -o /dev/null "http://127.0.0.1:${GATEWAY_PORT:-5080}/healthz" && break; sleep 1; done
+    for _ in $(seq 1 30); do curl -fsS -o /dev/null "http://127.0.0.1:${GATEWAY_PORT:-5080}/healthz" 2>/dev/null && break; sleep 1; done
     # The live step shows the per-deployment Deployment the orchestrator created through the Kubernetes API.
     SMOKE_LIVE="${SMOKE_LIVE:-1}" \
     SMOKE_LIVE_HOOK="echo \"      kubectl get deploy (\$1):\"; kubectl -n $NAMESPACE get deploy -l lean.role=live-worker -L lean.job-id | sed 's/^/        /'" \
