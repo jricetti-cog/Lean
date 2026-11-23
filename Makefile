@@ -37,7 +37,7 @@ build: ## Build every image with BuildKit bake (REGISTRY/TAG from IMAGE_REGISTRY
 	REGISTRY=$(IMAGE_REGISTRY) TAG=$(IMAGE_TAG) docker buildx bake -f Services/docker-bake.hcl
 
 pull: ## Pull the images for IMAGE_REGISTRY/IMAGE_TAG instead of building them
-	$(COMPOSE) pull --ignore-buildable=false
+	$(COMPOSE) pull
 
 push: ## Push every image (needs `docker login ghcr.io`), e.g. make push IMAGE_REGISTRY=ghcr.io/jricetti-cog/lean IMAGE_TAG=$(VERSION)
 	REGISTRY=$(IMAGE_REGISTRY) TAG=$(IMAGE_TAG) docker buildx bake -f Services/docker-bake.hcl --push
