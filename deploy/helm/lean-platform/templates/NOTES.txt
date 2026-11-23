@@ -1,0 +1,9 @@
+LEAN platform {{ .Chart.AppVersion }} installed in namespace {{ .Release.Namespace }}.
+
+  kubectl -n {{ .Release.Namespace }} port-forward svc/api-gateway 5080:8080   # API + /openapi
+  kubectl -n {{ .Release.Namespace }} port-forward svc/console 5090:8080       # web console
+  kubectl -n {{ .Release.Namespace }} port-forward svc/minio 9000:9000         # presigned downloads ({{ .Values.endpoints.publicS3Url }})
+  bash deploy/smoke/smoke.sh                                                  # from the repository root
+
+Backtest workers: {{ if .Values.backtestWorker.autoscaling.enabled }}{{ .Values.backtestWorker.autoscaling.minReplicas }}-{{ .Values.backtestWorker.autoscaling.maxReplicas }} replicas on {{ .Values.backtestWorker.autoscaling.queue }} depth ({{ .Values.backtestWorker.autoscaling.provider }}){{ else }}{{ .Values.backtestWorker.replicas }} replicas{{ end }}.
+Live deployments: {{ if .Values.liveWorker.enabled }}one Deployment per algorithm (kubectl get deploy -l lean.role=live-worker){{ else }}disabled{{ end }}.

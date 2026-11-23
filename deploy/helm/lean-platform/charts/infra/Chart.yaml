@@ -1,0 +1,6 @@
+apiVersion: v2
+name: infra
+description: In-cluster RabbitMQ, PostgreSQL and MinIO for lean-platform (local, demo and kind use). Production installs set infra.enabled=false and point lean-platform at managed endpoints.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

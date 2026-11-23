@@ -66,9 +66,10 @@ namespace QuantConnect.Services.Orchestrator
             builder.Services.AddHostedService<StatusConsumer>();
             builder.Services.AddHostedService<HeartbeatMonitor>();
             builder.Services.Configure<LiveDeploymentOptions>(builder.Configuration.GetSection(LiveDeploymentOptions.Section));
-            if (builder.Configuration.GetSection(LiveDeploymentOptions.Section).Get<LiveDeploymentOptions>() is { Enabled: true })
+            if (builder.Configuration.GetSection(LiveDeploymentOptions.Section).Get<LiveDeploymentOptions>() is { Enabled: true } live)
             {
-                builder.Services.AddSingleton<ILiveContainerRuntime, DockerLiveContainerRuntime>();
+                if (live.IsKubernetes) builder.Services.AddSingleton<ILiveContainerRuntime, KubernetesLiveContainerRuntime>();
+                else builder.Services.AddSingleton<ILiveContainerRuntime, DockerLiveContainerRuntime>();
                 builder.Services.AddHostedService<LiveDeployer>();
             }
 

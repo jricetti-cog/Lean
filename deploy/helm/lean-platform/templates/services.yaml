@@ -1,0 +1,126 @@
+{{- range $name, $svc := .Values.services }}
+{{- if ne (toString $svc.enabled) "false" }}
+{{- $isConsole := eq $name "console" }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels: {{- include "lean.labels" $ | nindent 4 }}
+    app.kubernetes.io/name: {{ $name }}
+spec:
+  selector: { app.kubernetes.io/name: {{ $name }}, app.kubernetes.io/instance: {{ $.Release.Name }} }
+  ports: [{ name: http, port: 8080, targetPort: 8080 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels: {{- include "lean.labels" $ | nindent 4 }}
+    app.kubernetes.io/name: {{ $name }}
+spec:
+  replicas: {{ $svc.replicas | default 1 }}
+  {{- if eq $name "market-data" }}
+  strategy: { type: Recreate }  # the single writer of lean-data
+  {{- end }}
+  selector:
+    matchLabels: { app.kubernetes.io/name: {{ $name }}, app.kubernetes.io/instance: {{ $.Release.Name }} }
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: {{ $name }}, app.kubernetes.io/instance: {{ $.Release.Name }}, app.kubernetes.io/part-of: lean-platform }
+      annotations:
+        checksum/env: {{ include (print $.Template.BasePath "/secret.yaml") $ | sha256sum }}
+    spec:
+      {{- if and (eq $name "job-orchestrator") $.Values.liveWorker.enabled }}
+      serviceAccountName: job-orchestrator
+      {{- else }}
+      automountServiceAccountToken: false
+      {{- end }}
+      securityContext: {{- toYaml $.Values.podSecurityContext | nindent 8 }}
+      {{- with $.Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if not $isConsole }}
+      initContainers: {{- include "lean.waitFor" (dict "root" $ "data" $svc.data) | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ $name }}
+          image: {{ include "lean.image" (dict "root" $ "name" $name) }}
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          {{- if $isConsole }}
+          env:
+            - { name: LEAN_GATEWAY_URL, value: "http://api-gateway.{{ $.Release.Namespace }}.svc.cluster.local:8080" }
+            - { name: NGINX_RESOLVER, value: {{ $svc.resolver | default "kube-dns.kube-system.svc.cluster.local" | quote }} }
+            - name: LEAN_API_KEY
+              valueFrom: { secretKeyRef: { name: {{ include "lean.secretName" $ }}, key: LEAN_API_KEY } }
+          {{- else }}
+          envFrom:
+            - configMapRef: { name: lean-platform-env }
+            - secretRef: { name: {{ include "lean.secretName" $ }} }
+          env:
+            {{- range $k, $v := $svc.env }}
+            - { name: {{ $k }}, value: {{ $v | quote }} }
+            {{- end }}
+            {{- if eq $name "api-gateway" }}
+            - { name: Gateway__ApiKeys__0__User, value: dev }
+            - { name: Gateway__ApiKeys__0__Admin, value: "true" }
+            - { name: Gateway__PublicS3Url, value: {{ $.Values.endpoints.publicS3Url | quote }} }
+            {{- end }}
+            {{- if eq $name "job-orchestrator" }}
+            {{- if $.Values.liveWorker.enabled }}
+            - { name: Orchestrator__LiveDeployment__Mode, value: kubernetes }
+            - { name: Orchestrator__LiveDeployment__Image, value: {{ include "lean.image" (dict "root" $ "name" "live-worker") | quote }} }
+            - { name: Orchestrator__LiveDeployment__ImagePullPolicy, value: {{ $.Values.image.pullPolicy | quote }} }
+            - { name: Orchestrator__LiveDeployment__DataClaim, value: lean-data }
+            - { name: Orchestrator__LiveDeployment__ServiceAccount, value: lean-live-worker }
+            - { name: Orchestrator__LiveDeployment__MemoryMb, value: {{ $.Values.liveWorker.memoryMb | quote }} }
+            - { name: Orchestrator__LiveDeployment__Cpus, value: {{ $.Values.liveWorker.cpus | quote }} }
+            - { name: Orchestrator__LiveDeployment__PodLabels, value: "app.kubernetes.io/part-of=lean-platform,app.kubernetes.io/instance={{ $.Release.Name }},app.kubernetes.io/name=live-worker" }
+            {{- else }}
+            - { name: Orchestrator__LiveDeployment__Mode, value: none }
+            {{- end }}
+            {{- end }}
+          {{- end }}
+          ports: [{ name: http, containerPort: 8080 }]
+          readinessProbe:
+            httpGet: { path: {{ ternary "/healthz" "/readyz" $isConsole }}, port: 8080 }
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            failureThreshold: 3
+          startupProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            periodSeconds: 2
+            failureThreshold: 90
+          securityContext: { allowPrivilegeEscalation: false }
+          resources: {{- toYaml $svc.resources | nindent 12 }}
+          {{- if or $svc.data (eq $name "report") }}
+          volumeMounts:
+            {{- if $svc.data }}
+            - { name: lean-data, mountPath: /Lean/Data, readOnly: {{ ne $svc.data "rw" }} }
+            {{- end }}
+            {{- if eq $name "report" }}
+            - { name: work, mountPath: /work }
+            {{- end }}
+          {{- end }}
+      {{- if or $svc.data (eq $name "report") }}
+      volumes:
+        {{- if $svc.data }}
+        - name: lean-data
+          persistentVolumeClaim: { claimName: lean-data, readOnly: {{ ne $svc.data "rw" }} }
+        {{- end }}
+        {{- if eq $name "report" }}
+        - { name: work, emptyDir: {} }
+        {{- end }}
+      {{- end }}
+{{- end }}
+{{- end }}

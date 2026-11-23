@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backtest-worker
+  labels: {{- include "lean.labels" . | nindent 4 }}
+    app.kubernetes.io/name: backtest-worker
+spec:
+  {{- if not .Values.backtestWorker.autoscaling.enabled }}
+  replicas: {{ .Values.backtestWorker.replicas }}
+  {{- end }}
+  selector:
+    matchLabels: { app.kubernetes.io/name: backtest-worker, app.kubernetes.io/instance: {{ .Release.Name }} }
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: backtest-worker, app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/part-of: lean-platform }
+      annotations:
+        checksum/env: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: {{ .Values.backtestWorker.terminationGracePeriodSeconds }}
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      initContainers: {{- include "lean.waitFor" (dict "root" $ "data" "ro") | nindent 8 }}
+      containers:
+        - name: backtest-worker
+          image: {{ include "lean.image" (dict "root" $ "name" "backtest-worker") }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          envFrom:
+            - configMapRef: { name: lean-platform-env }
+            - secretRef: { name: {{ include "lean.secretName" . }} }
+          env:
+            {{- range $k, $v := .Values.backtestWorker.env }}
+            - { name: {{ $k }}, value: {{ $v | quote }} }
+            {{- end }}
+          ports: [{ name: http, containerPort: 8080 }]
+          readinessProbe:
+            httpGet: { path: /readyz, port: 8080 }
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          startupProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            periodSeconds: 2
+            failureThreshold: 90
+          securityContext: { allowPrivilegeEscalation: false }
+          resources: {{- toYaml .Values.backtestWorker.resources | nindent 12 }}
+          volumeMounts:
+            - { name: lean-data, mountPath: /Lean/Data, readOnly: true }
+      volumes:
+        - name: lean-data
+          persistentVolumeClaim: { claimName: lean-data, readOnly: true }

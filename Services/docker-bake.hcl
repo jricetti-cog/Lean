@@ -15,7 +15,7 @@ variable "TAG" {
 
 group "default" {
   targets = ["api-gateway", "job-orchestrator", "results", "optimizer",
-             "backtest-worker", "live-worker", "market-data", "report", "research", "toolbox", "console"]
+             "backtest-worker", "live-worker", "market-data", "report", "research", "toolbox", "console", "lean-data"]
 }
 
 target "service" {
@@ -30,6 +30,18 @@ target "service" {
   tags       = ["${REGISTRY}/${svc}:${TAG}"]
   labels     = {
     "org.opencontainers.image.title"  = "lean-${svc}"
+    "org.opencontainers.image.source" = "https://github.com/jricetti-cog/Lean"
+  }
+}
+
+// Data/ and the seed script for the Helm chart's lean-data seed Job (the Compose stack bind-mounts Data/ instead).
+target "lean-data" {
+  context    = "Data"
+  contexts   = { seed = "deploy/compose/lean-data" }
+  dockerfile = "../deploy/docker/lean-data.Dockerfile"
+  tags       = ["${REGISTRY}/lean-data:${TAG}"]
+  labels     = {
+    "org.opencontainers.image.title"  = "lean-data"
     "org.opencontainers.image.source" = "https://github.com/jricetti-cog/Lean"
   }
 }

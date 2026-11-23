@@ -1,0 +1,78 @@
+# MinIO (S3-compatible artifact store): buckets and the least-privilege service user from the Compose bootstrap script.
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  labels: {{- include "infra.labels" . | nindent 4 }}
+spec:
+  selector: { app.kubernetes.io/name: minio, app.kubernetes.io/instance: {{ .Release.Name }} }
+  ports:
+    - { name: api, port: 9000 }
+    - { name: console, port: 9001 }
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: minio
+  labels: {{- include "infra.labels" . | nindent 4 }}
+spec:
+  serviceName: minio
+  replicas: 1
+  selector:
+    matchLabels: { app.kubernetes.io/name: minio, app.kubernetes.io/instance: {{ .Release.Name }} }
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: minio, app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/part-of: lean-platform }
+    spec:
+      containers:
+        - name: minio
+          image: {{ .Values.minio.image }}
+          args: ["server", "/data", "--console-address", ":9001"]
+          envFrom: [{ secretRef: { name: lean-infra } }]
+          ports: [{ containerPort: 9000 }, { containerPort: 9001 }]
+          readinessProbe:
+            httpGet: { path: /minio/health/ready, port: 9000 }
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /minio/health/live, port: 9000 }
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources: {{- toYaml .Values.minio.resources | nindent 12 }}
+          volumeMounts:
+            - { name: data, mountPath: /data }
+  volumeClaimTemplates:
+    - metadata: { name: data }
+      spec:
+        accessModes: [ReadWriteOnce]
+{{- include "infra.storageClass" . }}
+        resources: { requests: { storage: {{ .Values.minio.storage }} } }
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-bootstrap-{{ .Release.Revision }}
+  labels: {{- include "infra.labels" . | nindent 4 }}
+spec:
+  backoffLimit: 20
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: minio-bootstrap, app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/part-of: lean-platform }
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+        - name: wait-for-minio
+          image: {{ .Values.minio.image }}
+          command: ["sh", "-c", "until curl -fsS -o /dev/null http://minio:9000/minio/health/ready; do sleep 2; done"]
+      containers:
+        - name: bootstrap
+          image: {{ .Values.minio.image }}
+          command: ["/bin/sh", "/bootstrap/minio-bootstrap.sh"]
+          envFrom: [{ secretRef: { name: lean-infra } }]
+          env:
+            - { name: HOME, value: /tmp }
+          volumeMounts:
+            - { name: files, mountPath: /bootstrap }
+      volumes:
+        - name: files
+          configMap: { name: lean-infra-files }

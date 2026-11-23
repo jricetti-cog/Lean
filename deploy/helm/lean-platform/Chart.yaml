@@ -1,0 +1,13 @@
+apiVersion: v2
+name: lean-platform
+description: LEAN platform services (gateway, console, orchestrator, backtest workers, market-data, results, report, optimizer) with in-cluster or external RabbitMQ, PostgreSQL and MinIO.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+home: https://github.com/jricetti-cog/Lean
+sources: [https://github.com/jricetti-cog/Lean]
+dependencies:
+  # In-cluster infrastructure for local/demo installs; infra.enabled=false + `endpoints` for managed services.
+  - name: infra
+    version: 0.1.0
+    condition: infra.enabled

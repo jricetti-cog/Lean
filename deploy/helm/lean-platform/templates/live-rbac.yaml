@@ -1,0 +1,35 @@
+{{- if .Values.liveWorker.enabled }}
+# job-orchestrator creates one Deployment per live deployment (lean-live-<jobId>) in this namespace only.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: job-orchestrator
+  labels: {{- include "lean.labels" . | nindent 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: job-orchestrator-live-deployments
+  labels: {{- include "lean.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [apps]
+    resources: [deployments]
+    verbs: [get, list, watch, create, patch, delete]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: job-orchestrator-live-deployments
+  labels: {{- include "lean.labels" . | nindent 4 }}
+roleRef: { apiGroup: rbac.authorization.k8s.io, kind: Role, name: job-orchestrator-live-deployments }
+subjects:
+  - { kind: ServiceAccount, name: job-orchestrator, namespace: {{ .Release.Namespace }} }
+---
+# Live-worker pods talk to the broker and MinIO only: no Kubernetes API token.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: lean-live-worker
+  labels: {{- include "lean.labels" . | nindent 4 }}
+automountServiceAccountToken: false
+{{- end }}
