@@ -265,8 +265,11 @@ before=$(btc)
 epoch=$(job "$live" | jq -r .leaseEpoch)
 echo "   deployment $live holds $before BTCUSD, lease epoch $epoch; SIGKILL the container's main process"
 # A crash, not `docker kill`: Docker counts a `docker kill` as a manual stop and skips the on-failure restart policy.
+killed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 docker run --rm --pid host --user 0 --entrypoint sh "$(docker inspect -f '{{.Config.Image}}' "$lc")" -c "kill -9 $(docker inspect -f '{{.State.Pid}}' "$lc")"
 until_true "live container running again" sh -c "[ \"\$(docker inspect -f '{{.State.Running}}' $lc 2>/dev/null)\" = true ]"
+# The killed run's engine.log survives in the container until the restarted worker recreates the workspace.
+until_true "live worker recreated the workspace" sh -c "docker logs --since $killed_at $lc 2>&1 | grep -qE 'restoring|fresh portfolio'"
 until_true "algorithm restarted" sh -c "docker exec $lc sh -c 'grep -q \"LiveWorkerDemo: started with\" /work/$live/live/engine.log'"
 docker exec "$lc" sh -c "grep 'LiveWorkerDemo: started with' /work/$live/live/engine.log" | sed 's/^/   /'
 docker exec "$lc" sh -c "grep -q 'LiveWorkerDemo: started with $before BTCUSD' /work/$live/live/engine.log" || fail "restarted deployment did not restore $before BTCUSD"
