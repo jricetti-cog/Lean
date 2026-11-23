@@ -1,6 +1,7 @@
 # LEAN platform services CI (plan step s2.4).
 #   images: build every Services/Dockerfile image (docker-bake.hcl), gate their size, run the compose smoke test
-#           (infra profile up, BasicTemplateAlgorithm submitted and completed), then push to GHCR on master.
+#           (infra up, BasicTemplateAlgorithm submitted and completed), lint the Helm chart, then push versioned
+#           images to GHCR on master and on v* tags (deploy/README.md).
 #   tests:  Tests/Services, then the existing unit suite, inside quantconnect/lean:foundation.
 # Every step is a plain command, so the same commands verify a change locally (see deploy/compose/README.md).
 name: Services
@@ -8,6 +9,7 @@ name: Services
 on:
   push:
     branches: [master]
+    tags: ['v*']
   pull_request:
     branches: [master]
   workflow_dispatch:
@@ -57,7 +59,7 @@ jobs:
         run: bash Services/check-image-sizes.sh
 
       - name: Compose up (infra profile)
-        run: docker compose --profile infra up -d --wait
+        run: docker compose up -d --wait infra-ready
 
       - name: Infra smoke test
         run: sh deploy/compose/verify-infra.sh
@@ -67,19 +69,37 @@ jobs:
 
       - name: Compose logs
         if: failure()
-        run: docker compose --profile infra logs --no-color --tail 200
+        run: docker compose logs --no-color --tail 200
 
       - name: Compose down
         if: always()
-        run: docker compose --profile infra down -v
+        run: docker compose down -v
 
+      - name: Helm chart lint
+        run: |
+          curl -fsSL https://get.helm.sh/helm-v3.19.0-linux-amd64.tar.gz | sudo tar xz -C /usr/local/bin --strip-components=1 linux-amd64/helm
+          helm lint deploy/helm/lean-platform
+          helm template lean deploy/helm/lean-platform --namespace lean > /dev/null
+
+      # Versioned images: every master build is <sha> and `master`; a v<version> tag also publishes <version> and
+      # `latest`, plus the chart as oci://ghcr.io/<owner>/lean/charts/lean-platform:<version>.
       - name: Push images to GHCR
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        if: github.event_name == 'push'
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-          for svc in api-gateway job-orchestrator results optimizer backtest-worker live-worker market-data report research toolbox; do
+          extra=master
+          case "$GITHUB_REF" in refs/tags/v*) extra="${GITHUB_REF#refs/tags/v} latest" ;; esac
+          for svc in api-gateway job-orchestrator results optimizer backtest-worker live-worker market-data report research toolbox console lean-data; do
             docker push "$REGISTRY/$svc:$TAG"
+            for t in $extra; do docker tag "$REGISTRY/$svc:$TAG" "$REGISTRY/$svc:$t" && docker push "$REGISTRY/$svc:$t"; done
           done
+
+      - name: Push Helm chart to GHCR
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u "${{ github.actor }}" --password-stdin
+          helm package deploy/helm/lean-platform --version "${GITHUB_REF#refs/tags/v}" --app-version "${GITHUB_REF#refs/tags/v}"
+          helm push "lean-platform-${GITHUB_REF#refs/tags/v}.tgz" "oci://$REGISTRY/charts"
 
   tests:
     runs-on: ubuntu-latest

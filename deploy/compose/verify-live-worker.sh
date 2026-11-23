@@ -8,7 +8,6 @@
 # Requires curl and jq.
 set -euo pipefail
 [ -f .env ] && set -a && . ./.env && set +a
-export DOCKER_SOCKET_GID="${DOCKER_SOCKET_GID:-$(stat -c %g /var/run/docker.sock)}"
 GW="http://127.0.0.1:${GATEWAY_PORT:-5080}"
 ORCH="http://127.0.0.1:${ORCHESTRATOR_PORT:-5081}/internal/v1"
 KEY="${GATEWAY_API_KEY:-lean-dev-api-key}"
@@ -33,11 +32,12 @@ has_holdings() { [ "$(btc)" != 0 ]; }
 container_running() { [ "$(docker inspect -f '{{.State.Running}}' "$container" 2>/dev/null)" = true ]; }
 algo_started_times() { engine_log | grep -c "LiveWorkerDemo: started with" || true; }
 
-echo "== docker compose up (infra, job-orchestrator with the Docker socket, market-data feed, results, api-gateway)"
+echo "== docker compose up (infra, job-orchestrator behind docker-socket-proxy, market-data feed, results, api-gateway)"
 compose up -d --wait
 compose ps --format 'table {{.Service}}\t{{.Status}}'
-docker inspect -f '{{range .Mounts}}{{.Source}}->{{.Destination}} {{end}}' "$(compose ps -q job-orchestrator)" | grep -q docker.sock || fail "socket not mounted"
-pass "job-orchestrator has the Docker socket; live deployment mode $(docker exec "$(compose ps -q job-orchestrator)" printenv Orchestrator__LiveDeployment__Mode)"
+docker inspect -f '{{range .Mounts}}{{.Source}}->{{.Destination}} {{end}}' "$(compose ps -q job-orchestrator)" | grep -q docker.sock && fail "job-orchestrator mounts the Docker socket"
+docker inspect -f '{{range .Mounts}}{{.Source}}->{{.Destination}} {{end}}' "$(compose ps -q docker-socket-proxy)" | grep -q docker.sock || fail "docker-socket-proxy has no socket"
+pass "job-orchestrator reaches Docker only through docker-socket-proxy ($(docker exec "$(compose ps -q job-orchestrator)" printenv DOCKER_HOST)); live deployment mode $(docker exec "$(compose ps -q job-orchestrator)" printenv Orchestrator__LiveDeployment__Mode)"
 
 echo "== deploy through the gateway: POST /api/v1/live (PaperBrokerage, bus data queue)"
 spec='{"name":"live-smoke","algorithm":{"source":"builtin","typeName":"LiveWorkerDemoAlgorithm"},"brokerage":"PaperBrokerage","dataQueueHandlers":["bus"]}'

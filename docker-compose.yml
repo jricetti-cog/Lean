@@ -1,9 +1,14 @@
-# LEAN platform: infrastructure (plan step s2.3). Services from later phases add themselves to this file.
+# LEAN platform (plan step s6.3). With no profile, `docker compose up` builds the images (when missing) and starts the
+# whole platform: infrastructure (RabbitMQ, PostgreSQL, MinIO, lean-data seed), job-orchestrator, backtest-worker,
+# market-data, results, report, optimizer, api-gateway and console. Optional profiles: observability, research, toolbox.
 #
 #   cp .env.example .env               # optional: every setting has a local-development default
-#   docker compose --profile infra up            # foreground; or `up -d --wait` to block until healthy
-#   docker compose --profile infra ps -a         # long-running services healthy, the two one-shot jobs Exited (0)
+#   docker compose up                  # foreground; or `make up` (= up -d --wait), then `make smoke`
+#   docker compose up -d --wait api-gateway        # a subset: the named services and what they depend on
+#   docker compose --profile observability up -d   # plus Grafana/Prometheus/Tempo/Loki
 #
+# Images default to locally built lean/<service>:dev; LEAN_IMAGE_REGISTRY=ghcr.io/jricetti-cog/lean LEAN_IMAGE_TAG=<version>
+# runs the published images instead (`make pull`).
 # docker-compose.override.yml is merged automatically for local development (source mounts, debug ports);
 # use `docker compose -f docker-compose.yml ...` to run without it.
 # Published ports bind to 127.0.0.1 only. Services reach each other by service name on the `lean` network.
@@ -40,7 +45,6 @@ services:
   # at boot; the management UI is on RABBITMQ_MANAGEMENT_PORT.
   rabbitmq:
     image: ${RABBITMQ_IMAGE:-rabbitmq:3.13.7-management}
-    profiles: [infra]
     hostname: rabbitmq
     restart: unless-stopped
     deploy:
@@ -77,7 +81,6 @@ services:
   # deploy/compose/postgres/ creates them on first start; each service applies its own schema migrations.
   postgres:
     image: ${POSTGRES_IMAGE:-postgres:17.12-alpine}
-    profiles: [infra]
     restart: unless-stopped
     deploy:
       resources:
@@ -107,7 +110,6 @@ services:
   # S3-compatible artifact store (ADR 0003). Community MinIO build: upstream stopped publishing images.
   minio:
     image: ${MINIO_IMAGE:-pgsty/minio:RELEASE.2026-08-04T00-00-00Z}
-    profiles: [infra]
     restart: unless-stopped
     deploy:
       resources:
@@ -131,7 +133,6 @@ services:
   # One-shot: creates the buckets and the least-privilege service account. Idempotent, runs on every `up`.
   minio-bootstrap:
     image: ${MINIO_IMAGE:-pgsty/minio:RELEASE.2026-08-04T00-00-00Z}
-    profiles: [infra]
     restart: "no"
     depends_on:
       minio:
@@ -151,7 +152,6 @@ services:
   # see the marker and exit. market-data mounts lean-data read-write, every other service read-only.
   lean-data-seed:
     image: ${SEED_IMAGE:-alpine:3.22.8}
-    profiles: [infra]
     restart: "no"
     entrypoint: ["/bin/sh", "/seed/seed-lean-data.sh"]
     environment:
@@ -164,10 +164,9 @@ services:
     network_mode: none
 
   # Readiness gate: healthy once every long-running infrastructure service is healthy and both one-shot jobs
-  # completed, so `up --wait` works for the infra profile and later services can depend on this one service.
+  # completed, so `up --wait infra-ready` brings up just the infrastructure and later services can depend on this one service.
   infra-ready:
     image: ${SEED_IMAGE:-alpine:3.22.8}
-    profiles: [infra]
     restart: unless-stopped
     deploy:
       resources:
@@ -200,7 +199,6 @@ services:
       context: .
       dockerfile: Services/Dockerfile
       target: job-orchestrator
-    profiles: [orchestrator]
     restart: unless-stopped
     deploy:
       resources:
@@ -222,26 +220,51 @@ services:
       Orchestrator__LiveDeployment__ContainerPrefix: ${COMPOSE_PROJECT_NAME:-lean}-live-
       Orchestrator__LiveDeployment__MemoryMb: ${LIVE_WORKER_MEMORY_MB:-4096}
       Orchestrator__LiveDeployment__Cpus: ${LIVE_WORKER_CPUS:-2}
-    # The image runs as a non-root user: give it the group owning the host's docker socket (`stat -c %g /var/run/docker.sock`).
-    group_add: ["${DOCKER_SOCKET_GID:-999}"]
-    volumes:
-      - ${DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock
+      # Docker API through docker-socket-proxy (containers only); the orchestrator never mounts the socket itself.
+      DOCKER_HOST: tcp://docker-socket-proxy:2375
     ports:
       - 127.0.0.1:${ORCHESTRATOR_PORT:-5081}:8080
     depends_on:
       infra-ready:
         condition: service_healthy
-    networks: [lean]
+      docker-socket-proxy:
+        condition: service_healthy
+    networks: [lean, docker-api]
+
+  # The only container that mounts the Docker socket: exposes just the container endpoints job-orchestrator uses
+  # (create/inspect/list/start/remove live workers) on the internal docker-api network, never published. Root inside
+  # the proxy reads the socket whatever group owns it on the host, so no DOCKER_SOCKET_GID is needed.
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy:3.4@sha256:027f9fa5ee70be5836eeaa10ce889d7a83f34a8db16a7f412818b92997e0beab
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "${DOCKER_PROXY_CPUS:-0.25}"
+          memory: ${DOCKER_PROXY_MEMORY:-64m}
+    environment:
+      CONTAINERS: 1
+      POST: 1
+      EVENTS: 0
+      VERSION: 1
+      PING: 1
+    volumes:
+      - ${DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:2375/_ping | grep -q OK"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [docker-api]
 
   # Market data (ADR 0004, plan step s3.1): the only writer of lean-data (catalog, downloads, history, live fan-out).
-  #   docker compose --profile infra --profile market-data up -d --wait market-data
+  #   docker compose up -d --wait market-data
   market-data:
     image: ${LEAN_IMAGE_REGISTRY:-lean}/market-data:${LEAN_IMAGE_TAG:-dev}
     build:
       context: .
       dockerfile: Services/Dockerfile
       target: market-data
-    profiles: [market-data]
     restart: unless-stopped
     deploy:
       resources:
@@ -274,7 +297,6 @@ services:
       context: .
       dockerfile: Services/Dockerfile
       target: results
-    profiles: [results]
     restart: unless-stopped
     deploy:
       resources:
@@ -301,7 +323,6 @@ services:
       context: .
       dockerfile: Services/Dockerfile
       target: report
-    profiles: [report]
     restart: unless-stopped
     deploy:
       resources:
@@ -326,7 +347,7 @@ services:
   # lean-data volume, read-only (ADR 0004). Notebooks reach the services through the injected base URLs; the sample
   # ServicesQuantBookTemplate.ipynb pulls history from market-data and a finished backtest from results. Notebooks saved
   # under work/ persist in the research-notebooks volume.
-  #   docker compose --profile infra --profile market-data --profile results --profile research up -d --wait
+  #   docker compose --profile research up -d --wait research
   #   open http://127.0.0.1:${RESEARCH_PORT:-8888}/lab
   research:
     image: ${LEAN_IMAGE_REGISTRY:-lean}/research:${LEAN_IMAGE_TAG:-dev}
@@ -386,14 +407,13 @@ services:
   # Backtest workers (plan step s4.3): each replica consumes jobs.backtest with prefetch 1 and runs every job in a
   # child Launcher (bus engine handlers, lean-data read-only, the job's RAM/run-time limits). No published port, so
   # replicas scale freely (5081-5084 are taken by the other services):
-  #   docker compose --profile infra --profile orchestrator --profile workers up -d --wait --scale backtest-worker=3
+  #   docker compose up -d --wait --scale backtest-worker=3
   backtest-worker:
     image: ${LEAN_IMAGE_REGISTRY:-lean}/backtest-worker:${LEAN_IMAGE_TAG:-dev}
     build:
       context: .
       dockerfile: Services/Dockerfile
       target: backtest-worker
-    profiles: [workers]
     restart: unless-stopped
     # tini as PID 1: reaps the engine child processes and lets a crashed worker take its container down (Docker restarts it).
     init: true
@@ -426,14 +446,13 @@ services:
   # the workers, not the optimizer, to speed optimizations up). Folds child job.completed from optimizer.children and
   # publishes job.progress / the terminal event; serves /internal/v1/optimizations (the gateway's `optimizer` upstream).
   # One replica: the children's events reach the replica that runs their optimization only while there is one consumer.
-  #   docker compose --profile infra --profile orchestrator --profile workers --profile optimizer up -d --wait --scale backtest-worker=3
+  #   docker compose up -d --wait --scale backtest-worker=3
   optimizer:
     image: ${LEAN_IMAGE_REGISTRY:-lean}/optimizer:${LEAN_IMAGE_TAG:-dev}
     build:
       context: .
       dockerfile: Services/Dockerfile
       target: optimizer
-    profiles: [optimizer]
     restart: unless-stopped
     deploy:
       resources:
@@ -468,7 +487,6 @@ services:
       context: .
       dockerfile: Services/Dockerfile
       target: live-worker
-    profiles: [workers]
     deploy:
       replicas: 0
     networks: [lean]
@@ -482,7 +500,6 @@ services:
       context: .
       dockerfile: Services/Dockerfile
       target: api-gateway
-    profiles: [gateway]
     restart: unless-stopped
     deploy:
       resources:
@@ -513,14 +530,13 @@ services:
     networks: [lean]
 
   # Web console (plan step s5.1): nginx serves the SPA at / and proxies /api to api-gateway, adding the API key from
-  # CONSOLE_API_KEY (default: GATEWAY_API_KEY). Run with --profile gateway; UI at http://127.0.0.1:${CONSOLE_PORT:-5090}.
+  # CONSOLE_API_KEY (default: GATEWAY_API_KEY). UI at http://127.0.0.1:${CONSOLE_PORT:-5090}.
   console:
     image: ${LEAN_IMAGE_REGISTRY:-lean}/console:${LEAN_IMAGE_TAG:-dev}
     build:
       context: .
       dockerfile: Services/Dockerfile
       target: console
-    profiles: [console]
     restart: unless-stopped
     deploy:
       resources:
@@ -535,7 +551,7 @@ services:
     networks: [lean]
 
   # ---- Observability (plan step s5.3), all provisioned from deploy/compose/observability/:
-  #   docker compose --profile infra --profile observability up -d --wait   (plus the service profiles to watch)
+  #   docker compose --profile observability up -d --wait
   # Grafana on GRAFANA_PORT (anonymous viewer; admin login from GRAFANA_ADMIN_USER/GRAFANA_ADMIN_PASSWORD).
   otel-collector:
     image: ${OTEL_COLLECTOR_IMAGE:-otel/opentelemetry-collector-contrib:0.120.0}
@@ -693,3 +709,5 @@ volumes:
 
 networks:
   lean:
+  docker-api:
+    internal: true

@@ -1,0 +1,158 @@
+# lean-platform values. Install one release per namespace: Services keep the Compose names (rabbitmq, results, ...),
+# so every service uses the same addresses as in docker-compose.yml.
+
+image:
+  # Images published by .github/workflows/services.yml (tags: git sha, `master`, and the release version).
+  registry: ghcr.io/jricetti-cog/lean
+  # Defaults to the chart appVersion.
+  tag: ""
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+# Credentials shared with the infra subchart. Local-development defaults, the same as docker-compose.yml: override every
+# one of them (or use existingSecret) outside a local cluster.
+global:
+  credentials:
+    rabbitmq: { user: lean, password: lean-dev-rabbitmq, vhost: lean }
+    postgres:
+      adminUser: postgres
+      adminPassword: lean-dev-postgres
+      jobsPassword: lean-dev-jobs
+      resultsPassword: lean-dev-results
+      gatewayPassword: lean-dev-gateway
+      marketdataPassword: lean-dev-marketdata
+    minio:
+      rootUser: lean-admin
+      rootPassword: lean-dev-minio-admin
+      accessKey: lean-services
+      secretKey: lean-dev-minio-services
+      buckets: { algorithms: lean-algorithms, results: lean-results, reports: lean-reports }
+    gatewayApiKey: lean-dev-api-key
+
+# Name of a Secret with the service environment (keys as rendered by templates/secret.yaml) instead of the generated one.
+existingSecret: ""
+
+infra:
+  # In-cluster RabbitMQ, PostgreSQL and MinIO (charts/infra). Set false to use `endpoints`.
+  enabled: true
+
+# Infrastructure addresses; the defaults are the infra subchart's Services.
+endpoints:
+  rabbitmq: { host: rabbitmq, port: 5672, managementUrl: "http://rabbitmq:15672/" }
+  postgres: { host: postgres, port: 5432 }
+  s3: { serviceUrl: "http://minio:9000", forcePathStyle: true }
+  # Base URL clients use for presigned downloads (the gateway signs for this host). kind: the MinIO port-forward.
+  publicS3Url: "http://127.0.0.1:9000"
+  # OTLP collector; empty turns telemetry export off.
+  otlp: ""
+
+# Market data (ADR 0004): one PVC, written by market-data and the seed Job, mounted read-only everywhere else.
+# kind/single node: ReadWriteOnce works (all pods share the node). Multi-node: use a ReadWriteMany class (NFS, EFS, ...).
+data:
+  storage: 2Gi
+  storageClass: ""
+  accessModes: [ReadWriteOnce]
+  # Fill an empty PVC from the lean-data image (the repository's Data/ folder).
+  seed:
+    enabled: true
+    image: lean-data
+  uid: 1654
+
+# Defaults for every platform Deployment.
+podSecurityContext: { runAsNonRoot: true, runAsUser: 1654, runAsGroup: 1654, fsGroup: 1654 }
+nodeSelector: {}
+tolerations: []
+waitImage: busybox:1.37
+
+services:
+  job-orchestrator:
+    replicas: 1
+    resources: { requests: { cpu: 100m, memory: 256Mi }, limits: { memory: 1Gi } }
+    env:
+      Orchestrator__HeartbeatTimeoutSeconds: "90"
+      Orchestrator__MaxAttempts: "3"
+  market-data:
+    replicas: 1
+    data: rw
+    resources: { requests: { cpu: 250m, memory: 1Gi }, limits: { memory: 4Gi } }
+    env:
+      MarketData__Live__Symbols: Equity/usa/SPY,Forex/oanda/EURUSD,Crypto/coinbase/BTCUSD
+      MarketData__Live__Resolution: Second
+  results:
+    replicas: 1
+    data: ro
+    resources: { requests: { cpu: 100m, memory: 256Mi }, limits: { memory: 1Gi } }
+  report:
+    replicas: 1
+    data: ro
+    resources: { requests: { cpu: 250m, memory: 1Gi }, limits: { memory: 4Gi } }
+    env:
+      Report__DataFolder: /Lean/Data/
+      Report__ResultsApiUrl: http://results:8080/
+      Report__WorkDirectory: /work/reports
+  optimizer:
+    replicas: 1
+    resources: { requests: { cpu: 100m, memory: 256Mi }, limits: { memory: 1Gi } }
+    env:
+      Optimizer__OrchestratorUri: http://job-orchestrator:8080/
+      Optimizer__MaxConcurrentOptimizations: "2"
+      Optimizer__MaxConcurrentBacktests: "16"
+      Optimizer__HeartbeatIntervalSeconds: "30"
+  api-gateway:
+    replicas: 1
+    resources: { requests: { cpu: 100m, memory: 256Mi }, limits: { memory: 1Gi } }
+    env:
+      Gateway__Upstreams__Orchestrator: http://job-orchestrator:8080
+      Gateway__Upstreams__Results: http://results:8080
+      Gateway__Upstreams__Optimizer: http://optimizer:8080
+      Gateway__Upstreams__MarketData: http://market-data:8080
+      Gateway__Upstreams__Report: http://report:8080
+      Gateway__RateLimit__PermitLimit: "120"
+      Gateway__RateLimit__WindowSeconds: "60"
+  console:
+    replicas: 1
+    # nginx-unprivileged: renders its config into /etc/nginx/conf.d, owned by the image's nginx user.
+    podSecurityContext: { runAsNonRoot: true, runAsUser: 101, runAsGroup: 101 }
+    resources: { requests: { cpu: 50m, memory: 64Mi }, limits: { memory: 256Mi } }
+
+# Backtest workers: a Deployment consuming jobs.backtest one job at a time (prefetch 1). Every job costs ~4-5 s of
+# engine child-process start on top of its run time, so a warm worker is worth keeping: scale up fast on queue
+# depth, scale down slowly.
+backtestWorker:
+  replicas: 2
+  resources: { requests: { cpu: "1", memory: 2Gi }, limits: { memory: 6Gi } }
+  env:
+    Worker__DefaultRamMb: "4096"
+    Worker__HeartbeatIntervalSeconds: "30"
+    Worker__OrchestratorUri: http://job-orchestrator:8080/
+  # Give a running backtest time to finish (or be requeued) before the pod is killed.
+  terminationGracePeriodSeconds: 120
+  autoscaling:
+    enabled: true
+    # keda: a KEDA ScaledObject (RabbitMQ scaler, creates and drives the HPA; needs KEDA installed).
+    # external: a plain autoscaling/v2 HPA on an External metric served by your metrics adapter (e.g. prometheus-adapter
+    #           exposing rabbitmq_queue_messages{queue="jobs.backtest"}).
+    provider: keda
+    minReplicas: 1
+    maxReplicas: 8
+    # Messages (ready + unacked) per worker: one running + one waiting, i.e. about one job's run time plus ~5 s of
+    # start-up overhead of backlog per worker before another pod is added.
+    targetQueueLength: 2
+    queue: jobs.backtest
+    pollingInterval: 10
+    cooldownPeriod: 300
+    externalMetric: { name: rabbitmq_queue_messages, selector: { queue: jobs.backtest } }
+    behavior:
+      scaleUp:
+        stabilizationWindowSeconds: 0
+        policies: [{ type: Pods, value: 4, periodSeconds: 30 }]
+      scaleDown:
+        stabilizationWindowSeconds: 300
+        policies: [{ type: Pods, value: 1, periodSeconds: 60 }]
+
+# Live deployments: job-orchestrator creates one Deployment per live algorithm (lean-live-<jobId>) through the
+# Kubernetes API, with a namespace-scoped Role (apps/deployments only).
+liveWorker:
+  enabled: true
+  memoryMb: 4096
+  cpus: 2

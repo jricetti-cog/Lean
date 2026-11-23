@@ -32,7 +32,6 @@ fi
 
 echo "== stack: $WORKERS backtest workers"
 [ -f .env ] || cp .env.example .env
-export DOCKER_SOCKET_GID=${DOCKER_SOCKET_GID:-$(stat -c %g /var/run/docker.sock)}
 # The harness polls every in-flight job; lift the per-key rate limit for this run only.
 GATEWAY_RATE_LIMIT=${GATEWAY_RATE_LIMIT:-100000} BACKTEST_WORKER_REPLICAS=$WORKERS \
     docker compose -f docker-compose.yml -f Tests/Services.Parity/docker-compose.parity.yml \

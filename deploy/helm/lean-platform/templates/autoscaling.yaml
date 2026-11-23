@@ -1,0 +1,57 @@
+{{- $a := .Values.backtestWorker.autoscaling }}
+{{- if $a.enabled }}
+{{- if eq $a.provider "keda" }}
+# KEDA creates and drives the HPA (keda-hpa-backtest-worker) from the jobs.backtest depth.
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: backtest-worker-rabbitmq
+  labels: {{- include "lean.labels" . | nindent 4 }}
+spec:
+  secretTargetRef:
+    - { parameter: host, name: {{ include "lean.secretName" . }}, key: RabbitMQ__ScalerHost }
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: backtest-worker
+  labels: {{- include "lean.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef: { name: backtest-worker }
+  minReplicaCount: {{ $a.minReplicas }}
+  maxReplicaCount: {{ $a.maxReplicas }}
+  pollingInterval: {{ $a.pollingInterval }}
+  cooldownPeriod: {{ $a.cooldownPeriod }}
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior: {{- toYaml $a.behavior | nindent 8 }}
+  triggers:
+    - type: rabbitmq
+      authenticationRef: { name: backtest-worker-rabbitmq }
+      metadata:
+        protocol: http
+        mode: QueueLength
+        value: {{ $a.targetQueueLength | quote }}
+        queueName: {{ $a.queue }}
+{{- else if eq $a.provider "external" }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: backtest-worker
+  labels: {{- include "lean.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: backtest-worker }
+  minReplicas: {{ $a.minReplicas }}
+  maxReplicas: {{ $a.maxReplicas }}
+  behavior: {{- toYaml $a.behavior | nindent 4 }}
+  metrics:
+    - type: External
+      external:
+        metric:
+          name: {{ $a.externalMetric.name }}
+          selector: { matchLabels: {{- toYaml $a.externalMetric.selector | nindent 14 }} }
+        target: { type: AverageValue, averageValue: {{ $a.targetQueueLength | quote }} }
+{{- else }}
+{{- fail "backtestWorker.autoscaling.provider must be keda or external" }}
+{{- end }}
+{{- end }}

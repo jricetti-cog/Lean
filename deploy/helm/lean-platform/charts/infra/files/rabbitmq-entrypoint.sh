@@ -1,0 +1,1 @@
+../../../../../compose/rabbitmq/entrypoint.sh

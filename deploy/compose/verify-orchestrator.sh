@@ -2,7 +2,7 @@
 # End-to-end check of job-orchestrator (plan step s4.1) against the compose stack. Run from the repository root:
 #
 #   ORCHESTRATOR_MAX_ATTEMPTS=2 ORCHESTRATOR_HEARTBEAT_TIMEOUT_SECONDS=10 \
-#     docker compose --profile infra --profile orchestrator up -d --wait --build
+#     docker compose up -d --wait --build job-orchestrator
 #   ORCHESTRATOR_MAX_ATTEMPTS=2 ORCHESTRATOR_HEARTBEAT_TIMEOUT_SECONDS=10 deploy/compose/verify-orchestrator.sh
 #
 # Plays the worker side over HTTP and the RabbitMQ management API (takes dispatches from jobs.backtest, publishes
@@ -50,6 +50,8 @@ curl -fsS "$API/readyz" >/dev/null && pass "GET /healthz and /readyz (PostgreSQL
 docker compose --profile infra --profile orchestrator ps job-orchestrator --format '{{.Service}}|{{.Status}}' | grep -q '(healthy)' \
     && pass "job-orchestrator container healthy"
 
+# This script plays the worker: stop real ones (started by default since the platform has no profiles) so none races it.
+docker compose stop backtest-worker optimizer >/dev/null 2>&1 || true
 mq -X DELETE "$MQ/queues/$RABBITMQ_VHOST/jobs.backtest/contents" >/dev/null
 pass "purged jobs.backtest (no workers run in this check)"
 

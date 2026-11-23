@@ -37,9 +37,14 @@ public sealed class LiveDeploymentOptions
 {
     public const string Section = "Orchestrator:LiveDeployment";
 
-    /// <summary><c>docker</c> starts one container per deployment through the Docker Engine API; <c>none</c> leaves <c>jobs.live</c> to externally run workers.</summary>
+    /// <summary>
+    /// <c>docker</c> starts one container per deployment through the Docker Engine API; <c>kubernetes</c> creates one Deployment per
+    /// live deployment through the Kubernetes API (in-cluster service account); <c>none</c> leaves <c>jobs.live</c> to externally run workers.
+    /// </summary>
     public string Mode { get; set; } = "none";
     public string DockerSocket { get; set; } = "/var/run/docker.sock";
+    /// <summary>Docker Engine API over TCP (e.g. <c>tcp://docker-socket-proxy:2375</c>); defaults to <c>DOCKER_HOST</c>, else <see cref="DockerSocket"/>.</summary>
+    public string? DockerHost { get; set; } = Environment.GetEnvironmentVariable("DOCKER_HOST");
     public string Image { get; set; } = "lean/live-worker:dev";
     /// <summary>Docker network the container joins (the compose <c>lean</c> network).</summary>
     public string? Network { get; set; }
@@ -61,7 +66,21 @@ public sealed class LiveDeploymentOptions
     /// <summary>Container CPU limit in cores (Docker <c>NanoCpus</c>); 0 leaves it unlimited.</summary>
     public double Cpus { get; set; }
 
-    public bool Enabled => string.Equals(Mode, "docker", StringComparison.OrdinalIgnoreCase);
+    /// <summary>Kubernetes mode: API server, namespace (default: the service account's), PVC holding lean-data, pod service account and pull policy.</summary>
+    public string KubernetesApiUri { get; set; } = "https://kubernetes.default.svc";
+    public string? KubernetesNamespace { get; set; }
+    public string? DataClaim { get; set; }
+    public string? ServiceAccount { get; set; }
+    public string ImagePullPolicy { get; set; } = "IfNotPresent";
+    /// <summary>Extra pod labels (comma-separated <c>key=value</c>), e.g. the Helm release labels.</summary>
+    public string? PodLabels { get; set; }
+
+    /// <summary>Kubernetes mode: numeric user (and group) of the live-worker container; the image's <c>app</c> user.</summary>
+    public long RunAsUser { get; set; } = 1654;
+
+    public bool IsDocker => string.Equals(Mode, "docker", StringComparison.OrdinalIgnoreCase);
+    public bool IsKubernetes => string.Equals(Mode, "kubernetes", StringComparison.OrdinalIgnoreCase);
+    public bool Enabled => IsDocker || IsKubernetes;
 }
 
 /// <summary>A container as far as live deployment cares.</summary>
@@ -75,16 +94,26 @@ public interface ILiveContainerRuntime
     Task StartAsync(string id, CancellationToken ct);
     Task RemoveAsync(string id, CancellationToken ct);
     Task<IReadOnlyList<LiveContainer>> ListAsync(string label, CancellationToken ct);
+    /// <summary>True when the runtime restarts a worker even after a clean exit (a Kubernetes Deployment), so finished deployments are removed by job state.</summary>
+    bool RestartsFinishedWorkers => false;
 }
 
-/// <summary>Docker Engine API over the unix socket.</summary>
+/// <summary>Docker Engine API over TCP (<see cref="LiveDeploymentOptions.DockerHost"/>) or the unix socket.</summary>
 public sealed class DockerLiveContainerRuntime : ILiveContainerRuntime, IDisposable
 {
     private readonly HttpClient _http;
 
     public DockerLiveContainerRuntime(IOptions<LiveDeploymentOptions> options)
     {
-        var socket = options.Value.DockerSocket;
+        var host = options.Value.DockerHost;
+        if (!string.IsNullOrEmpty(host) && host.StartsWith("tcp://", StringComparison.OrdinalIgnoreCase))
+        {
+            _http = new HttpClient { BaseAddress = new Uri("http://" + host["tcp://".Length..].TrimEnd('/') + "/") };
+            return;
+        }
+        var socket = !string.IsNullOrEmpty(host) && host.StartsWith("unix://", StringComparison.OrdinalIgnoreCase)
+            ? host["unix://".Length..]
+            : options.Value.DockerSocket;
         _http = new HttpClient(new SocketsHttpHandler
         {
             ConnectCallback = async (_, ct) =>
@@ -277,13 +306,23 @@ public sealed class LiveDeployer : BackgroundService
         };
     }
 
-    /// <summary>Removes live-worker containers that exited cleanly (the deployment was stopped or ended); crashed ones stay for Docker to restart.</summary>
+    /// <summary>
+    /// Removes live-worker containers that exited cleanly or whose job is terminal (the deployment was stopped or ended); crashed ones
+    /// of running jobs stay for the runtime to restart.
+    /// </summary>
     public async Task<int> SweepAsync(CancellationToken ct)
     {
         var removed = 0;
         foreach (var container in await _runtime.ListAsync($"{RoleLabel}={Role}", ct))
         {
-            if (!container.Running && container.ExitCode == 0)
+            var finished = !container.Running && container.ExitCode == 0;
+            if (!finished && _store != null && (!container.Running || _runtime.RestartsFinishedWorkers)
+                && Guid.TryParse(container.Labels.GetValueOrDefault(JobLabel), out var jobId)
+                && await _store.GetAsync(jobId, ct) is { } job && JobStateMachine.IsTerminal(job.Status))
+            {
+                finished = true;
+            }
+            if (finished)
             {
                 await _runtime.RemoveAsync(container.Id, ct);
                 removed++;

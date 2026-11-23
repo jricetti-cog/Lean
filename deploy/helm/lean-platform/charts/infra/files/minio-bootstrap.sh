@@ -1,0 +1,1 @@
+../../../../../compose/minio/minio-bootstrap.sh

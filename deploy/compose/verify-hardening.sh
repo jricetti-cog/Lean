@@ -17,7 +17,6 @@
 # Requires curl, jq and python3.
 set -euo pipefail
 [ -f .env ] && set -a && . ./.env && set +a
-export DOCKER_SOCKET_GID="${DOCKER_SOCKET_GID:-$(stat -c %g /var/run/docker.sock)}"
 ORCH="http://127.0.0.1:${ORCHESTRATOR_PORT:-5081}/internal/v1"
 GW="http://127.0.0.1:${GATEWAY_PORT:-5080}/api/v1"
 KEY="${GATEWAY_API_KEY:-lean-dev-api-key}"

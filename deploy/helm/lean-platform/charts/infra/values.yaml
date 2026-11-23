@@ -1,0 +1,21 @@
+# Credentials come from the parent chart's `global.credentials` (one place for both charts).
+storageClass: ""
+rabbitmq:
+  image: rabbitmq:3.13.7-management
+  storage: 2Gi
+  erlangCookie: lean-dev-erlang-cookie
+  resources:
+    requests: { cpu: 250m, memory: 512Mi }
+    limits: { memory: 1Gi }
+postgres:
+  image: postgres:17.12-alpine
+  storage: 2Gi
+  resources:
+    requests: { cpu: 250m, memory: 256Mi }
+    limits: { memory: 1Gi }
+minio:
+  image: pgsty/minio:RELEASE.2026-08-04T00-00-00Z
+  storage: 5Gi
+  resources:
+    requests: { cpu: 250m, memory: 256Mi }
+    limits: { memory: 1Gi }
