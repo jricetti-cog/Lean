@@ -77,7 +77,7 @@ code=$(gw GET "/api/v1/jobs/$job/result")
 echo "      $(jq -c '{status, statistics: (.statistics | {"Total Orders", "Net Profit", "Sharpe Ratio", "End Equity"})}' "$tmp/body")"
 [ "$(jq -r '.statistics["Total Orders"]' "$tmp/body")" = 1 ] && pass "result statistics: 1 order" || fail "unexpected statistics $(jq -c .statistics "$tmp/body")"
 code=$(gw GET "/api/v1/jobs/$job/result/download")
-[ "$code" = 302 ] && curl -fsS "$(location)" | jq -e '.Statistics["Total Orders"] == "1"' >/dev/null \
+[ "$code" = 302 ] && curl -fsS "$(location)" | jq -e '(.statistics // .Statistics)["Total Orders"] == "1"' >/dev/null \
     && pass "result download -> 302 presigned MinIO URL, readable" || fail "result download returned $code"
 
 echo "== report on the backtest (report service)"
