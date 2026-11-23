@@ -1,0 +1,125 @@
+# Prometheus alerting rules for the LEAN platform (plan step s6.4). Each alert's runbook is the matching section of
+# docs/operations/runbooks.md (annotation runbook_url). Rules use only metrics the observability profile already
+# collects: job-orchestrator /metrics (lean_jobs, lean_queue_*, lean_outbox_unsent), service OTLP metrics via the
+# collector (lean_worker_*, lean_live_*, lean_messaging_*, http_server_*), rabbitmq_* and pg_*.
+# Check: docker run --rm -v $PWD/deploy/compose/observability:/r --entrypoint promtool prom/prometheus:v3.2.1 test rules /r/alerts.test.yml
+groups:
+  - name: lean-platform
+    rules:
+      - alert: LeanScrapeTargetDown
+        expr: up{job=~"lean-platform|rabbitmq|postgres|otel-collector"} == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: "Prometheus cannot scrape {{ $labels.job }} ({{ $labels.instance }})"
+          runbook_url: docs/operations/runbooks.md#leanscrapetargetdown
+
+      - alert: LeanJobsWaitingNoWorker
+        expr: (lean_queue_ready{queue="jobs.backtest"} > 0) and on() (sum(lean_worker_busy{job="backtest-worker"}) or vector(0)) == 0
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "{{ $value }} backtest jobs waiting and no backtest-worker is running one"
+          runbook_url: docs/operations/runbooks.md#leanjobswaitingnoworker
+
+      - alert: LeanBacktestBacklog
+        expr: lean_queue_ready{queue="jobs.backtest"} > on() group_left() (2 * clamp_min(count(lean_worker_busy{job="backtest-worker"}) or vector(0), 1))
+        for: 15m
+        labels: { severity: warning }
+        annotations:
+          summary: "jobs.backtest backlog ({{ $value }} ready) above 2 per worker for 15 min"
+          runbook_url: docs/operations/runbooks.md#leanbacktestbacklog
+
+      - alert: LeanDeadLetters
+        expr: lean_queue_dead > 0
+        for: 1m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $value }} dead-lettered messages in {{ $labels.queue }}.dead"
+          runbook_url: docs/operations/runbooks.md#leandeadletters
+
+      - alert: LeanOutboxBacklog
+        expr: lean_outbox_unsent > 0
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "{{ $value }} job-orchestrator outbox rows unpublished for 5 min"
+          runbook_url: docs/operations/runbooks.md#leanoutboxbacklog
+
+      - alert: LeanJobFailureRate
+        expr: |
+          sum(increase(lean_worker_jobs_total{lean_job_outcome="failed"}[15m]))
+            / clamp_min(sum(increase(lean_worker_jobs_total[15m])), 1) > 0.25
+          and sum(increase(lean_worker_jobs_total[15m])) >= 4
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $value | humanizePercentage }} of backtest attempts failed in the last 15 min"
+          runbook_url: docs/operations/runbooks.md#leanjobfailurerate
+
+      - alert: LeanLiveDeploymentStale
+        expr: sum(lean_jobs{kind="live", status="stale"}) > 0
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: "{{ $value }} live deployments stale (heartbeats stopped)"
+          runbook_url: docs/operations/runbooks.md#leanlivedeploymentstale
+
+      - alert: LeanLiveEngineRestarts
+        expr: sum by (job) (increase(lean_live_runs_total{lean_live_outcome="restart"}[15m])) > 0
+        labels: { severity: warning }
+        annotations:
+          summary: "A live engine exited without a final result and was restarted"
+          runbook_url: docs/operations/runbooks.md#leanliveenginerestarts
+
+      - alert: LeanMessagesDeadLettered
+        expr: sum by (job, messaging_destination_name) (rate(lean_messaging_process_duration_seconds_count{lean_message_disposition="dead_letter"}[5m])) > 0
+        for: 1m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $labels.job }} dead-letters deliveries from {{ $labels.messaging_destination_name }}"
+          runbook_url: docs/operations/runbooks.md#leanmessagesdeadlettered
+
+      - alert: LeanHttp5xxRate
+        expr: |
+          sum by (job) (rate(http_server_request_duration_seconds_count{http_response_status_code=~"5.."}[5m]))
+            / sum by (job) (rate(http_server_request_duration_seconds_count[5m])) > 0.05
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $labels.job }} answers {{ $value | humanizePercentage }} of requests with 5xx"
+          runbook_url: docs/operations/runbooks.md#leanhttp5xxrate
+
+  - name: lean-infrastructure
+    rules:
+      - alert: RabbitMQMemoryHigh
+        expr: sum(rabbitmq_process_resident_memory_bytes) / sum(rabbitmq_resident_memory_limit_bytes) > 0.8
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "RabbitMQ at {{ $value | humanizePercentage }} of its memory high watermark (publishers block at 100%)"
+          runbook_url: docs/operations/runbooks.md#rabbitmqmemoryhigh
+
+      - alert: RabbitMQDiskLow
+        expr: sum(rabbitmq_disk_space_available_bytes) < 2 * 1024 * 1024 * 1024
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "RabbitMQ has {{ $value | humanize1024 }}B disk left (publishers block at the disk_free_limit)"
+          runbook_url: docs/operations/runbooks.md#rabbitmqdisklow
+
+      - alert: PostgresDown
+        expr: pg_up == 0
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: "postgres-exporter cannot reach PostgreSQL"
+          runbook_url: docs/operations/runbooks.md#postgresdown
+
+      - alert: PostgresConnectionsHigh
+        expr: sum(pg_stat_database_numbackends) / max(pg_settings_max_connections) > 0.8
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "PostgreSQL at {{ $value | humanizePercentage }} of max_connections"
+          runbook_url: docs/operations/runbooks.md#postgresconnectionshigh

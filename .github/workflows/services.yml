@@ -36,6 +36,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Operations docs checks (configuration reference, alert rules)
+        run: |
+          python3 docs/operations/gen_config_reference.py --check
+          docker run --rm -v "$PWD/deploy/compose/observability:/r" -w /r --entrypoint promtool prom/prometheus:v3.2.1 test rules alerts.test.yml
+
       # quantconnect/lean:foundation is ~14 GB compressed: make room for it, the engine images and the build stage.
       - name: Free disk space
         run: |

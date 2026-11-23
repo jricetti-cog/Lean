@@ -5,6 +5,11 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
+# Alerts (runbooks: docs/operations/runbooks.md). No Alertmanager is bundled: firing alerts show on /alerts and in
+# Grafana; point an `alerting:` block at your Alertmanager to route them.
+rule_files:
+  - /etc/prometheus/alerts.yml
+
 scrape_configs:
   - job_name: lean-services
     honor_labels: true
