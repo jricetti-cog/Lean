@@ -45,6 +45,14 @@ keda() {
 }
 
 load() {
+    local missing=()
+    for svc in "${IMAGES[@]}"; do
+        docker image inspect "${SRC_REGISTRY}/${svc}:${TAG}" >/dev/null 2>&1 || missing+=("$svc")
+    done
+    if [ ${#missing[@]} -gt 0 ]; then
+        echo "== building missing images: ${missing[*]}"
+        REGISTRY="$SRC_REGISTRY" TAG="$TAG" docker buildx bake -f "$(dirname "$0")/../../Services/docker-bake.hcl" --load "${missing[@]}"
+    fi
     for svc in "${IMAGES[@]}"; do
         docker tag "${SRC_REGISTRY}/${svc}:${TAG}" "localhost:${REG_PORT}/lean/${svc}:${TAG}"
         docker push -q "localhost:${REG_PORT}/lean/${svc}:${TAG}"
