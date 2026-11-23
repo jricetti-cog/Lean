@@ -1,0 +1,188 @@
+# promtool unit tests for alerts.yml: each alert fires on the condition its runbook describes and stays quiet otherwise.
+rule_files: [alerts.yml]
+evaluation_interval: 15s
+tests:
+  - interval: 15s
+    input_series:
+      - series: 'up{job="lean-platform", instance="job-orchestrator:8080"}'
+        values: '0x20'
+      - series: 'up{job="rabbitmq", instance="rabbitmq:15692"}'
+        values: '1x20'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: LeanScrapeTargetDown
+        exp_alerts:
+          - exp_labels: { severity: critical, job: lean-platform, instance: "job-orchestrator:8080" }
+            exp_annotations:
+              summary: "Prometheus cannot scrape lean-platform (job-orchestrator:8080)"
+              runbook_url: docs/operations/runbooks.md#leanscrapetargetdown
+
+  - interval: 1m
+    input_series:
+      - series: 'lean_queue_ready{queue="jobs.backtest", job="lean-platform"}'
+        values: '3x10'
+      - series: 'lean_worker_busy{job="backtest-worker", instance="w1"}'
+        values: '0x10'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: LeanJobsWaitingNoWorker
+        exp_alerts:
+          - exp_labels: { severity: critical, queue: jobs.backtest, job: lean-platform }
+            exp_annotations:
+              summary: "3 backtest jobs waiting and no backtest-worker is running one"
+              runbook_url: docs/operations/runbooks.md#leanjobswaitingnoworker
+
+  - interval: 1m
+    input_series:
+      - series: 'lean_queue_ready{queue="jobs.backtest", job="lean-platform"}'
+        values: '3x10'
+      - series: 'lean_worker_busy{job="backtest-worker", instance="w1"}'
+        values: '1x10'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: LeanJobsWaitingNoWorker
+        exp_alerts: []
+
+  - interval: 1m
+    input_series:
+      - series: 'lean_queue_ready{queue="jobs.backtest", job="lean-platform"}'
+        values: '10x20'
+      - series: 'lean_worker_busy{job="backtest-worker", instance="w1"}'
+        values: '1x20'
+      - series: 'lean_worker_busy{job="backtest-worker", instance="w2"}'
+        values: '1x20'
+    alert_rule_test:
+      - eval_time: 16m
+        alertname: LeanBacktestBacklog
+        exp_alerts:
+          - exp_labels: { severity: warning, queue: jobs.backtest, job: lean-platform }
+            exp_annotations:
+              summary: "jobs.backtest backlog (10 ready) above 2 per worker for 15 min"
+              runbook_url: docs/operations/runbooks.md#leanbacktestbacklog
+
+  - interval: 1m
+    input_series:
+      - series: 'lean_queue_dead{queue="jobs.backtest", job="lean-platform"}'
+        values: '0 0 1 1 1'
+      - series: 'lean_outbox_unsent{job="lean-platform"}'
+        values: '5x10'
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: LeanDeadLetters
+        exp_alerts:
+          - exp_labels: { severity: warning, queue: jobs.backtest, job: lean-platform }
+            exp_annotations:
+              summary: "1 dead-lettered messages in jobs.backtest.dead"
+              runbook_url: docs/operations/runbooks.md#leandeadletters
+      - eval_time: 6m
+        alertname: LeanOutboxBacklog
+        exp_alerts:
+          - exp_labels: { severity: critical, job: lean-platform }
+            exp_annotations:
+              summary: "5 job-orchestrator outbox rows unpublished for 5 min"
+              runbook_url: docs/operations/runbooks.md#leanoutboxbacklog
+
+  - interval: 1m
+    input_series:
+      - series: 'lean_worker_jobs_total{job="backtest-worker", lean_job_outcome="failed"}'
+        values: '0+1x30'
+      - series: 'lean_worker_jobs_total{job="backtest-worker", lean_job_outcome="completed"}'
+        values: '0+1x30'
+    alert_rule_test:
+      - eval_time: 25m
+        alertname: LeanJobFailureRate
+        exp_alerts:
+          - exp_labels: { severity: warning }
+            exp_annotations:
+              summary: "50% of backtest attempts failed in the last 15 min"
+              runbook_url: docs/operations/runbooks.md#leanjobfailurerate
+
+  - interval: 1m
+    input_series:
+      - series: 'lean_jobs{kind="live", status="stale", job="lean-platform"}'
+        values: '0 1 1 1'
+      - series: 'lean_live_runs_total{job="live-worker", lean_live_outcome="restart"}'
+        values: '0 0 1 1'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: LeanLiveDeploymentStale
+        exp_alerts:
+          - exp_labels: { severity: critical }
+            exp_annotations:
+              summary: "1 live deployments stale (heartbeats stopped)"
+              runbook_url: docs/operations/runbooks.md#leanlivedeploymentstale
+      - eval_time: 3m
+        alertname: LeanLiveEngineRestarts
+        exp_alerts:
+          - exp_labels: { severity: warning, job: live-worker }
+            exp_annotations:
+              summary: "A live engine exited without a final result and was restarted"
+              runbook_url: docs/operations/runbooks.md#leanliveenginerestarts
+
+  - interval: 1m
+    input_series:
+      - series: 'lean_messaging_process_duration_seconds_count{job="results", messaging_destination_name="results.packets", lean_message_disposition="dead_letter"}'
+        values: '0+1x10'
+      - series: 'http_server_request_duration_seconds_count{job="api-gateway", http_response_status_code="503"}'
+        values: '0+10x20'
+      - series: 'http_server_request_duration_seconds_count{job="api-gateway", http_response_status_code="200"}'
+        values: '0+90x20'
+    alert_rule_test:
+      - eval_time: 7m
+        alertname: LeanMessagesDeadLettered
+        exp_alerts:
+          - exp_labels: { severity: warning, job: results, messaging_destination_name: results.packets }
+            exp_annotations:
+              summary: "results dead-letters deliveries from results.packets"
+              runbook_url: docs/operations/runbooks.md#leanmessagesdeadlettered
+      - eval_time: 16m
+        alertname: LeanHttp5xxRate
+        exp_alerts:
+          - exp_labels: { severity: warning, job: api-gateway }
+            exp_annotations:
+              summary: "api-gateway answers 10% of requests with 5xx"
+              runbook_url: docs/operations/runbooks.md#leanhttp5xxrate
+
+  - interval: 1m
+    input_series:
+      - series: 'rabbitmq_process_resident_memory_bytes{job="rabbitmq"}'
+        values: '900x10'
+      - series: 'rabbitmq_resident_memory_limit_bytes{job="rabbitmq"}'
+        values: '1000x10'
+      - series: 'rabbitmq_disk_space_available_bytes{job="rabbitmq"}'
+        values: '1073741824x10'
+      - series: 'pg_up{job="postgres"}'
+        values: '0x10'
+      - series: 'pg_stat_database_numbackends{job="postgres", datname="jobs"}'
+        values: '90x10'
+      - series: 'pg_settings_max_connections{job="postgres"}'
+        values: '100x10'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: RabbitMQMemoryHigh
+        exp_alerts:
+          - exp_labels: { severity: warning }
+            exp_annotations:
+              summary: "RabbitMQ at 90% of its memory high watermark (publishers block at 100%)"
+              runbook_url: docs/operations/runbooks.md#rabbitmqmemoryhigh
+      - eval_time: 6m
+        alertname: RabbitMQDiskLow
+        exp_alerts:
+          - exp_labels: { severity: critical }
+            exp_annotations:
+              summary: "RabbitMQ has 1GiB disk left (publishers block at the disk_free_limit)"
+              runbook_url: docs/operations/runbooks.md#rabbitmqdisklow
+      - eval_time: 2m
+        alertname: PostgresDown
+        exp_alerts:
+          - exp_labels: { severity: critical, job: postgres }
+            exp_annotations:
+              summary: "postgres-exporter cannot reach PostgreSQL"
+              runbook_url: docs/operations/runbooks.md#postgresdown
+      - eval_time: 6m
+        alertname: PostgresConnectionsHigh
+        exp_alerts:
+          - exp_labels: { severity: warning }
+            exp_annotations:
+              summary: "PostgreSQL at 90% of max_connections"
+              runbook_url: docs/operations/runbooks.md#postgresconnectionshigh

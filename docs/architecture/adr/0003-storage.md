@@ -1,6 +1,6 @@
 # ADR 0003: Storage — PostgreSQL, MinIO, shared data volume
 
-* Status: Accepted
+* Status: Accepted; as-built differences in [ADR 0006](0006-as-built.md)
 * Plan step: `s1.2`
 
 ## Context

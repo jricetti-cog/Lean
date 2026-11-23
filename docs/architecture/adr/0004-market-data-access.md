@@ -1,6 +1,6 @@
 # ADR 0004: Market data access — shared read-only volume + market-data service
 
-* Status: Accepted
+* Status: Accepted; as-built differences in [ADR 0006](0006-as-built.md)
 * Plan step: `s1.2`
 * Decision taken: **shared read-only `lean-data` volume plus the market-data service** (approved plan).
 

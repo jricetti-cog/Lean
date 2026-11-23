@@ -1,6 +1,6 @@
 # ADR 0005: Engine hosting — benchmark evidence for ADR 0004
 
-* Status: Accepted
+* Status: Accepted; as-built differences in [ADR 0006](0006-as-built.md)
 * Plan step: `s1.3`
 * Decision: **keep ADR 0004.** The engine runs in a container, gets its job and publishes its result over
   RabbitMQ (ADR 0002) and reads data from the shared read-only `lean-data` volume through the stock

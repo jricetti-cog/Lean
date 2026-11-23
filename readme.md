@@ -122,6 +122,23 @@ Download the [LEAN CLI Cheat Sheet](https://cdn.quantconnect.com/i/tu/cli-cheat-
 </picture>
 
 
+## Run the platform
+
+This fork can also run LEAN as Docker services (api-gateway, job-orchestrator, backtest workers, market-data, results,
+report, optimizer, React console) on RabbitMQ, PostgreSQL and MinIO. The monolith below is unchanged. With Docker
+Compose v2, `make`, `curl` and `jq`:
+
+```
+make up       # docker compose up -d --wait: builds the images, starts the platform
+make smoke    # runs a backtest over the bus and through the public API
+```
+
+Console: http://127.0.0.1:5090, API: http://127.0.0.1:5080 (`X-Api-Key: lean-dev-api-key`). `make down` stops it.
+Kubernetes: `deploy/helm/lean-platform`. Docs: [operations](docs/operations/README.md),
+[architecture](docs/architecture/README.md).
+
+## Run the monolith
+
 This section will cover how to install lean locally for you to use in your environment. **For most users we strongly recommend the LEAN CLI which is prebuilt and runs on all platforms.** Refer to the following readme files for a detailed guide regarding using your local IDE with Lean.
 <br/>
 

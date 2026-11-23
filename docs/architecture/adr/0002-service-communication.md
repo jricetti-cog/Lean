@@ -1,6 +1,6 @@
 # ADR 0002: Communication — REST + OpenAPI and RabbitMQ
 
-* Status: Accepted
+* Status: Accepted; as-built differences in [ADR 0006](0006-as-built.md)
 * Plan step: `s1.2`
 * Decision taken: **RabbitMQ** as the message broker (approved plan).
 
