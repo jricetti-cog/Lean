@@ -98,12 +98,12 @@ if [ "${SMOKE_LIVE:-0}" = 1 ]; then
     live=$(jq -r .id "$tmp/body")
     wait_status "/api/v1/jobs/$live" running || fail "live deployment not running: $(cat "$tmp/body")"
     pass "live deployment $live running on $(jq -r .workerId "$tmp/body")"
-    [ -z "${SMOKE_LIVE_HOOK:-}" ] || sh -c "$SMOKE_LIVE_HOOK running $live"
+    [ -z "${SMOKE_LIVE_HOOK:-}" ] || sh -c "$SMOKE_LIVE_HOOK" smoke-live-hook running "$live"
     code=$(gw POST "/api/v1/live/$live/stop" -H 'content-type: application/json' -d '{"reason":"smoke done","liquidate":true}')
     case "$code" in 200|202) ;; *) fail "stop returned $code";; esac
     wait_status "/api/v1/jobs/$live" cancelled completed || fail "live deployment did not stop: $(cat "$tmp/body")"
     pass "live deployment stopped ($(jq -r .status "$tmp/body"))"
-    [ -z "${SMOKE_LIVE_HOOK:-}" ] || sh -c "$SMOKE_LIVE_HOOK stopped $live"
+    [ -z "${SMOKE_LIVE_HOOK:-}" ] || sh -c "$SMOKE_LIVE_HOOK" smoke-live-hook stopped "$live"
 fi
 
 echo "== smoke passed"
