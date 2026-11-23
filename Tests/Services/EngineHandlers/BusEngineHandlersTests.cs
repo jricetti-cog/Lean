@@ -284,6 +284,32 @@ namespace QuantConnect.Tests.Services.EngineHandlers
         }
 
         [Test]
+        public void PacketsSentFromConcurrentThreadsArePublishedInSequenceOrder()
+        {
+            var bus = new InMemoryMessageBus();
+            EngineBus.Use(bus, new FileSystemArtifactStore(Path.Combine(_root, "minio")));
+            EngineBus.Job = Context();
+
+            var handler = new BusMessagingHandler();
+            handler.SetAuthentication(new BacktestNodePacket { BacktestId = "algo" });
+            const int threads = 8, packets = 500;
+            Parallel.For(0, threads, new ParallelOptions { MaxDegreeOfParallelism = threads }, thread =>
+            {
+                for (var i = 0; i < packets; i++)
+                {
+                    handler.Send(new DebugPacket(0, "algo", "", $"{thread}:{i}"));
+                }
+            });
+            handler.Dispose();
+
+            var sequences = bus.Published.Where(m => m.Envelope.Type == MessageTypes.PacketPrefix + "Debug")
+                .Select(m => m.Envelope.Headers.Sequence.Value).ToList();
+            Assert.AreEqual(threads * packets, sequences.Count);
+            CollectionAssert.IsOrdered(sequences);
+            CollectionAssert.AllItemsAreUnique(sequences);
+        }
+
+        [Test]
         public void WarmUpPythonConversionsBuildsPythonnetsLazyConverters()
         {
             BusJobQueueHandler.WarmUpPythonConversions();

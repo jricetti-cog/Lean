@@ -31,6 +31,7 @@ public class BusMessagingHandler : QuantConnect.Messaging.Messaging
     private const string AppId = "lean-engine";
     private readonly Channel<Func<Task>> _outbox = Channel.CreateUnbounded<Func<Task>>(new UnboundedChannelOptions { SingleReader = true });
     private readonly object _startLock = new();
+    private readonly object _publishLock = new();
     private readonly int _outboxLimit = BusSettings.GetInt(BusSettings.OutboxLimit, 10_000);
     private int _pending;
     private long _sequence;
@@ -138,8 +139,15 @@ public class BusMessagingHandler : QuantConnect.Messaging.Messaging
             return;
         }
         var body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(packet));
-        var sequence = Interlocked.Increment(ref _sequence);
+        // The algorithm and result threads both send packets: allocate the sequence and enqueue together so the outbox stays in sequence order.
+        lock (_publishLock)
+        {
+            Publish(job, packet, packetType, body, ++_sequence);
+        }
+    }
 
+    private void Publish(BusJobContext job, Packet packet, string packetType, byte[] body, long sequence)
+    {
         if (packet is BacktestResultPacket result && result.Progress < 1m)
         {
             Enqueue(Progress(job, result));

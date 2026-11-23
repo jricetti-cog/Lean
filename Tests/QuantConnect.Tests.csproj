@@ -43,6 +43,9 @@
     <PackageReference Include="Common.Logging" Version="3.4.1" />
     <PackageReference Include="Common.Logging.Core" Version="3.4.1" />
     <PackageReference Include="Deedle" Version="2.1.0" />
+    <!-- The BacktestWorker reference brings Microsoft.CodeAnalysis.CSharp 4.14.0; lift the Workspaces assemblies Microsoft.DotNet.Interactive brings (4.8.0)
+         to the same version, or Assembly.GetTypes() on them throws ReflectionTypeLoadException (e.g. OptionPriceModels.QuantLib.Create). -->
+    <PackageReference Include="Microsoft.CodeAnalysis" Version="4.14.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
     <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="16.9.4" />
     <PackageReference Include="Moq" Version="4.16.1" />
