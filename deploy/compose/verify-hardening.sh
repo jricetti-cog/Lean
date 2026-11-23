@@ -9,7 +9,7 @@
 #   4. poison job:     an algorithm that SIGKILLs its backtest-worker -> each delivery crashes a worker (Docker restarts
 #                      it), the attempt limit fails the job with max-attempts-exceeded and the dispatch is dead-lettered
 #   5. limits:         RSS over maxRamMb and run time over maxRuntimeSeconds -> engine stopped, job failed with the reason
-#   6. live-worker kill: `docker kill` a live deployment's container -> redeployed, holdings restored, no second buy
+#   6. live-worker kill: SIGKILL a live deployment's main process -> restarted, holdings restored, no second buy
 #   7. load:           50 queued backtests across 5 workers, throughput recorded
 # Run from the repository root after building the images:
 #   docker compose --profile infra --profile orchestrator --profile workers --profile market-data --profile results --profile gateway build
@@ -263,9 +263,13 @@ docker inspect -f '   {{.Name}}: cpus {{.HostConfig.NanoCpus}} memory {{.HostCon
 until_true "BTCUSD bought" sh -c "[ \"\$(curl -sS -H 'X-Api-Key: $KEY' $GW/live/$live/state | jq -r '[.holdings[]? | .q] | add // 0')\" != 0 ]"
 before=$(btc)
 epoch=$(job "$live" | jq -r .leaseEpoch)
-echo "   deployment $live holds $before BTCUSD, lease epoch $epoch; docker kill $lc"
-docker kill "$lc" >/dev/null
+echo "   deployment $live holds $before BTCUSD, lease epoch $epoch; SIGKILL the container's main process"
+# A crash, not `docker kill`: Docker counts a `docker kill` as a manual stop and skips the on-failure restart policy.
+killed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+docker run --rm --pid host --user 0 --entrypoint sh "$(docker inspect -f '{{.Config.Image}}' "$lc")" -c "kill -9 $(docker inspect -f '{{.State.Pid}}' "$lc")"
 until_true "live container running again" sh -c "[ \"\$(docker inspect -f '{{.State.Running}}' $lc 2>/dev/null)\" = true ]"
+# The killed run's engine.log survives in the container until the restarted worker recreates the workspace.
+until_true "live worker recreated the workspace" sh -c "docker logs --since $killed_at $lc 2>&1 | grep -qE 'restoring|fresh portfolio'"
 until_true "algorithm restarted" sh -c "docker exec $lc sh -c 'grep -q \"LiveWorkerDemo: started with\" /work/$live/live/engine.log'"
 docker exec "$lc" sh -c "grep 'LiveWorkerDemo: started with' /work/$live/live/engine.log" | sed 's/^/   /'
 docker exec "$lc" sh -c "grep -q 'LiveWorkerDemo: started with $before BTCUSD' /work/$live/live/engine.log" || fail "restarted deployment did not restore $before BTCUSD"

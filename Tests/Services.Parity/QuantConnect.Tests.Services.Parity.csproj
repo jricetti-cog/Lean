@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Platform parity regression harness (plan step s6.1): runs LEAN's regression algorithms through the gateway of a
+       running stack and compares each result with the algorithm's ExpectedStatistics. See README.md. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>QuantConnect.Tests.Services.Parity</RootNamespace>
+    <AssemblyName>QuantConnect.Tests.Services.Parity</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <NoWarn>$(NoWarn);CA1822;CS1591</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
+    <PackageReference Include="NUnit" Version="4.2.2" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Fixtures/ is its own project: the engine plugin the parity stack's workers load. -->
+    <Compile Remove="Fixtures\**" />
+    <None Remove="Fixtures\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Algorithm.CSharp\QuantConnect.Algorithm.CSharp.csproj" />
+  </ItemGroup>
+</Project>

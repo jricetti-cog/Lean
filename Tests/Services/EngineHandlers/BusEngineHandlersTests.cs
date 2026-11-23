@@ -14,6 +14,7 @@
 */
 
 using System;
+using System.Reflection;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -256,6 +257,47 @@ namespace QuantConnect.Tests.Services.EngineHandlers
         }
 
         [Test]
+        public void DisposeKeepsDrainingAnOutboxLongerThanTheShutdownTimeoutWhileItMakesProgress()
+        {
+            var bus = new DisposableBus { PublishDelay = TimeSpan.FromMilliseconds(100) };
+            EngineBus.Use(bus, new FileSystemArtifactStore(Path.Combine(_root, "minio")), ownsBus: true);
+            EngineBus.Job = Context();
+            Config.Set(BusSettings.ShutdownTimeoutSeconds, "1");
+            try
+            {
+                var handler = new BusMessagingHandler();
+                handler.SetAuthentication(new BacktestNodePacket { BacktestId = "algo" });
+                for (var i = 0; i < 25; i++)
+                {
+                    handler.Send(new DebugPacket(0, "algo", "", $"line {i}"));
+                }
+                handler.Dispose();
+            }
+            finally
+            {
+                Config.Set(BusSettings.ShutdownTimeoutSeconds, "30");
+            }
+
+            var debug = bus.Inner.Published.Where(m => m.Envelope.Type == MessageTypes.PacketPrefix + "Debug")
+                .Select(m => JsonConvert.DeserializeObject<DebugPacket>(Encoding.UTF8.GetString(m.Body.Span)).Message).ToList();
+            CollectionAssert.AreEqual(Enumerable.Range(0, 25).Select(i => $"line {i}"), debug, "every packet is published, in order");
+        }
+
+        [Test]
+        public void WarmUpPythonConversionsBuildsPythonnetsLazyConverters()
+        {
+            BusJobQueueHandler.WarmUpPythonConversions();
+
+            var lazies = typeof(global::Python.Runtime.PyObject).Assembly.GetType("Python.Runtime.Converter")!
+                .GetFields(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
+                .Where(f => f.FieldType.IsGenericType && f.FieldType.GetGenericTypeDefinition() == typeof(Lazy<>))
+                .ToDictionary(f => f.Name, f => (bool)f.FieldType.GetProperty("IsValueCreated")!.GetValue(f.GetValue(null))!);
+            TestContext.Progress.WriteLine(string.Join(", ", lazies.Select(l => $"{l.Key}={l.Value}")));
+            Assert.IsNotEmpty(lazies);
+            Assert.IsTrue(lazies.Values.All(created => created), "every lazy converter is built before any data-feed thread");
+        }
+
+        [Test]
         public void PublishFailuresNeverReachTheEngine()
         {
             var bus = new InMemoryMessageBus { NackWhen = _ => true };
@@ -305,8 +347,17 @@ namespace QuantConnect.Tests.Services.EngineHandlers
             public InMemoryMessageBus Inner { get; } = new();
             public bool Disposed { get; private set; }
 
-            public Task PublishAsync(OutgoingMessage message, CancellationToken cancellationToken = default) =>
-                Disposed ? throw new ObjectDisposedException(nameof(DisposableBus)) : Inner.PublishAsync(message, cancellationToken);
+            public TimeSpan PublishDelay { get; init; }
+
+            public async Task PublishAsync(OutgoingMessage message, CancellationToken cancellationToken = default)
+            {
+                if (PublishDelay > TimeSpan.Zero)
+                {
+                    await Task.Delay(PublishDelay, cancellationToken);
+                }
+                if (Disposed) throw new ObjectDisposedException(nameof(DisposableBus));
+                await Inner.PublishAsync(message, cancellationToken);
+            }
 
             public Task<IAsyncDisposable> ConsumeAsync(string queue, MessageHandler handler, ConsumerOptions options = null, CancellationToken cancellationToken = default) =>
                 Inner.ConsumeAsync(queue, handler, options, cancellationToken);

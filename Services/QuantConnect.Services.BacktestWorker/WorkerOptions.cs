@@ -14,6 +14,7 @@
 */
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace QuantConnect.Services.BacktestWorker;
@@ -43,6 +44,11 @@ public sealed class WorkerOptions
     public int HeartbeatIntervalSeconds { get; set; } = 30;
     public int PollIntervalMilliseconds { get; set; } = 1000;
     public bool KeepWorkDirectories { get; set; }
+    /// <summary>
+    /// Extra Launcher <c>config.json</c> keys for every attempt (<c>Worker__EngineConfig__&lt;key&gt;</c>), e.g. the parity stack's
+    /// <c>fundamental-data-provider</c>; the keys the worker sets to wire the bus handlers win over these. Empty by default.
+    /// </summary>
+    public Dictionary<string, string> EngineConfig { get; set; } = new(StringComparer.Ordinal);
 
     public string ResolvedWorkerId => string.IsNullOrWhiteSpace(WorkerId) ? Environment.MachineName : WorkerId!;
     public string LauncherPath => Path.Combine(LauncherDirectory, "QuantConnect.Lean.Launcher.dll");

@@ -23,7 +23,7 @@ largest-triangle-three-buckets for line series). `GET .../charts/{chart}?maxPoin
 for more points than it holds (or omitting `maxPoints`) reads the full-resolution chart from the result JSON in MinIO.
 
 Settings: `ConnectionStrings__Results`, `RabbitMQ__Uri`, `S3__ServiceUrl` / `S3__AccessKey` / `S3__SecretKey` /
-`S3__ResultsBucket`, `Results__ChartMaxPoints`, `Results__MaxLogsPerAttempt`, `Results__Prefetch` (16),
+`S3__ResultsBucket`, `Results__ChartMaxPoints`, `Results__MaxLogsPerAttempt`, `Results__Prefetch` (64), `Results__Partitions` (8: jobs ingested concurrently, each job's messages in order),
 `Results__Consume` (true). Migrations (`Storage/Migrations/*.sql`) run at startup under an advisory lock.
 
 ```bash

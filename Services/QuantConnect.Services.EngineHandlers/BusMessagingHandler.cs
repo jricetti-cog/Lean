@@ -75,9 +75,22 @@ public class BusMessagingHandler : QuantConnect.Messaging.Messaging
         var timeout = TimeSpan.FromSeconds(BusSettings.GetInt(BusSettings.ShutdownTimeoutSeconds, 30));
         _heartbeat?.Dispose();
         _outbox.Writer.TryComplete();
-        if (_pump != null && !_pump.Wait(timeout))
+        if (_pump != null)
         {
-            Log.Error($"BusMessagingHandler.Dispose(): outbox not drained after {timeout}, {Volatile.Read(ref _pending)} messages lost");
+            // The timeout bounds a stalled broker, not a long outbox: keep draining while each window publishes something
+            // (an algorithm that logs heavily can leave tens of thousands of packets ahead of its final result).
+            var pending = Volatile.Read(ref _pending);
+            while (!_pump.Wait(timeout))
+            {
+                var left = Volatile.Read(ref _pending);
+                if (left >= pending)
+                {
+                    Log.Error($"BusMessagingHandler.Dispose(): outbox not drained, no progress in {timeout}, {left} messages lost");
+                    break;
+                }
+                Log.Trace($"BusMessagingHandler.Dispose(): draining the outbox, {left} messages left");
+                pending = left;
+            }
         }
         EngineBus.Close(timeout);
         Log.Trace($"BusMessagingHandler.Dispose(): published {Interlocked.Read(ref _sequence)}, dropped {Dropped}");

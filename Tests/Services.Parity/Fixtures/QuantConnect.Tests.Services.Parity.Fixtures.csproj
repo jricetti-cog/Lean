@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The fixtures LEAN's regression suite swaps into the engine (Tests/AlgorithmRunner.cs), built without the test
+       dependencies so the parity stack's backtest workers can load them as a plugin (docker-compose.parity.yml). -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>QuantConnect.Tests.Services.Parity.Fixtures</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\Common\Data\Fundamental\TestFundamentalDataProvider.cs" Link="TestFundamentalDataProvider.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Common\QuantConnect.csproj" Private="false" />
+  </ItemGroup>
+</Project>

@@ -152,6 +152,19 @@ namespace QuantConnect.Tests.Services.BacktestWorker
         }
 
         [Test]
+        public void EngineConfigIsAddedToTheAttemptConfigWithoutReplacingTheBusKeys()
+        {
+            _options.EngineConfig["fundamental-data-provider"] = "Fixtures.TestFundamentalDataProvider";
+            _options.EngineConfig["job-queue-handler"] = "Some.Other.Handler";
+            var workspace = JobWorkspace.Create(_options, Job(), "worker-1");
+
+            var config = JsonNode.Parse(File.ReadAllText(workspace.ConfigPath))!.AsObject();
+
+            Assert.AreEqual("Fixtures.TestFundamentalDataProvider", (string)config["fundamental-data-provider"]);
+            Assert.AreEqual(JobWorkspace.JobQueueHandler, (string)config["job-queue-handler"]);
+        }
+
+        [Test]
         public async Task CompletedJobIsReportedAfterTheEngineUploadAndThenAcked()
         {
             EngineStoresResult("Completed", 0);
