@@ -4,6 +4,7 @@
 #   bash deploy/kind/kind.sh up        # cluster + registry + KEDA, push the local images, install the chart
 #   bash deploy/kind/kind.sh smoke     # port-forward the gateway/console/MinIO and run deploy/smoke/smoke.sh
 #   bash deploy/kind/kind.sh down      # delete the cluster and the registry
+# (`cluster`, `load` and `install` run the steps of `up` separately.)
 # Needs docker, kind, kubectl and helm. Images: lean/<service>:dev from `make build` (or `docker compose build`).
 set -euo pipefail
 
@@ -86,9 +87,10 @@ down() {
 
 case "${1:-}" in
     up) registry; cluster; keda; load; shift; install "$@" ;;
+    cluster) registry; cluster; keda ;;
     load) registry; load ;;
     install) shift; install "$@" ;;
     smoke) smoke ;;
     down) down ;;
-    *) echo "usage: $0 up|load|install|smoke|down" >&2; exit 2 ;;
+    *) echo "usage: $0 up|cluster|load|install|smoke|down" >&2; exit 2 ;;
 esac
