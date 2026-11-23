@@ -65,6 +65,8 @@ code=$(gw GET "/api/v1/jobs/$job")
 code=$(gw GET "/api/v1/jobs?kind=backtest&limit=3")
 [ "$code" = 200 ] && pass "GET /api/v1/jobs -> $(jq '.items | length' /tmp/gw.body) items, first $(jq -r '.items[0].id' /tmp/gw.body)" || fail "list returned $code"
 
+# This script plays the worker: a real one (started by default since the platform has no profiles) would race it.
+$DC stop backtest-worker >/dev/null 2>&1 || true
 echo "== worker side (no worker image): dispatch -> attempt -> started -> result in MinIO -> completed"
 for _ in $(seq 1 30); do [ "$(curl -fsS "$ORCH/internal/v1/jobs/$job" | jq -r .status)" = dispatched ] && break; sleep 1; done
 msg=$(mq -X POST "$MQ/queues/$RABBITMQ_VHOST/jobs.backtest/get" -d '{"count":1,"ackmode":"ack_requeue_false","encoding":"auto"}' | jq -c '.[0]')
