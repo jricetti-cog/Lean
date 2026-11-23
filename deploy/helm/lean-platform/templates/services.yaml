@@ -36,7 +36,7 @@ spec:
       {{- else }}
       automountServiceAccountToken: false
       {{- end }}
-      securityContext: {{- toYaml $.Values.podSecurityContext | nindent 8 }}
+      securityContext: {{- toYaml ($svc.podSecurityContext | default $.Values.podSecurityContext) | nindent 8 }}
       {{- with $.Values.imagePullSecrets }}
       imagePullSecrets: {{- toYaml . | nindent 8 }}
       {{- end }}

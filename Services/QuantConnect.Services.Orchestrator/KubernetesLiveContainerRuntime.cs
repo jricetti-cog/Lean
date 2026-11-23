@@ -213,14 +213,15 @@ public sealed class KubernetesLiveContainerRuntime : ILiveContainerRuntime, IDis
         var handler = new SocketsHttpHandler();
         if (File.Exists(caPath))
         {
-            var ca = X509Certificate2.CreateFromPemFile(caPath);
+            var trust = new X509Certificate2Collection();
+            trust.ImportFromPemFile(caPath);
             handler.SslOptions.RemoteCertificateValidationCallback = (_, certificate, _, errors) =>
             {
                 if (errors == SslPolicyErrors.None) return true;
                 if (certificate == null || (errors & SslPolicyErrors.RemoteCertificateNameMismatch) != 0) return false;
                 using var chain = new X509Chain();
                 chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
-                chain.ChainPolicy.CustomTrustStore.Add(ca);
+                chain.ChainPolicy.CustomTrustStore.AddRange(trust);
                 chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
                 return chain.Build(new X509Certificate2(certificate));
             };

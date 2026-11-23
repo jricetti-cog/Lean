@@ -111,6 +111,8 @@ services:
       Gateway__RateLimit__WindowSeconds: "60"
   console:
     replicas: 1
+    # nginx-unprivileged: renders its config into /etc/nginx/conf.d, owned by the image's nginx user.
+    podSecurityContext: { runAsNonRoot: true, runAsUser: 101, runAsGroup: 101 }
     resources: { requests: { cpu: 50m, memory: 64Mi }, limits: { memory: 256Mi } }
 
 # Backtest workers: a Deployment consuming jobs.backtest one job at a time (prefetch 1). Every job costs ~4-5 s of
