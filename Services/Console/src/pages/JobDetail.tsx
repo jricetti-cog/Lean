@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { api, ok, reportDownloadUrl, resultDownloadUrl, TERMINAL, type Job, type ResultSummary } from '../api/client';
 import { useFinalRefresh, useJobEvent, useJobEvents, usePolling, type JobEvents, type Loadable } from '../components/hooks';
-import { packetSummary, type OrderRow } from '../lean';
+import { cancelledStatistics, packetSummary, type OrderRow } from '../lean';
 import { ChartPanel, fetchOrders, LogsPanel, OrdersTable, pollWhile, StreamBadge } from '../components/ResultPanels';
 import { Card, duration, ErrorBox, fmtTime, KeyValues, Progress, StatGrid, StatusBadge } from '../components/ui';
 
@@ -162,6 +162,8 @@ export default function JobDetail() {
   const j = job.data;
   const stats = result.data?.statistics;
   const runtime = result.data?.runtimeStatistics;
+  const cancelled = cancelledStatistics(j.status, result.data);
+  const cancelledLabel = cancelled && `cancelled at ${cancelled.percent}%`;
 
   return (
     <div className="stack">
@@ -196,15 +198,24 @@ export default function JobDetail() {
           Parameters: <KeyValues values={j.spec.backtest.parameters} />
         </p>
       )}
-      <div className="cols">
-        <Card title="Statistics">
-          <StatGrid stats={stats} />
+      {cancelled ? (
+        <Card title={`Statistics · ${cancelledLabel}`}>
+          <p className="muted small" data-testid="cancelled-statistics">
+            Last statistics the backtest streamed before it was cancelled; a cancelled backtest has no final statistics.
+          </p>
+          <StatGrid stats={cancelled.statistics} />
         </Card>
-        <Card title="Runtime">
-          <StatGrid stats={runtime} />
-        </Card>
-      </div>
-      <ChartPanel id={id} chart="Strategy Equity" title="Equity" live={live} events={events} refresh={final} />
+      ) : (
+        <div className="cols">
+          <Card title="Statistics">
+            <StatGrid stats={stats} />
+          </Card>
+          <Card title="Runtime">
+            <StatGrid stats={runtime} />
+          </Card>
+        </div>
+      )}
+      <ChartPanel id={id} chart="Strategy Equity" title={cancelled ? `Equity · ${cancelledLabel}` : 'Equity'} live={live} events={events} refresh={final} />
       <ChartPanel id={id} chart="Drawdown" title="Drawdown" negative live={live} events={events} refresh={final} />
       <OrdersTable orders={orders.data} error={orders.error} />
       <LogsPanel id={id} live={live} events={events} refresh={final} />

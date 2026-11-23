@@ -82,6 +82,19 @@ export function packetSummary(packet: unknown): { progress?: number; runtimeStat
   };
 }
 
+/**
+ * A cancelled backtest never gets LEAN's final statistics (only the final result carries them): its last streamed
+ * runtime statistics stand in, labelled with the progress it was cancelled at. Undefined for every other page.
+ */
+export function cancelledStatistics(
+  status: string | undefined,
+  result: { progress?: number; statistics?: Record<string, string>; runtimeStatistics?: Record<string, string> } | undefined,
+): { percent: number; statistics: Record<string, string> } | undefined {
+  if (status !== 'cancelled' || !result || Object.keys(result.statistics ?? {}).length) return undefined;
+  const percent = Math.round(Math.max(0, Math.min(1, result.progress ?? 0)) * 100);
+  return { percent, statistics: result.runtimeStatistics ?? {} };
+}
+
 const LOG_TYPES = ['Log', 'Debug', 'SystemDebug', 'RuntimeError', 'HandledError'] as const;
 
 /** A `log`/`error` SSE event (`packets.v1.Log`, `Debug`, `RuntimeError`, ...) as a `/logs` line. */

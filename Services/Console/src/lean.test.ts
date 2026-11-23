@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chartSeries, orderRow, positionsFromOrders, seriesPoints } from './lean';
+import { cancelledStatistics, chartSeries, orderRow, positionsFromOrders, seriesPoints } from './lean';
 
 describe('lean result helpers', () => {
   it('reads [t,v], candle and {x,y} series values, sorted and de-duplicated', () => {
@@ -23,5 +23,15 @@ describe('lean result helpers', () => {
     ].map(orderRow);
     expect(orders[1]).toMatchObject({ type: 'Limit', status: 'Filled', symbol: 'SPY' });
     expect(positionsFromOrders(orders)).toEqual([{ symbol: 'SPY', quantity: 20, averagePrice: 105, lastPrice: 110 }]);
+  });
+
+  it('falls back to the last runtime statistics only for cancelled backtests without final statistics', () => {
+    const runtimeStatistics = { Equity: '$100,512.00', 'Net Profit': '$512.00' };
+    expect(cancelledStatistics('cancelled', { progress: 0.374, statistics: {}, runtimeStatistics })).toEqual({ percent: 37, statistics: runtimeStatistics });
+    expect(cancelledStatistics('cancelled', { progress: 0, statistics: {}, runtimeStatistics: {} })).toEqual({ percent: 0, statistics: {} });
+    expect(cancelledStatistics('cancelled', { progress: 1, statistics: { 'Total Orders': '2' }, runtimeStatistics })).toBeUndefined();
+    expect(cancelledStatistics('completed', { progress: 1, statistics: {}, runtimeStatistics })).toBeUndefined();
+    expect(cancelledStatistics('failed', { progress: 0.5, statistics: {}, runtimeStatistics })).toBeUndefined();
+    expect(cancelledStatistics('cancelled', undefined)).toBeUndefined();
   });
 });
