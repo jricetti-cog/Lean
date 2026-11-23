@@ -134,7 +134,11 @@ public sealed class KubernetesLiveContainerRuntime : ILiveContainerRuntime, IDis
             ["image"] = (string?)spec["Image"] ?? _options.Image,
             ["imagePullPolicy"] = _options.ImagePullPolicy,
             ["env"] = env,
-            ["securityContext"] = new JsonObject { ["runAsNonRoot"] = true, ["allowPrivilegeEscalation"] = false },
+            ["securityContext"] = new JsonObject
+            {
+                ["runAsNonRoot"] = true, ["runAsUser"] = _options.RunAsUser, ["runAsGroup"] = _options.RunAsUser,
+                ["allowPrivilegeEscalation"] = false,
+            },
         };
         if (limits.Count > 0) container["resources"] = new JsonObject { ["limits"] = limits, ["requests"] = limits.DeepClone() };
         var pod = new JsonObject

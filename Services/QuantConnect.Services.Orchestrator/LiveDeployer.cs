@@ -73,6 +73,9 @@ public sealed class LiveDeploymentOptions
     /// <summary>Extra pod labels (comma-separated <c>key=value</c>), e.g. the Helm release labels.</summary>
     public string? PodLabels { get; set; }
 
+    /// <summary>Kubernetes mode: numeric user (and group) of the live-worker container; the image's <c>app</c> user.</summary>
+    public long RunAsUser { get; set; } = 1654;
+
     public bool IsDocker => string.Equals(Mode, "docker", StringComparison.OrdinalIgnoreCase);
     public bool IsKubernetes => string.Equals(Mode, "kubernetes", StringComparison.OrdinalIgnoreCase);
     public bool Enabled => IsDocker || IsKubernetes;

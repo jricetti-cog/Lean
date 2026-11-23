@@ -70,6 +70,7 @@ namespace QuantConnect.Tests.Services.LiveWorker
             var container = template["spec"]!["containers"]![0]!;
             Assert.AreEqual("ghcr.io/x/live-worker:1.0.0", (string)container["image"]);
             Assert.IsTrue((bool)container["volumeMounts"]![0]!["readOnly"]);
+            Assert.AreEqual(1654, (long)container["securityContext"]!["runAsUser"]!);
             Assert.AreEqual("/Lean/Data", (string)container["volumeMounts"]![0]!["mountPath"]);
             Assert.AreEqual((2048L * 1024 * 1024).ToString(), (string)container["resources"]!["limits"]!["memory"]);
             Assert.AreEqual("1500m", (string)container["resources"]!["limits"]!["cpu"]);

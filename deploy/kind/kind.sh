@@ -53,7 +53,7 @@ load() {
 
 install() {
     helm upgrade --install "$RELEASE" "$CHART" --namespace "$NAMESPACE" --create-namespace \
-        --set image.registry="localhost:${REG_PORT}/lean" --set image.tag="$TAG" \
+        --set image.registry="localhost:${REG_PORT}/lean" --set image.tag="$TAG" --set image.pullPolicy=Always \
         --wait --wait-for-jobs --timeout "${HELM_TIMEOUT:-30m}" "$@"
     kubectl -n "$NAMESPACE" get pods,svc,pvc,hpa,scaledobject
 }
