@@ -18,12 +18,12 @@ make smoke                                            # engine over the bus, the
 | 1 | Console > New backtest | Submit a C# built-in algorithm (e.g. `BasicTemplateAlgorithm`) |
 | 2 | Console > New backtest | Submit a Python algorithm (source in the editor) |
 | 3 | Console > Jobs > job | Status, progress, equity chart and logs streaming live, then the final statistics |
-| 4 | Job page > Report | Generate the report and open the HTML |
+| 4 | Job page | **Generate report**, then **Open report** for the HTML |
 | 5 | Console > Jobs | Cancel a running backtest and open its page (see known gap below) |
 | 6 | Terminal, then Console > Optimizations | `docker compose up -d --scale backtest-worker=3`, run a grid optimization, child backtests spread over the workers, best parameters |
 | 7 | Console > Live | Deploy `LiveWorkerDemoAlgorithm` on `PaperBrokerage` with the simulated BTCUSD feed, watch holdings/equity, stop it |
 | 8 | Grafana > Service RED | Request rate, errors and latency per service, including the optimizer |
-| 9 | Grafana > Explore > Tempo | Paste a gateway `X-Request-ID` and open the full trace (gateway > orchestrator > worker > results) |
+| 9 | Grafana > Explore > Tempo (sign in as admin first: the anonymous viewer has no Explore) | Paste a gateway `X-Request-ID` and open the full trace (gateway > orchestrator > worker > results) |
 
 Known gap: a cancelled backtest's page shows "No statistics yet" instead of the last statistics it streamed.
 
@@ -31,7 +31,7 @@ Known gap: a cancelled backtest's page shows "No statistics yet" instead of the 
 
 - Parity: [`Tests/Services.Parity/parity-results/parity.md` at 7cc1aee90](https://github.com/jricetti-cog/Lean/blob/7cc1aee90b6f6bd660a909257a5e1de6f748505b/Tests/Services.Parity/parity-results/parity.md),
   1101 / 1101 runnable regression algorithms match `ExpectedStatistics` through the gateway.
-- The walkthrough recording is attached to the PR that added this page.
+- The walkthrough recording is attached to the PR that added this page (#40).
 
 `docker compose --profile observability ps` after `up -d --wait`:
 
