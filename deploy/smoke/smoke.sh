@@ -88,7 +88,7 @@ report=$(jq -r .id "$tmp/body")
 wait_status "/api/v1/reports/$report" completed || fail "report did not complete: $(cat "$tmp/body")"
 pass "report $report completed"
 code=$(gw GET "/api/v1/reports/$report/html")
-[ "$code" = 302 ] && curl -fsS "$(location)" | grep -qi '<html' && pass "report HTML downloads (presigned MinIO URL)" || fail "report html returned $code"
+[ "$code" = 302 ] && curl -fsS -o "$tmp/report.html" "$(location)" && grep -qi '<html' "$tmp/report.html" && pass "report HTML downloads (presigned MinIO URL)" || fail "report html returned $code"
 
 if [ "${SMOKE_LIVE:-0}" = 1 ]; then
     echo "== live deployment (PaperBrokerage, bus data queue)"
