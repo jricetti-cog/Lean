@@ -6,7 +6,7 @@
 # Submits a deliberately slow Python backtest (BAR_SLEEP seconds per minute bar) through the console's /api proxy,
 # reads GET /api/v1/jobs/{id}/events while it runs and checks the frames the console pages consume. With LIVE=1 (default)
 # it then deploys LiveWorkerDemoAlgorithm on the real live worker (needs the market-data profile too and
-# DOCKER_SOCKET_GID, see verify-live-worker.sh), streams it for LIVE_SECONDS and stops it through the API.
+# see verify-live-worker.sh), streams it for LIVE_SECONDS and stops it through the API.
 set -eu
 [ -f .env ] && set -a && . ./.env && set +a
 

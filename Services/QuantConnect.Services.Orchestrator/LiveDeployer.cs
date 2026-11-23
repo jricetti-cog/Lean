@@ -43,6 +43,8 @@ public sealed class LiveDeploymentOptions
     /// </summary>
     public string Mode { get; set; } = "none";
     public string DockerSocket { get; set; } = "/var/run/docker.sock";
+    /// <summary>Docker Engine API over TCP (e.g. <c>tcp://docker-socket-proxy:2375</c>); defaults to <c>DOCKER_HOST</c>, else <see cref="DockerSocket"/>.</summary>
+    public string? DockerHost { get; set; } = Environment.GetEnvironmentVariable("DOCKER_HOST");
     public string Image { get; set; } = "lean/live-worker:dev";
     /// <summary>Docker network the container joins (the compose <c>lean</c> network).</summary>
     public string? Network { get; set; }
@@ -96,14 +98,22 @@ public interface ILiveContainerRuntime
     bool RestartsFinishedWorkers => false;
 }
 
-/// <summary>Docker Engine API over the unix socket.</summary>
+/// <summary>Docker Engine API over TCP (<see cref="LiveDeploymentOptions.DockerHost"/>) or the unix socket.</summary>
 public sealed class DockerLiveContainerRuntime : ILiveContainerRuntime, IDisposable
 {
     private readonly HttpClient _http;
 
     public DockerLiveContainerRuntime(IOptions<LiveDeploymentOptions> options)
     {
-        var socket = options.Value.DockerSocket;
+        var host = options.Value.DockerHost;
+        if (!string.IsNullOrEmpty(host) && host.StartsWith("tcp://", StringComparison.OrdinalIgnoreCase))
+        {
+            _http = new HttpClient { BaseAddress = new Uri("http://" + host["tcp://".Length..].TrimEnd('/') + "/") };
+            return;
+        }
+        var socket = !string.IsNullOrEmpty(host) && host.StartsWith("unix://", StringComparison.OrdinalIgnoreCase)
+            ? host["unix://".Length..]
+            : options.Value.DockerSocket;
         _http = new HttpClient(new SocketsHttpHandler
         {
             ConnectCallback = async (_, ct) =>

@@ -10,8 +10,6 @@ VERSION := $(shell sed -n 's/^appVersion: *"\{0,1\}\([^"]*\)"\{0,1\}/\1/p' deplo
 
 export LEAN_IMAGE_REGISTRY := $(IMAGE_REGISTRY)
 export LEAN_IMAGE_TAG := $(IMAGE_TAG)
-# job-orchestrator starts live workers through the Docker socket: give it the socket's group.
-export DOCKER_SOCKET_GID ?= $(shell stat -c %g /var/run/docker.sock 2>/dev/null || echo 999)
 
 COMPOSE ?= docker compose
 KIND_CLUSTER ?= lean

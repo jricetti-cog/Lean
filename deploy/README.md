@@ -30,9 +30,10 @@ image) and then `deploy/smoke/smoke.sh`, which uses only the public endpoints: g
 console and its API proxy, a Python backtest run by a real worker, the result download (presigned MinIO URL), and a
 report on it. `verify-events.sh` (timing-sensitive) is not part of the smoke gate.
 
-Live deployments: job-orchestrator starts one `lean-live-<jobId>` container per deployment through the Docker socket.
-`make up` passes the socket's group (`DOCKER_SOCKET_GID`); with plain `docker compose up` set it in `.env` when it is
-not 999 (`stat -c %g /var/run/docker.sock`).
+Live deployments: job-orchestrator starts one `lean-live-<jobId>` container per deployment through the Docker Engine
+API at `DOCKER_HOST=tcp://docker-socket-proxy:2375`. `docker-socket-proxy` (pinned `tecnativa/docker-socket-proxy`) is the
+only container that mounts `/var/run/docker.sock`. It allows only the container endpoints (`CONTAINERS=1`, `POST=1`) on the
+internal `docker-api` network, which is not published. Plain `docker compose up` works whatever group owns the socket.
 
 ### Versioned images (GHCR)
 

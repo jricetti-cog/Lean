@@ -220,16 +220,37 @@ services:
       Orchestrator__LiveDeployment__ContainerPrefix: ${COMPOSE_PROJECT_NAME:-lean}-live-
       Orchestrator__LiveDeployment__MemoryMb: ${LIVE_WORKER_MEMORY_MB:-4096}
       Orchestrator__LiveDeployment__Cpus: ${LIVE_WORKER_CPUS:-2}
-    # The image runs as a non-root user: give it the group owning the host's docker socket (`stat -c %g /var/run/docker.sock`).
-    group_add: ["${DOCKER_SOCKET_GID:-999}"]
-    volumes:
-      - ${DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock
+      # Docker API through docker-socket-proxy (containers only); the orchestrator never mounts the socket itself.
+      DOCKER_HOST: tcp://docker-socket-proxy:2375
     ports:
       - 127.0.0.1:${ORCHESTRATOR_PORT:-5081}:8080
     depends_on:
       infra-ready:
         condition: service_healthy
-    networks: [lean]
+      docker-socket-proxy:
+        condition: service_healthy
+    networks: [lean, docker-api]
+
+  # The only container that mounts the Docker socket: exposes just the container endpoints job-orchestrator uses
+  # (create/inspect/list/start/remove live workers) on the internal docker-api network, never published. Root inside
+  # the proxy reads the socket whatever group owns it on the host, so no DOCKER_SOCKET_GID is needed.
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy:3.4@sha256:027f9fa5ee70be5836eeaa10ce889d7a83f34a8db16a7f412818b92997e0beab
+    restart: unless-stopped
+    environment:
+      CONTAINERS: 1
+      POST: 1
+      EVENTS: 0
+      VERSION: 1
+      PING: 1
+    volumes:
+      - ${DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:2375/_ping | grep -q OK"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [docker-api]
 
   # Market data (ADR 0004, plan step s3.1): the only writer of lean-data (catalog, downloads, history, live fan-out).
   #   docker compose up -d --wait market-data
@@ -683,3 +704,5 @@ volumes:
 
 networks:
   lean:
+  docker-api:
+    internal: true
