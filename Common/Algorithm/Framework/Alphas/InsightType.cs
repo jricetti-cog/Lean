@@ -13,15 +13,15 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 
 namespace QuantConnect.Algorithm.Framework.Alphas
 {
     /// <summary>
     /// Specifies the type of insight
     /// </summary>
-    [JsonConverter(typeof(StringEnumConverter), true)]
+    [JsonConverterWithArgs(typeof(StringEnumJsonConverter), true)]
     public enum InsightType
     {
         /// <summary>

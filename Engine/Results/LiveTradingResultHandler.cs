@@ -22,7 +22,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using QuantConnect.Brokerages;
 using QuantConnect.Configuration;
 using QuantConnect.Data.UniverseSelection;
@@ -471,7 +470,7 @@ namespace QuantConnect.Lean.Engine.Results
             var filename = $"{AlgorithmId}-{utcTime:yyyy-MM-dd}-order-events.json";
             var path = GetResultsPath(filename);
 
-            var data = JsonConvert.SerializeObject(orderEvents, Formatting.None, SerializerSettings);
+            var data = JsonSerialization.Serialize(orderEvents, SerializerSettings);
 
             File.WriteAllText(path, data);
         }

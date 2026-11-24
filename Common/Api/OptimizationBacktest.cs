@@ -14,7 +14,7 @@
 */
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using QuantConnect.Optimizer.Parameters;
 

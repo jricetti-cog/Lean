@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
 */
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace QuantConnect.Api
 {

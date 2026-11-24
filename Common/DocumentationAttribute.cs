@@ -15,7 +15,7 @@
 
 using System;
 using System.Linq;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Reflection;
 
 namespace QuantConnect
@@ -35,25 +35,25 @@ namespace QuantConnect
         /// <summary>
         /// The documentation tag
         /// </summary>
-        [JsonProperty(PropertyName = "tag")]
+        [JsonPropertyName("tag")]
         public string Tag { get; }
 
         /// <summary>
         ///  The associated weight of this attribute and tag
         /// </summary>
-        [JsonProperty(PropertyName = "weight")]
+        [JsonPropertyName("weight")]
         public int Weight { get; }
 
         /// <summary>
         ///  The associated line of this attribute
         /// </summary>
-        [JsonProperty(PropertyName = "line")]
+        [JsonPropertyName("line")]
         public int Line { get; }
 
         /// <summary>
         ///  The associated file name of this attribute
         /// </summary>
-        [JsonProperty(PropertyName = "fileName")]
+        [JsonPropertyName("fileName")]
         public string FileName { get; }
 
         /// <summary>

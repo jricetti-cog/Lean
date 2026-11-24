@@ -15,7 +15,7 @@
 
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuantConnect.Util;
 
 namespace QuantConnect.Securities.FutureOption.Api
@@ -29,13 +29,13 @@ namespace QuantConnect.Securities.FutureOption.Api
         /// <summary>
         /// Describes the type of future option this entry is
         /// </summary>
-        [JsonProperty("label")]
+        [JsonPropertyName("label")]
         public string Label { get; private set; }
 
         /// <summary>
         /// Name of the product
         /// </summary>
-        [JsonProperty("name")]
+        [JsonPropertyName("name")]
         public string Name { get; private set; }
 
         /// <summary>
@@ -43,37 +43,37 @@ namespace QuantConnect.Securities.FutureOption.Api
         /// Note that there are other types such as weekly, but we
         /// only support American options for now.
         /// </summary>
-        [JsonProperty("optionType")]
+        [JsonPropertyName("optionType")]
         public string OptionType { get; private set; }
 
         /// <summary>
         /// Product ID of the option
         /// </summary>
-        [JsonProperty("productId")]
+        [JsonPropertyName("productId")]
         public int ProductId { get; private set; }
 
         /// <summary>
         /// Is Daily option
         /// </summary>
-        [JsonProperty("daily")]
+        [JsonPropertyName("daily")]
         public bool Daily { get; private set; }
 
         /// <summary>
         /// ???
         /// </summary>
-        [JsonProperty("sto")]
+        [JsonPropertyName("sto")]
         public bool Sto { get; private set; }
 
         /// <summary>
         /// Is weekly option
         /// </summary>
-        [JsonProperty("weekly")]
+        [JsonPropertyName("weekly")]
         public bool Weekly { get; private set; }
 
         /// <summary>
         /// Expirations of the future option
         /// </summary>
-        [JsonProperty("expirations")]
+        [JsonPropertyName("expirations")]
         public List<CMEOptionsExpiration> Expirations { get; private set; }
     }
 
@@ -86,26 +86,26 @@ namespace QuantConnect.Securities.FutureOption.Api
         /// <summary>
         /// Date of expiry
         /// </summary>
-        [JsonProperty("label")]
+        [JsonPropertyName("label")]
         public string Label { get; private set; }
 
         /// <summary>
         /// Product ID of the expiring asset (usually future option)
         /// </summary>
-        [JsonProperty("productId")]
+        [JsonPropertyName("productId")]
         public int ProductId { get; private set; }
 
         /// <summary>
         /// Contract ID of the asset
         /// </summary>
         /// <remarks>Used to search settlements for the option chain</remarks>
-        [JsonProperty("contractId")]
+        [JsonPropertyName("contractId")]
         public string ContractId { get; private set; }
 
         /// <summary>
         /// Contract month code formatted as [FUTURE_MONTH_LETTER(1)][YEAR(1)]
         /// </summary>
-        [JsonProperty("expiration")]
+        [JsonPropertyName("expiration")]
         public CMEOptionExpirationEntry Expiration { get; private set; }
     }
 
@@ -117,25 +117,25 @@ namespace QuantConnect.Securities.FutureOption.Api
         /// <summary>
         /// Month of expiry
         /// </summary>
-        [JsonProperty("month")]
+        [JsonPropertyName("month")]
         public int Month { get; private set; }
 
         /// <summary>
         /// Year of expiry
         /// </summary>
-        [JsonProperty("year")]
+        [JsonPropertyName("year")]
         public int Year { get; private set; }
 
         /// <summary>
         /// Expiration code (two letter)
         /// </summary>
-        [JsonProperty("code")]
+        [JsonPropertyName("code")]
         public string Code { get; private set; }
 
         /// <summary>
         /// Expiration code (three letter)
         /// </summary>
-        [JsonProperty("twoDigitsCode")]
+        [JsonPropertyName("twoDigitsCode")]
         public string TwoDigitsCode { get; private set; }
     }
 }

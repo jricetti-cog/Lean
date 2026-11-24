@@ -14,7 +14,6 @@
 */
 
 using System;
-using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace QuantConnect.Tests.Common
@@ -31,8 +30,8 @@ namespace QuantConnect.Tests.Common
             series.AddPoint(point);
             chart.AddSeries(series);
 
-            var serialized = JsonConvert.SerializeObject(chart);
-            var deserialized = JsonConvert.DeserializeObject<Chart>(serialized);
+            var serialized = JsonSerialization.Serialize(chart);
+            var deserialized = JsonSerialization.Deserialize<Chart>(serialized);
 
             Assert.AreEqual(1, deserialized.Series.Count);
             var deserializedSeries = deserialized.Series[series.Name];
@@ -63,7 +62,7 @@ namespace QuantConnect.Tests.Common
         [TestCase("{ \"x\": 890370000, \"y\": null, \"tooltip\": \"a Test\"}", null, "a Test")]
         public void Deserialize(string serialized, decimal? expected, string toolTip)
         {
-            var deserialized = JsonConvert.DeserializeObject<ScatterChartPoint>(serialized);
+            var deserialized = JsonSerialization.Deserialize<ScatterChartPoint>(serialized);
 
             var time = new DateTime(1998, 3, 20, 5, 0, 0);
             Assert.AreEqual(time, deserialized.Time);

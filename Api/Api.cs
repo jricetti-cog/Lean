@@ -19,7 +19,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using Newtonsoft.Json;
+using System.Text.Json;
 using QuantConnect.Interfaces;
 using QuantConnect.Logging;
 using QuantConnect.Optimizer.Objectives;
@@ -33,7 +33,6 @@ using System.Threading;
 using System.Net.Http.Headers;
 using System.Collections.Concurrent;
 using System.Text;
-using Newtonsoft.Json.Serialization;
 
 namespace QuantConnect.Api
 {
@@ -53,17 +52,7 @@ namespace QuantConnect.Api
         /// <summary>
         /// Serializer settings to use
         /// </summary>
-        protected JsonSerializerSettings SerializerSettings { get; set; } = new()
-        {
-            ContractResolver = new DefaultContractResolver
-            {
-                NamingStrategy = new CamelCaseNamingStrategy
-                {
-                    ProcessDictionaryKeys = false,
-                    OverrideSpecifiedNames = true
-                }
-            }
-        };
+        protected JsonSerializerOptions SerializerSettings { get; set; } = JsonSerialization.CamelCase;
 
         /// <summary>
         /// Returns the underlying API connection
@@ -89,12 +78,6 @@ namespace QuantConnect.Api
         {
             ApiConnection = CreateApiConnection(userId, token);
             _dataFolder = dataFolder?.Replace("\\", "/", StringComparison.InvariantCulture);
-
-            //Allow proper decoding of orders from the API.
-            JsonConvert.DefaultSettings = () => new JsonSerializerSettings
-            {
-                Converters = { new OrderJsonConverter() }
-            };
         }
 
         /// <summary>
@@ -477,7 +460,7 @@ namespace QuantConnect.Api
         {
             const string resource = "backtests/chart/read";
             // Serialize just once
-            var payloadStr = JsonConvert.SerializeObject(new
+            var payloadStr = JsonSerialization.Serialize(new
             {
                 projectId,
                 name,
@@ -671,7 +654,7 @@ namespace QuantConnect.Api
             using (Py.GIL())
             {
                 var stringBrokerageSettings = brokerageSettings.ToString();
-                return JsonConvert.DeserializeObject<Dictionary<string, object>>(stringBrokerageSettings);
+                return JsonSerialization.Deserialize<Dictionary<string, object>>(stringBrokerageSettings);
             }
         }
 
@@ -848,7 +831,7 @@ namespace QuantConnect.Api
         public ReadChartResponse ReadLiveChart(int projectId, string name, int start, int end, uint count)
         {
             const string resource = "live/chart/read";
-            var payloadStr = JsonConvert.SerializeObject(new
+            var payloadStr = JsonSerialization.Serialize(new
             {
                 projectId,
                 name,
@@ -977,7 +960,7 @@ namespace QuantConnect.Api
         /// <returns><see cref="BacktestReport"/></returns>
         public BacktestReport ReadBacktestReport(int projectId, string backtestId)
         {
-            var payloadStr = JsonConvert.SerializeObject(new { backtestId, projectId });
+            var payloadStr = JsonSerialization.Serialize(new { backtestId, projectId });
             var report = new BacktestReport();
             var finish = DateTime.UtcNow.AddMinutes(1);
             // The endpoint answers with a generating response until the report is ready
@@ -1378,7 +1361,7 @@ namespace QuantConnect.Api
             }
 
             var jobId = result.JobId;
-            var getUrlPayloadStr = JsonConvert.SerializeObject(new
+            var getUrlPayloadStr = JsonSerialization.Serialize(new
             {
                 organizationId,
                 jobId
@@ -1540,7 +1523,7 @@ namespace QuantConnect.Api
         /// Makes a simple POST request to the specified endpoint with the given payload
         /// </summary>
         protected bool TryJsonPost<T>(string endpoint, out T result, object payload = null,
-            ApiConnection apiConnection = null, JsonSerializerSettings jsonSerializerSettings = null, TimeSpan? timeout = null)
+            ApiConnection apiConnection = null, JsonSerializerOptions jsonSerializerSettings = null, TimeSpan? timeout = null)
             where T : RestResponse
         {
             using var request = ApiUtils.CreateJsonPostRequest(endpoint, payload, jsonSerializerSettings);

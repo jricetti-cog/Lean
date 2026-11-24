@@ -17,7 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using ProtoBuf;
 using QuantConnect.Data.Auxiliary;
 using QuantConnect.Data.UniverseSelection;

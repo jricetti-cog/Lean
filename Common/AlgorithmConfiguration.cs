@@ -14,7 +14,8 @@
 */
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 using QuantConnect.Util;
 using QuantConnect.Packets;
 using QuantConnect.Interfaces;
@@ -42,7 +43,7 @@ namespace QuantConnect
         /// <summary>
         /// The algorithm's account currency
         /// </summary>
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string AccountCurrency { get; set; }
 
         /// <summary>
@@ -65,13 +66,13 @@ namespace QuantConnect
         /// <summary>
         /// The deployment details of the live algorithm, if any
         /// </summary>
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IReadOnlyDictionary<string, string> DeploymentDetails { get; set; }
 
         /// <summary>
         /// Backtest maximum end date
         /// </summary>
-        [JsonConverter(typeof(DateTimeJsonConverter), DateFormat.ISOShort, DateFormat.UI)]
+        [JsonConverterWithArgs(typeof(DateTimeJsonConverter), DateFormat.ISOShort, DateFormat.UI)]
         public DateTime? OutOfSampleMaxEndDate { get; set; }
 
         /// <summary>
@@ -82,13 +83,13 @@ namespace QuantConnect
         /// <summary>
         /// The backtest start date
         /// </summary>
-        [JsonConverter(typeof(DateTimeJsonConverter), DateFormat.ISOShort, DateFormat.UI)]
+        [JsonConverterWithArgs(typeof(DateTimeJsonConverter), DateFormat.ISOShort, DateFormat.UI)]
         public DateTime StartDate { get; set; }
 
         /// <summary>
         /// The backtest end date
         /// </summary>
-        [JsonConverter(typeof(DateTimeJsonConverter), DateFormat.ISOShort, DateFormat.UI)]
+        [JsonConverterWithArgs(typeof(DateTimeJsonConverter), DateFormat.ISOShort, DateFormat.UI)]
         public DateTime EndDate { get; set; }
 
         /// <summary>

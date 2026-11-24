@@ -17,7 +17,7 @@
 using System;
 using ProtoBuf;
 using Python.Runtime;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuantConnect.Securities;
 using QuantConnect.Python;
 

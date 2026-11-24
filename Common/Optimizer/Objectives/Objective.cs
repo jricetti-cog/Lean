@@ -16,7 +16,7 @@
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace QuantConnect.Optimizer.Objectives
 {
@@ -82,7 +82,7 @@ namespace QuantConnect.Optimizer.Objectives
         /// </summary>
         /// <remarks>For <see cref="Objectives.Target"/> if defined and backtest complies with the targets then finish optimization</remarks>
         /// <remarks>For <see cref="Constraint"/> non optional, the value of the target constraint</remarks>
-        [JsonProperty("target-value")]
+        [JsonPropertyName("target-value")]
         public decimal? OldTargetValue
         {
             set

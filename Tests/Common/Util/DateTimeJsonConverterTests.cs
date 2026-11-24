@@ -1,4 +1,4 @@
-/*
+﻿/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -15,7 +15,9 @@
 */
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 using NUnit.Framework;
 using QuantConnect.Util;
 
@@ -28,7 +30,7 @@ namespace QuantConnect.Tests.Common.Util
         public void Write()
         {
             var instance = new MultiDateTimeFormatClassTest { Value = new DateTime(2025, 08, 08, 10, 30, 0) };
-            var result = JsonConvert.SerializeObject(instance);
+            var result = JsonSerialization.Serialize(instance);
             Assert.AreEqual("{\"Value\":\"2025-08-08T10:30:00Z\"}", result);
         }
 
@@ -36,7 +38,7 @@ namespace QuantConnect.Tests.Common.Util
         public void WriteNullable()
         {
             var instance = new NullableDateTimeFormatClassTest { Value = null };
-            var result = JsonConvert.SerializeObject(instance);
+            var result = JsonSerialization.Serialize(instance);
             Assert.AreEqual("{\"Value\":null}", result);
         }
 
@@ -51,10 +53,10 @@ namespace QuantConnect.Tests.Common.Util
         {
             if (throws)
             {
-                Assert.Throws<JsonSerializationException>(() => JsonConvert.DeserializeObject<SingleDateTimeFormatClassTest>(strObject));
+                Assert.Throws<JsonException>(() => JsonSerialization.Deserialize<SingleDateTimeFormatClassTest>(strObject));
                 return;
             }
-            var result = JsonConvert.DeserializeObject<MultiDateTimeFormatClassTest>(strObject);
+            var result = JsonSerialization.Deserialize<MultiDateTimeFormatClassTest>(strObject);
 
             Assert.AreEqual(new DateTime(2025, 08, 08, 10, 30, 0), result.Value);
         }
@@ -68,10 +70,10 @@ namespace QuantConnect.Tests.Common.Util
         {
             if (throws)
             {
-                Assert.Throws<JsonSerializationException>(() => JsonConvert.DeserializeObject<SingleDateTimeFormatClassTest>(strObject));
+                Assert.Throws<JsonException>(() => JsonSerialization.Deserialize<SingleDateTimeFormatClassTest>(strObject));
                 return;
             }
-            var result = JsonConvert.DeserializeObject<SingleDateTimeFormatClassTest>(strObject);
+            var result = JsonSerialization.Deserialize<SingleDateTimeFormatClassTest>(strObject);
 
             Assert.AreEqual(new DateTime(2025, 08, 08, 10, 30, 0), result.Value);
         }
@@ -87,10 +89,10 @@ namespace QuantConnect.Tests.Common.Util
         {
             if (throws)
             {
-                Assert.Throws<JsonSerializationException>(() => JsonConvert.DeserializeObject<NullableDateTimeFormatClassTest>(strObject));
+                Assert.Throws<JsonException>(() => JsonSerialization.Deserialize<NullableDateTimeFormatClassTest>(strObject));
                 return;
             }
-            var result = JsonConvert.DeserializeObject<NullableDateTimeFormatClassTest>(strObject);
+            var result = JsonSerialization.Deserialize<NullableDateTimeFormatClassTest>(strObject);
             if (expectNull)
             {
                 Assert.AreEqual(null, result.Value);
@@ -107,7 +109,7 @@ namespace QuantConnect.Tests.Common.Util
         public void ManualConversion(string strObject, bool expectNull)
         {
             var converter = new DateTimeJsonConverter(DateFormat.ISOShort, DateFormat.UI);
-            var result = JsonConvert.DeserializeObject<DateTime?>(strObject, converter);
+            var result = JsonSerialization.Deserialize<DateTime?>(strObject, JsonSerialization.Create(converters: converter));
             if (expectNull)
             {
                 Assert.AreEqual(null, result);
@@ -118,17 +120,17 @@ namespace QuantConnect.Tests.Common.Util
 
         internal class MultiDateTimeFormatClassTest
         {
-            [JsonConverter(typeof(DateTimeJsonConverter), DateFormat.ISOShort, DateFormat.UI, DateFormat.FIX)]
+            [JsonConverterWithArgs(typeof(DateTimeJsonConverter), DateFormat.ISOShort, DateFormat.UI, DateFormat.FIX)]
             public DateTime Value { get; set; }
         }
         internal class SingleDateTimeFormatClassTest
         {
-            [JsonConverter(typeof(DateTimeJsonConverter), DateFormat.UI)]
+            [JsonConverterWithArgs(typeof(DateTimeJsonConverter), DateFormat.UI)]
             public DateTime Value { get; set; }
         }
         internal class NullableDateTimeFormatClassTest
         {
-            [JsonConverter(typeof(DateTimeJsonConverter), DateFormat.ISOShort)]
+            [JsonConverterWithArgs(typeof(DateTimeJsonConverter), DateFormat.ISOShort)]
             public DateTime? Value { get; set; }
         }
     }

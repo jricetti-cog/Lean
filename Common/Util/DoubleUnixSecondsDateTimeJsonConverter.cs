@@ -14,7 +14,7 @@
 */
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace QuantConnect.Util
 {
@@ -24,19 +24,6 @@ namespace QuantConnect.Util
     public class DoubleUnixSecondsDateTimeJsonConverter : TypeChangeJsonConverter<DateTime?, double?>
     {
         private static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
-        /// <summary>
-        /// Determines whether this instance can convert the specified object type.
-        /// </summary>
-        /// <param name="objectType">Type of the object.</param>
-        /// <returns>
-        /// <c>true</c> if this instance can convert the specified object type; otherwise, <c>false</c>.
-        /// </returns>
-        public override bool CanConvert(Type objectType)
-        {
-            return objectType == typeof(DateTime)
-                || objectType == typeof(DateTime?);
-        }
 
         /// <summary>
         /// Convert the input value to a value to be serialzied

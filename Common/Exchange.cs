@@ -14,7 +14,7 @@
 */
 
 using System.Linq;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 
 namespace QuantConnect
@@ -348,7 +348,7 @@ namespace QuantConnect
         /// <summary>
         /// Security types traded in this exchange
         /// </summary>
-        [JsonProperty(ReferenceLoopHandling = ReferenceLoopHandling.Ignore)]
+        [JsonInclude]
         public IReadOnlyList<SecurityType> SecurityTypes { get; init; } = new List<SecurityType>();
 
         /// <summary>

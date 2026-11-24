@@ -14,10 +14,11 @@
 */
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 
 namespace QuantConnect.Report
 {
@@ -26,99 +27,104 @@ namespace QuantConnect.Report
     /// deserialization can occur without exceptions.
     /// </summary>
     /// <typeparam name="T">Result type to deserialize into</typeparam>
-    public class NullResultValueTypeJsonConverter<T> : JsonConverter
+    public class NullResultValueTypeJsonConverter<T> : JsonConverter<T>
         where T : Result
     {
-        private JsonSerializerSettings _settings;
+        private readonly JsonSerializerOptions _settings;
 
         /// <summary>
         /// Initialize a new instance of <see cref="NullResultValueTypeJsonConverter{T}"/>
         /// </summary>
         public NullResultValueTypeJsonConverter()
         {
-            _settings = new JsonSerializerSettings
-            {
-                Converters = new List<JsonConverter> { new OrderTypeNormalizingJsonConverter() },
-                FloatParseHandling = FloatParseHandling.Decimal
-            };
+            _settings = JsonSerialization.Create(floatAsDecimal: true, converters: new OrderTypeNormalizingJsonConverter());
         }
 
         /// <summary>
         /// Determine if this converter can convert a given type
         /// </summary>
-        /// <param name="objectType">Object type to convert</param>
-        /// <returns>Always true</returns>
         public override bool CanConvert(Type objectType)
         {
             return objectType.IsAssignableTo(typeof(T));
         }
 
         /// <summary>
-        /// Read Json for conversion
+        /// Read Json and convert
         /// </summary>
-        /// <returns>Resulting object</returns>
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            var token = JToken.ReadFrom(reader);
-            if (token.Type == JTokenType.Null)
+            var token = JsonNode.Parse(ref reader);
+            if (token == null)
             {
                 return null;
             }
 
-            foreach (JProperty property in GetProperty(token, "Charts").Children())
+            if (GetProperty(token, "Charts") is JsonObject charts)
             {
-                foreach (JProperty seriesProperty in GetProperty(property.Value, "Series"))
+                foreach (var property in charts)
                 {
-                    var newValues = new List<JToken>();
-                    foreach (var entry in GetProperty(seriesProperty.Value, "Values"))
+                    if (GetProperty(property.Value, "Series") is not JsonObject seriesCollection)
                     {
-                        if (entry is JObject jobj &&
-                            (jobj["x"] == null || jobj["x"].Value<long?>() == null ||
-                             jobj["y"] == null || jobj["y"].Value<decimal?>() == null))
+                        continue;
+                    }
+                    foreach (var seriesProperty in seriesCollection)
+                    {
+                        var series = seriesProperty.Value;
+                        if (GetProperty(series, "Values") is not JsonArray values)
                         {
-                            // null chart point
                             continue;
                         }
 
-                        if (entry is JArray jArray && jArray.Any(jToken => jToken.Type == JTokenType.Null))
+                        var newValues = new JsonArray();
+                        foreach (var entry in values)
                         {
-                            // null candlestick
-                            continue;
+                            if (entry is JsonObject jobj &&
+                                (jobj["x"].IsNull() || jobj["y"].IsNull()))
+                            {
+                                // null chart point
+                                continue;
+                            }
+
+                            if (entry is JsonArray jArray && jArray.Any(jToken => jToken.IsNull()))
+                            {
+                                // null candlestick
+                                continue;
+                            }
+
+                            newValues.Add(entry?.DeepClone());
                         }
 
-                        newValues.Add(entry);
-                    }
-
-                    var chart = GetProperty(token, "Charts")[property.Name];
-                    var series = GetProperty(chart, "Series")[seriesProperty.Name];
-                    if (series["Values"] != null)
-                    {
-                        series["Values"] = JArray.FromObject(newValues);
-                    }
-                    else if (series["values"] != null)
-                    {
-                        series["values"] = JArray.FromObject(newValues);
+                        if (series["Values"] != null)
+                        {
+                            series["Values"] = newValues;
+                        }
+                        else if (series["values"] != null)
+                        {
+                            series["values"] = newValues;
+                        }
                     }
                 }
             }
 
-            // Deserialize with OrderJsonConverter, otherwise it will fail. We convert the token back
-            // to its JSON representation and use the `JsonConvert.DeserializeObject<T>(...)` method instead
-            // of using `token.ToObject<T>()` since it can be provided a JsonConverter in its arguments.
-            return JsonConvert.DeserializeObject<T>(token.ToString(), _settings);
+            // Deserialize with OrderTypeNormalizingJsonConverter, otherwise it will fail
+            return token.Deserialize<T>(_settings);
         }
 
         /// <summary>
         /// Write Json; Not implemented
         /// </summary>
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
         {
             throw new NotImplementedException();
         }
 
-        private static JToken GetProperty(JToken jToken, string name)
+        private static JsonNode GetProperty(JsonNode jToken, string name)
         {
-            return jToken[name] ?? jToken[name.ToLower()];
+            if (jToken is not JsonObject jObject)
+            {
+                return null;
+            }
+            return jObject[name] ?? jObject[name.ToLowerInvariant()];
         }
     }
 }

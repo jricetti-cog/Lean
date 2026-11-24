@@ -14,83 +14,60 @@
 */
 
 using System;
-using Newtonsoft.Json;
-using QuantConnect.Util;
-using QuantConnect.Orders;
-using Newtonsoft.Json.Linq;
-using QuantConnect.Packets;
-using QuantConnect.Securities;
 using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 
 namespace QuantConnect.Api
 {
     /// <summary>
     /// Custom JsonConverter for LiveResults data for live algorithms
     /// </summary>
-    public class LiveAlgorithmResultsJsonConverter : JsonConverter
+    public class LiveAlgorithmResultsJsonConverter : JsonConverter<LiveAlgorithmResults>
     {
-        /// <summary>
-        /// Gets a value indicating whether this <see cref="T:Newtonsoft.Json.JsonConverter"/> can write JSON.
-        /// </summary>
-        /// <value>
-        /// <c>true</c> if this <see cref="T:Newtonsoft.Json.JsonConverter"/> can write JSON; otherwise, <c>false</c>.
-        /// </value>
-        public override bool CanWrite
-        {
-            get { return false; }
-        }
-
-        /// <summary>
-        /// Writes the JSON representation of the object.
-        /// </summary>
-        /// <param name="writer">The <see cref="T:Newtonsoft.Json.JsonWriter"/> to write to.</param><param name="value">The value.</param><param name="serializer">The calling serializer.</param>
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-        {
-            throw new NotImplementedException("The LiveAlgorithmResultsJsonConverter does not implement a WriteJson method.");
-        }
-
         /// <summary>
         /// Determines whether this instance can convert the specified object type.
         /// </summary>
-        /// <param name="objectType">Type of the object.</param>
-        /// <returns>
-        /// <c>true</c> if this instance can convert the specified object type; otherwise, <c>false</c>.
-        /// </returns>
         public override bool CanConvert(Type objectType)
         {
             return typeof(LiveAlgorithmResults).IsAssignableFrom(objectType);
         }
 
+        /// <summary>
+        /// Writes the results using their default serialization
+        /// </summary>
+        public override void Write(Utf8JsonWriter writer, LiveAlgorithmResults value, JsonSerializerOptions options)
+        {
+            writer.WriteDefault(value, options);
+        }
 
         /// <summary>
         /// Reads the JSON representation of the object.
         /// </summary>
-        /// <param name="reader">The <see cref="T:Newtonsoft.Json.JsonReader"/> to read from.</param><param name="objectType">Type of the object.</param><param name="existingValue">The existing value of object being read.</param><param name="serializer">The calling serializer.</param>
-        /// <returns>
-        /// The object value.
-        /// </returns>
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override LiveAlgorithmResults Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            var jObject = JObject.Load(reader);
+            var jObject = JsonNode.Parse(ref reader).AsObject();
 
             // `files` and `charts` need their own deserialization, and every field is optional since an
             // errored or not yet started deployment only reports a subset of them
             var liveAlgoResults = new LiveAlgorithmResults
             {
-                Message = jObject.Value<string>("message"),
-                Status = jObject.Value<string>("status"),
-                DeployId = jObject.Value<string>("deployId"),
-                CloneId = jObject.Value<int>("cloneId"),
-                Launched = jObject.Value<DateTime>("launched"),
-                Stopped = jObject.Value<DateTime?>("stopped"),
-                Brokerage = jObject.Value<string>("brokerage"),
-                SecurityTypes = jObject.Value<string>("securityTypes"),
-                ProjectName = jObject.Value<string>("projectName"),
-                Description = jObject.Value<string>("description"),
-                Datacenter = jObject.Value<string>("datacenter"),
-                Public = jObject.Value<bool>("public"),
-                Success = jObject.Value<bool>("success"),
-                Errors = jObject["errors"]?.ToObject<List<string>>() ?? new List<string>()
+                Message = jObject["message"].Value<string>(),
+                Status = jObject["status"].Value<string>(),
+                DeployId = jObject["deployId"].Value<string>(),
+                CloneId = jObject["cloneId"].Value<int>(),
+                Launched = jObject["launched"].Value<DateTime>(),
+                Stopped = jObject["stopped"].Value<DateTime?>(),
+                Brokerage = jObject["brokerage"].Value<string>(),
+                SecurityTypes = jObject["securityTypes"].Value<string>(),
+                ProjectName = jObject["projectName"].Value<string>(),
+                Description = jObject["description"].Value<string>(),
+                Datacenter = jObject["datacenter"].Value<string>(),
+                Public = jObject["public"].Value<bool>(),
+                Success = jObject["success"].Value<bool>(),
+                Errors = jObject["errors"]?.Value<List<string>>() ?? new List<string>()
             };
 
             if (!liveAlgoResults.Success)
@@ -104,11 +81,7 @@ namespace QuantConnect.Api
             var charts = jObject["charts"] ?? jObject["Charts"];
             if (charts != null)
             {
-                var stringCharts = jObject["charts"]?.ToString() ?? jObject["Charts"].ToString();
-                if(!string.IsNullOrEmpty(stringCharts))
-                {
-                    chartDictionary = JsonConvert.DeserializeObject<Dictionary<string, Chart>>(stringCharts);
-                }
+                chartDictionary = charts.Value<Dictionary<string, Chart>>();
             }
 
             // Deserialize files data
@@ -116,11 +89,7 @@ namespace QuantConnect.Api
             var files = jObject["files"] ?? jObject["Files"];
             if (files != null)
             {
-                var stringFiles = jObject["files"]?.ToString() ?? jObject["Files"].ToString();
-                if (!string.IsNullOrEmpty(stringFiles))
-                {
-                    projectFiles = JsonConvert.DeserializeObject<List<ProjectFile>>(stringFiles);
-                }
+                projectFiles = files.Value<List<ProjectFile>>();
             }
 
             liveAlgoResults.Charts = chartDictionary;
@@ -132,19 +101,14 @@ namespace QuantConnect.Api
             return liveAlgoResults;
         }
 
-        /// <summary>
-        /// Deserializes a string dictionary, if the given json holds one. Older deployments were
-        /// run before some of them were reported, so they are all optional
-        /// </summary>
-        private static IDictionary<string, string> DeserializeDictionary(JObject jObject, string name, string alternativeName)
+        private static IDictionary<string, string> DeserializeDictionary(JsonObject jObject, string name, string alternativeName)
         {
             var value = jObject[name] ?? jObject[alternativeName];
-            if (value == null || value.Type != JTokenType.Object)
+            if (value is not JsonObject)
             {
                 return null;
             }
-
-            return value.ToObject<Dictionary<string, string>>();
+            return value.Value<Dictionary<string, string>>();
         }
     }
 }

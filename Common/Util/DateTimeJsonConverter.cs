@@ -11,96 +11,140 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
 */
 
 using System;
-using System.Linq;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using System.Collections.Generic;
+using System.Text.Json;
+using System.Globalization;
+using System.Text.Json.Serialization;
 
 namespace QuantConnect.Util
 {
     /// <summary>
     /// Provides a json converter that allows defining the date time format used
     /// </summary>
-    public class DateTimeJsonConverter : JsonConverter
+    public class DateTimeJsonConverter : JsonConverterFactory
     {
-        private readonly List<IsoDateTimeConverter> _converters;
+        private readonly string[] _formats;
 
         /// <summary>
-        /// True, can read a json into a date time
+        /// Creates a new instance
         /// </summary>
-        public override bool CanRead => true;
-
-        /// <summary>
-        /// True, can write a datetime to json
-        /// </summary>
-        public override bool CanWrite => true;
-
-        /// <summary>
-        ///  Initializes a new instance of the <see cref="DateTimeJsonConverter"/> class
-        /// </summary>
-        /// <param name="format">>The date time format</param>
         public DateTimeJsonConverter(string format)
         {
-            _converters = [new IsoDateTimeConverter() { DateTimeFormat = format }];
+            _formats = new[] { format };
         }
 
         /// <summary>
-        ///  Initializes a new instance of the <see cref="DateTimeJsonConverter"/> class
+        /// Creates a new instance
         /// </summary>
-        /// <param name="format">>The date time format</param>
-        /// <param name="format2">Other format for backwards compatibility</param>
-        public DateTimeJsonConverter(string format, string format2) : this(format)
+        public DateTimeJsonConverter(string format, string format2)
         {
-            _converters.Add(new IsoDateTimeConverter() { DateTimeFormat = format2 });
+            _formats = new[] { format, format2 };
         }
 
         /// <summary>
-        ///  Initializes a new instance of the <see cref="DateTimeJsonConverter"/> class
+        /// Creates a new instance
         /// </summary>
-        /// <param name="format">>The date time format</param>
-        /// <param name="format2">Other format for backwards compatibility</param>
-        /// <param name="format3">Other format for backwards compatibility</param>
-        public DateTimeJsonConverter(string format, string format2, string format3) : this(format, format2)
+        public DateTimeJsonConverter(string format, string format2, string format3)
         {
-            _converters.Add(new IsoDateTimeConverter() { DateTimeFormat = format3 });
+            _formats = new[] { format, format2, format3 };
         }
 
         /// <summary>
-        /// True if can convert the given object type
+        /// Determines whether this instance can convert the specified object type
         /// </summary>
-        public override bool CanConvert(Type objectType)
+        public override bool CanConvert(Type typeToConvert)
         {
-            return objectType == typeof(DateTime) || objectType == typeof(string) || objectType == typeof(DateTime?);
+            return typeToConvert == typeof(DateTime) || typeToConvert == typeof(DateTime?);
         }
 
         /// <summary>
-        /// Converts the given value
+        /// Creates the converter for the given type
         /// </summary>
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
         {
-            foreach (var converter in _converters)
+            return typeToConvert == typeof(DateTime) ? new Converter(_formats) : new NullableConverter(_formats);
+        }
+
+        private static DateTime? ReadValue(ref Utf8JsonReader reader, string[] formats, bool nullable)
+        {
+            if (reader.TokenType == JsonTokenType.Null)
             {
-                try
+                if (nullable)
                 {
-                    return converter.ReadJson(reader, objectType, existingValue, serializer);
+                    return null;
                 }
-                catch
+                throw new JsonException($"Cannot convert null value to {typeof(DateTime)}.");
+            }
+            if (reader.TokenType == JsonTokenType.String)
+            {
+                // newtonsoft parsed iso dates before handing them to the converter
+                if (reader.TryGetDateTime(out var isoDate))
                 {
+                    return isoDate;
+                }
+                var text = reader.GetString();
+                if (nullable && string.IsNullOrEmpty(text))
+                {
+                    return null;
+                }
+                foreach (var format in formats)
+                {
+                    if (DateTime.TryParseExact(text, format, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var result))
+                    {
+                        return result;
+                    }
                 }
             }
-            throw new JsonSerializationException($"Unexpected value when converting date. Expected formats: {string.Join(",", _converters.Select(x => x.DateTimeFormat))}");
+            throw new JsonException($"Unexpected value when converting date. Expected formats: {string.Join(",", formats)}");
         }
 
-        /// <summary>
-        /// Writes the given value to json
-        /// </summary>
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        private class Converter : JsonConverter<DateTime>
         {
-            _converters[0].WriteJson(writer, value, serializer);
+            private readonly string[] _formats;
+
+            public Converter(string[] formats)
+            {
+                _formats = formats;
+            }
+
+            public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            {
+                return ReadValue(ref reader, _formats, false).Value;
+            }
+
+            public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
+            {
+                writer.WriteStringValue(value.ToString(_formats[0], CultureInfo.InvariantCulture));
+            }
+        }
+
+        private class NullableConverter : JsonConverter<DateTime?>
+        {
+            private readonly string[] _formats;
+
+            public NullableConverter(string[] formats)
+            {
+                _formats = formats;
+            }
+
+            public override bool HandleNull => true;
+
+            public override DateTime? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            {
+                return ReadValue(ref reader, _formats, true);
+            }
+
+            public override void Write(Utf8JsonWriter writer, DateTime? value, JsonSerializerOptions options)
+            {
+                if (value == null)
+                {
+                    writer.WriteNullValue();
+                    return;
+                }
+                writer.WriteStringValue(value.Value.ToString(_formats[0], CultureInfo.InvariantCulture));
+            }
         }
     }
 }

@@ -14,8 +14,8 @@
 */
 
 using System.Collections.Generic;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 
 namespace QuantConnect.Api
 {
@@ -32,7 +32,7 @@ namespace QuantConnect.Api
         /// <summary>
         /// True on successful compile
         /// </summary>
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonConverter(typeof(StringEnumJsonConverter))]
         public CompileState State { get; set; }
 
         /// <summary>

@@ -17,7 +17,7 @@
 using System;
 using System.Linq;
 using Python.Runtime;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using QuantConnect.Data.UniverseSelection;
 
@@ -36,7 +36,7 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the FiveYears period value for the field
         /// </summary>
-        [JsonProperty("5Y")]
+        [JsonPropertyName("5Y")]
         [Obsolete("RegressionGrowthofDividends5Years was retired by Morningstar in 2026 for all periods; no replacement is available.")]
         [JsonIgnore]
         public double FiveYears => throw new NotSupportedException("RegressionGrowthofDividends5Years was retired by Morningstar in 2026 for all periods; no replacement is available.");

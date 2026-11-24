@@ -14,7 +14,7 @@
 */
 
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace QuantConnect.Securities.FutureOption.Api
 {
@@ -26,7 +26,7 @@ namespace QuantConnect.Securities.FutureOption.Api
         /// <summary>
         /// Products matching the search criteria
         /// </summary>
-        [JsonProperty("products")]
+        [JsonPropertyName("products")]
         public List<CMEProductSlateV2ListEntry> Products { get; private set; }
     }
 
@@ -38,61 +38,61 @@ namespace QuantConnect.Securities.FutureOption.Api
         /// <summary>
         /// CME ID for the asset
         /// </summary>
-        [JsonProperty("id")]
+        [JsonPropertyName("id")]
         public int Id { get; private set; }
 
         /// <summary>
         /// Name of the product (e.g. E-mini NASDAQ futures)
         /// </summary>
-        [JsonProperty("name")]
+        [JsonPropertyName("name")]
         public string Name { get; private set; }
 
         /// <summary>
         /// Clearing code
         /// </summary>
-        [JsonProperty("clearing")]
+        [JsonPropertyName("clearing")]
         public string Clearing { get; private set; }
 
         /// <summary>
         /// GLOBEX ticker
         /// </summary>
-        [JsonProperty("globex")]
+        [JsonPropertyName("globex")]
         public string Globex { get; private set; }
 
         /// <summary>
         /// Is traded in the GLOBEX venue
         /// </summary>
-        [JsonProperty("globexTraded")]
+        [JsonPropertyName("globexTraded")]
         public bool GlobexTraded { get; private set; }
 
         /// <summary>
         /// Venues this asset trades on
         /// </summary>
-        [JsonProperty("venues")]
+        [JsonPropertyName("venues")]
         public string Venues { get; private set; }
 
         /// <summary>
         /// Asset type this product is cleared as (i.e. "Futures", "Options")
         /// </summary>
-        [JsonProperty("cleared")]
+        [JsonPropertyName("cleared")]
         public string Cleared { get; private set; }
 
         /// <summary>
         /// Exchange the asset trades on (i.e. CME, NYMEX, COMEX, CBOT)
         /// </summary>
-        [JsonProperty("exch")]
+        [JsonPropertyName("exch")]
         public string Exchange { get; private set; }
 
         /// <summary>
         /// Asset class group ID - describes group of asset class (e.g. equities, agriculture, etc.)
         /// </summary>
-        [JsonProperty("groupId")]
+        [JsonPropertyName("groupId")]
         public int GroupId { get; private set; }
 
         /// <summary>
         /// More specific ID describing product
         /// </summary>
-        [JsonProperty("subGroupId")]
+        [JsonPropertyName("subGroupId")]
         public int subGroupId { get; private set; }
     }
 }

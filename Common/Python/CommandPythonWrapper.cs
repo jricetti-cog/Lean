@@ -14,8 +14,7 @@
 */
 
 using Python.Runtime;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 using QuantConnect.Commands;
 using QuantConnect.Interfaces;
 using System.Collections.Generic;
@@ -49,13 +48,13 @@ namespace QuantConnect.Python
                     SetProperty("PayloadData", data);
                 }
 
-                foreach (var kvp in JsonConvert.DeserializeObject<Dictionary<string, object>>(data))
+                foreach (var kvp in JsonSerialization.Deserialize<Dictionary<string, object>>(data))
                 {
-                    if (kvp.Value is JArray jArray)
+                    if (kvp.Value is JsonArray jArray)
                     {
                         SetProperty(kvp.Key, jArray.ToObject<List<object>>());
                     }
-                    else if (kvp.Value is JObject jobject)
+                    else if (kvp.Value is JsonObject jobject)
                     {
                         SetProperty(kvp.Key, jobject.ToObject<Dictionary<string, object>>());
                     }

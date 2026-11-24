@@ -15,7 +15,7 @@
 
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace QuantConnect.Api
 {
@@ -27,43 +27,43 @@ namespace QuantConnect.Api
         /// <summary>
         /// Name of a project file
         /// </summary>
-        [JsonProperty(PropertyName = "name")]
+        [JsonPropertyName("name")]
         public string Name { get; set; }
 
         /// <summary>
         /// Contents of the project file
         /// </summary>
-        [JsonProperty(PropertyName = "content")]
+        [JsonPropertyName("content")]
         public string Code { get; set; }
 
         /// <summary>
         /// DateTime project file was modified, can be null
         /// </summary>
-        [JsonProperty(PropertyName = "modified")]
+        [JsonPropertyName("modified")]
         public DateTime? DateModified { get; set; }
 
         /// <summary>
         /// Indicates if the project file is a library or not
         /// </summary>
-        [JsonProperty(PropertyName = "isLibrary")]
+        [JsonPropertyName("isLibrary")]
         public bool IsLibrary { get; set; }
 
         /// <summary>
         /// Indicates if the project file is open or not
         /// </summary>
-        [JsonProperty(PropertyName = "open")]
+        [JsonPropertyName("open")]
         public bool Open { get; set; }
 
         /// <summary>
         /// ID of the project
         /// </summary>
-        [JsonProperty(PropertyName = "projectId")]
+        [JsonPropertyName("projectId")]
         public int ProjectId { get; set; }
 
         /// <summary>
         /// ID of the project file, can be null
         /// </summary>
-        [JsonProperty(PropertyName = "id")]
+        [JsonPropertyName("id")]
         public int? Id { get; set; }
     }
 
@@ -75,7 +75,7 @@ namespace QuantConnect.Api
         /// <summary>
         /// List of project file information
         /// </summary>
-        [JsonProperty(PropertyName = "files")]
+        [JsonPropertyName("files")]
         public List<ProjectFile> Files { get; set; }
     }
 }

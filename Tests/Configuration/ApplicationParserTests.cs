@@ -20,7 +20,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
-using Newtonsoft.Json;
 
 namespace QuantConnect.Tests.Configuration
 {
@@ -175,7 +174,7 @@ namespace QuantConnect.Tests.Configuration
             var parametersConfigString = Config.Get("parameters");
             if (!string.IsNullOrEmpty(parametersConfigString))
             {
-                parameters = JsonConvert.DeserializeObject<Dictionary<string, string>>(parametersConfigString);
+                parameters = JsonSerialization.Deserialize<Dictionary<string, string>>(parametersConfigString);
             }
 
             Assert.Contains("ema-slow", parameters.Keys);

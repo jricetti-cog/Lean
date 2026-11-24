@@ -15,7 +15,7 @@
 
 using System.Net.Http;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json;
 using System.Net.Http.Headers;
 using System.Net.Mime;
 
@@ -50,12 +50,12 @@ namespace QuantConnect.Api
         /// <param name="payload">The request payload</param>
         /// <param name="jsonSerializerSettings">Settings for the json serializer</param>
         /// <returns>The POST request</returns>
-        public static HttpRequestMessage CreateJsonPostRequest(string endpoint, object payload = null, JsonSerializerSettings jsonSerializerSettings = null)
+        public static HttpRequestMessage CreateJsonPostRequest(string endpoint, object payload = null, JsonSerializerOptions jsonSerializerSettings = null)
         {
             var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
             if (payload != null)
             {
-                request.Content = new StringContent(payload as string ?? JsonConvert.SerializeObject(payload, jsonSerializerSettings),
+                request.Content = new StringContent(payload as string ?? JsonSerialization.Serialize(payload, jsonSerializerSettings),
                     new MediaTypeHeaderValue(MediaTypeNames.Application.Json));
             }
 

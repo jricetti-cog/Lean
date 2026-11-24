@@ -16,7 +16,6 @@
 
 using System;
 using System.Linq;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using QuantConnect.Algorithm.Framework.Alphas;
 using QuantConnect.Securities;
@@ -43,8 +42,8 @@ namespace QuantConnect.Tests.Algorithm.Framework
             var insight = new Insight(time, Symbols.SPY, Time.OneMinute, InsightType.Volatility, InsightDirection.Up, 1, 2, "source-model", 1);
             Insight.Group(insight);
             insight.ReferenceValueFinal = 10;
-            var serialized = JsonConvert.SerializeObject(insight);
-            var deserialized = JsonConvert.DeserializeObject<Insight>(serialized);
+            var serialized = JsonSerialization.Serialize(insight);
+            var deserialized = JsonSerialization.Deserialize<Insight>(serialized);
 
             Assert.AreEqual(insight.CloseTimeUtc, deserialized.CloseTimeUtc);
             Assert.AreEqual(insight.Confidence, deserialized.Confidence);
@@ -89,8 +88,8 @@ namespace QuantConnect.Tests.Algorithm.Framework
             insight.EstimatedValue = 0.00001m;
             insight.Score.SetScore(InsightScoreType.Direction, 0.00001, DateTime.UtcNow);
             insight.Score.SetScore(InsightScoreType.Magnitude, 0.00001, DateTime.UtcNow);
-            var serialized = JsonConvert.SerializeObject(insight);
-            var deserialized = JsonConvert.DeserializeObject<Insight>(serialized);
+            var serialized = JsonSerialization.Serialize(insight);
+            var deserialized = JsonSerialization.Deserialize<Insight>(serialized);
 
             Assert.AreEqual(0, deserialized.EstimatedValue);
             Assert.AreEqual(0, deserialized.Score.Direction);

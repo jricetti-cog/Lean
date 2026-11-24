@@ -16,7 +16,6 @@
 
 using System;
 using System.Linq;
-using Newtonsoft.Json;
 using QuantConnect.Data;
 using QuantConnect.Util;
 using QuantConnect.Logging;
@@ -163,7 +162,7 @@ namespace QuantConnect.Lean.Engine.Setup
 
             if (!dataFeedsConfigString.IsNullOrEmpty())
             {
-                var dataFeeds = JsonConvert.DeserializeObject<Dictionary<SecurityType, List<TickType>>>(dataFeedsConfigString);
+                var dataFeeds = JsonSerialization.Deserialize<Dictionary<SecurityType, List<TickType>>>(dataFeedsConfigString);
                 return dataFeeds;
             }
 

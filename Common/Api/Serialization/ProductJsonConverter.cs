@@ -14,16 +14,18 @@
 */
 
 using System;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using QuantConnect.Util.Json;
 using System.Collections.Generic;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Serialization;
 
 namespace QuantConnect.Api.Serialization
 {
     /// <summary>
     /// Provides an implementation of <see cref="JsonConverter"/> that can deserialize <see cref="Product"/>
     /// </summary>
-    public class ProductJsonConverter : JsonConverter
+    public class ProductJsonConverter : JsonConverter<Product>
     {
         private Dictionary<string, ProductType> _productTypeMap = new Dictionary<string, ProductType>()
         {
@@ -37,56 +39,28 @@ namespace QuantConnect.Api.Serialization
         };
 
         /// <summary>
-        /// Gets a value indicating whether this <see cref="JsonConverter"/> can write JSON.
+        /// Writes the product using its default serialization
         /// </summary>
-        /// <value>
-        /// <c>true</c> if this <see cref="JsonConverter"/> can write JSON; otherwise, <c>false</c>.
-        /// </value>
-        public override bool CanWrite => false;
-
-        /// <summary>
-        /// Determines whether this instance can convert the specified object type.
-        /// </summary>
-        /// <param name="objectType">Type of the object.</param>
-        /// <returns>
-        /// <c>true</c> if this instance can convert the specified object type; otherwise, <c>false</c>.
-        /// </returns>
-        public override bool CanConvert(Type objectType)
+        public override void Write(Utf8JsonWriter writer, Product value, JsonSerializerOptions options)
         {
-            return objectType == typeof(Product);
+            writer.WriteDefault(value, options);
         }
 
         /// <summary>
-        /// Writes the JSON representation of the object.
+        /// Reads the JSON representation of the object
         /// </summary>
-        /// <param name="writer">The <see cref="JsonWriter"/> to write to.</param><param name="value">The value.</param><param name="serializer">The calling serializer.</param>
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        public override Product Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            throw new NotImplementedException("The OrderJsonConverter does not implement a WriteJson method;.");
+            return CreateProductFromJObject(JsonNode.Parse(ref reader) as JsonObject, options);
         }
 
         /// <summary>
-        /// Reads the JSON representation of the object.
+        /// Create a product from a json object
         /// </summary>
-        /// <param name="reader">The <see cref="JsonReader"/> to read from.</param><param name="objectType">Type of the object.</param><param name="existingValue">The existing value of object being read.</param><param name="serializer">The calling serializer.</param>
-        /// <returns>
-        /// The object value.
-        /// </returns>
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-        {
-            var jObject = JObject.Load(reader);
-
-            var result = CreateProductFromJObject(jObject);
-
-            return result;
-        }
-
-        /// <summary>
-        /// Create an order from a simple JObject
-        /// </summary>
-        /// <param name="jObject"></param>
-        /// <returns>Order Object</returns>
-        public Product CreateProductFromJObject(JObject jObject)
+        /// <param name="jObject">The json object</param>
+        /// <param name="options">The serializer options</param>
+        /// <returns>Product Object</returns>
+        public Product CreateProductFromJObject(JsonObject jObject, JsonSerializerOptions options = null)
         {
             if (jObject == null)
             {
@@ -102,7 +76,7 @@ namespace QuantConnect.Api.Serialization
             return new Product
             {
                 Type = _productTypeMap[productTypeName],
-                Items = jObject["items"].ToObject<List<ProductItem>>()
+                Items = jObject["items"].ToObject<List<ProductItem>>(options)
             };
         }
     }

@@ -17,7 +17,7 @@
 using System;
 using System.Linq;
 using Python.Runtime;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using QuantConnect.Data.UniverseSelection;
 
@@ -36,7 +36,7 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the OneMonth period value for the field
         /// </summary>
-        [JsonProperty("1M")]
+        [JsonPropertyName("1M")]
         [Obsolete("BSFileDate.OneMonth was retired by Morningstar in 2026; use BSFileDate.ThreeMonths (also available: TwelveMonths).")]
         [JsonIgnore]
         public DateTime OneMonth => throw new NotSupportedException("BSFileDate.OneMonth was retired by Morningstar in 2026; use BSFileDate.ThreeMonths (also available: TwelveMonths).");
@@ -44,13 +44,13 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the SixMonths period value for the field
         /// </summary>
-        [JsonProperty("3M")]
+        [JsonPropertyName("3M")]
         public DateTime ThreeMonths => FundamentalService.Get<DateTime>(TimeProvider.GetUtcNow(), SecurityIdentifier, FundamentalProperty.FinancialStatements_BalanceSheet_BSFileDate_ThreeMonths);
 
         /// <summary>
         /// Gets/sets the TwelveMonths period value for the field
         /// </summary>
-        [JsonProperty("12M")]
+        [JsonPropertyName("12M")]
         public DateTime TwelveMonths => FundamentalService.Get<DateTime>(TimeProvider.GetUtcNow(), SecurityIdentifier, FundamentalProperty.FinancialStatements_BalanceSheet_BSFileDate_TwelveMonths);
 
         /// <summary>

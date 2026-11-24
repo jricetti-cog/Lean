@@ -14,7 +14,6 @@
 */
 
 using System;
-using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace QuantConnect.Tests.Common.Util
@@ -28,8 +27,8 @@ namespace QuantConnect.Tests.Common.Util
             var dateTime = new DateTime(2023, 08, 01, 12, 11, 10);
             var candlestick = new Candlestick(dateTime, 100, 110, 80, 90);
 
-            var serializedCandlestick = JsonConvert.SerializeObject(candlestick);
-            var result = (Candlestick)JsonConvert.DeserializeObject(serializedCandlestick, typeof(Candlestick));
+            var serializedCandlestick = JsonSerialization.Serialize(candlestick);
+            var result = (Candlestick)JsonSerialization.Deserialize(serializedCandlestick, typeof(Candlestick));
 
             Assert.AreEqual(candlestick.Time, result.Time);
             Assert.AreEqual(candlestick.Open, result.Open);
@@ -44,8 +43,8 @@ namespace QuantConnect.Tests.Common.Util
             var dateTime = new DateTime(2023, 08, 01, 12, 11, 10);
             var chartPoint = new ChartPoint(dateTime, 100);
 
-            var serializedChartPoint = JsonConvert.SerializeObject(chartPoint);
-            var result = (Candlestick)JsonConvert.DeserializeObject(serializedChartPoint, typeof(Candlestick));
+            var serializedChartPoint = JsonSerialization.Serialize(chartPoint);
+            var result = (Candlestick)JsonSerialization.Deserialize(serializedChartPoint, typeof(Candlestick));
 
             Assert.AreEqual(chartPoint.Time, result.Time);
             Assert.AreEqual(chartPoint.y, result.Open);

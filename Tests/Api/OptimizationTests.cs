@@ -16,7 +16,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using QuantConnect.Api;
 using QuantConnect.Optimizer;
@@ -47,7 +46,7 @@ namespace QuantConnect.Tests.API
         [Test]
         public void Deserialization()
         {
-            var deserialized = JsonConvert.DeserializeObject<Optimization>(_validSerialization);
+            var deserialized = JsonSerialization.Deserialize<Optimization>(_validSerialization);
             Assert.IsNotNull(deserialized);
             Assert.AreEqual("myOptimizationId", deserialized.OptimizationId);
             Assert.AreEqual("myOptimizationName", deserialized.Name);
@@ -85,7 +84,7 @@ namespace QuantConnect.Tests.API
         [Test]
         public void EstimateDeserialization()
         {
-            var deserialized = JsonConvert.DeserializeObject<Estimate>(_validEstimateSerialization);
+            var deserialized = JsonSerialization.Deserialize<Estimate>(_validEstimateSerialization);
             Assert.AreEqual("myEstimateId", deserialized.EstimateId);
             Assert.AreEqual(26, deserialized.Time);
             Assert.AreEqual(500, deserialized.Balance);

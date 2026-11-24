@@ -14,54 +14,40 @@
 */
 
 using System;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 
 namespace QuantConnect
 {
     /// <summary>
-    /// <see cref="ScatterChartPoint"/> json converter
+    /// ScatterChartPoint json converter
     /// </summary>
-    public class ScatterChartPointJsonConverter : JsonConverter
+    public class ScatterChartPointJsonConverter : JsonConverter<ScatterChartPoint>
     {
         /// <summary>
-        /// Default writer
+        /// Reads the JSON representation of the object.
         /// </summary>
-        public override bool CanWrite => false;
-
-        /// <summary>
-        /// Determine if this Converter can convert this type
-        /// </summary>
-        /// <param name="objectType">Type that we would like to convert</param>
-        /// <returns>True if <see cref="Series"/></returns>
-        public override bool CanConvert(Type objectType)
+        public override ScatterChartPoint Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            return objectType == typeof(ScatterChartPoint);
-        }
-
-        /// <summary>
-        /// Reads series from Json
-        /// </summary>
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-        {
-            if (reader.TokenType == JsonToken.StartObject)
+            if (reader.TokenType == JsonTokenType.StartObject)
             {
-                var jObject = JObject.Load(reader);
-                var tooltip = jObject.TryGetPropertyValue<string>("tooltip");
-
-                return new ScatterChartPoint(jObject["x"].Value<long>(), jObject["y"].Value<decimal?>(), tooltip);
+                var jObject = JsonNode.Parse(ref reader).AsObject();
+                var tooltip = jObject["tooltip"]?.Value<string>();
+                return new ScatterChartPoint(jObject["x"].Value<long>(), jObject["y"].SafeNullableDecimalValue(), tooltip);
             }
 
-            var jArray = JArray.Load(reader);
-            return new ScatterChartPoint(jArray[0].Value<long>(), jArray[1].Value<decimal?>());
+            var jArray = JsonNode.Parse(ref reader).AsArray();
+            return new ScatterChartPoint(jArray[0].Value<long>(), jArray[1].SafeNullableDecimalValue());
         }
 
         /// <summary>
-        /// Writes a Json from series
+        /// Writes the point using its default serialization
         /// </summary>
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        public override void Write(Utf8JsonWriter writer, ScatterChartPoint value, JsonSerializerOptions options)
         {
-            throw new NotImplementedException();
+            writer.WriteDefault(value, options);
         }
     }
 }

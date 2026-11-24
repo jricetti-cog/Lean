@@ -17,7 +17,7 @@
 using System;
 using System.Linq;
 using Python.Runtime;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using QuantConnect.Data.UniverseSelection;
 
@@ -34,7 +34,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26296
         /// </remarks>
-        [JsonProperty("26296")]
+        [JsonPropertyName("26296")]
         public CashFlowFileDate CFFileDate => _cFFileDate ??= new(_timeProvider, _securityIdentifier);
         private CashFlowFileDate _cFFileDate;
 
@@ -44,7 +44,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQ5AB
         /// </remarks>
-        [JsonProperty("EQ5AB")]
+        [JsonPropertyName("EQ5AB")]
         public CashFlowStatementPeriodEndingDate PeriodEndingDate => _cashFlowStatementPeriodEndingDate ??= new(_timeProvider, _securityIdentifier);
         private CashFlowStatementPeriodEndingDate _cashFlowStatementPeriodEndingDate;
 
@@ -54,7 +54,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26000
         /// </remarks>
-        [JsonProperty("26000")]
+        [JsonPropertyName("26000")]
         public AmortizationCashFlowStatement Amortization => _amortization ??= new(_timeProvider, _securityIdentifier);
         private AmortizationCashFlowStatement _amortization;
 
@@ -64,7 +64,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26005
         /// </remarks>
-        [JsonProperty("26005")]
+        [JsonPropertyName("26005")]
         public CapitalExpenditureCashFlowStatement CapitalExpenditure => _capitalExpenditure ??= new(_timeProvider, _securityIdentifier);
         private CapitalExpenditureCashFlowStatement _capitalExpenditure;
 
@@ -74,7 +74,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26007
         /// </remarks>
-        [JsonProperty("26007")]
+        [JsonPropertyName("26007")]
         public CashDividendsPaidCashFlowStatement CashDividendsPaid => _cashDividendsPaid ??= new(_timeProvider, _securityIdentifier);
         private CashDividendsPaidCashFlowStatement _cashDividendsPaid;
 
@@ -84,7 +84,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26008
         /// </remarks>
-        [JsonProperty("26008")]
+        [JsonPropertyName("26008")]
         public CashFlowFromContinuingFinancingActivitiesCashFlowStatement CashFlowFromContinuingFinancingActivities => _cashFlowFromContinuingFinancingActivities ??= new(_timeProvider, _securityIdentifier);
         private CashFlowFromContinuingFinancingActivitiesCashFlowStatement _cashFlowFromContinuingFinancingActivities;
 
@@ -94,7 +94,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26009
         /// </remarks>
-        [JsonProperty("26009")]
+        [JsonPropertyName("26009")]
         public CashFlowFromContinuingInvestingActivitiesCashFlowStatement CashFlowFromContinuingInvestingActivities => _cashFlowFromContinuingInvestingActivities ??= new(_timeProvider, _securityIdentifier);
         private CashFlowFromContinuingInvestingActivitiesCashFlowStatement _cashFlowFromContinuingInvestingActivities;
 
@@ -104,7 +104,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26010
         /// </remarks>
-        [JsonProperty("26010")]
+        [JsonPropertyName("26010")]
         public CashFlowFromContinuingOperatingActivitiesCashFlowStatement CashFlowFromContinuingOperatingActivities => _cashFlowFromContinuingOperatingActivities ??= new(_timeProvider, _securityIdentifier);
         private CashFlowFromContinuingOperatingActivitiesCashFlowStatement _cashFlowFromContinuingOperatingActivities;
 
@@ -114,7 +114,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26011
         /// </remarks>
-        [JsonProperty("26011")]
+        [JsonPropertyName("26011")]
         public CashFlowFromDiscontinuedOperationCashFlowStatement CashFlowFromDiscontinuedOperation => _cashFlowFromDiscontinuedOperation ??= new(_timeProvider, _securityIdentifier);
         private CashFlowFromDiscontinuedOperationCashFlowStatement _cashFlowFromDiscontinuedOperation;
 
@@ -124,7 +124,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26012
         /// </remarks>
-        [JsonProperty("26012")]
+        [JsonPropertyName("26012")]
         public FinancingCashFlowCashFlowStatement FinancingCashFlow => _financingCashFlow ??= new(_timeProvider, _securityIdentifier);
         private FinancingCashFlowCashFlowStatement _financingCashFlow;
 
@@ -134,7 +134,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26013
         /// </remarks>
-        [JsonProperty("26013")]
+        [JsonPropertyName("26013")]
         public InvestingCashFlowCashFlowStatement InvestingCashFlow => _investingCashFlow ??= new(_timeProvider, _securityIdentifier);
         private InvestingCashFlowCashFlowStatement _investingCashFlow;
 
@@ -144,7 +144,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26014
         /// </remarks>
-        [JsonProperty("26014")]
+        [JsonPropertyName("26014")]
         public OperatingCashFlowCashFlowStatement OperatingCashFlow => _operatingCashFlow ??= new(_timeProvider, _securityIdentifier);
         private OperatingCashFlowCashFlowStatement _operatingCashFlow;
 
@@ -154,7 +154,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26015
         /// </remarks>
-        [JsonProperty("26015")]
+        [JsonPropertyName("26015")]
         public BeginningCashPositionCashFlowStatement BeginningCashPosition => _beginningCashPosition ??= new(_timeProvider, _securityIdentifier);
         private BeginningCashPositionCashFlowStatement _beginningCashPosition;
 
@@ -164,7 +164,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26016
         /// </remarks>
-        [JsonProperty("26016")]
+        [JsonPropertyName("26016")]
         public EndCashPositionCashFlowStatement EndCashPosition => _endCashPosition ??= new(_timeProvider, _securityIdentifier);
         private EndCashPositionCashFlowStatement _endCashPosition;
 
@@ -174,7 +174,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26018
         /// </remarks>
-        [JsonProperty("26018")]
+        [JsonPropertyName("26018")]
         public CashFromDiscontinuedFinancingActivitiesCashFlowStatement CashFromDiscontinuedFinancingActivities => _cashFromDiscontinuedFinancingActivities ??= new(_timeProvider, _securityIdentifier);
         private CashFromDiscontinuedFinancingActivitiesCashFlowStatement _cashFromDiscontinuedFinancingActivities;
 
@@ -184,7 +184,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26020
         /// </remarks>
-        [JsonProperty("26020")]
+        [JsonPropertyName("26020")]
         public CashFromDiscontinuedInvestingActivitiesCashFlowStatement CashFromDiscontinuedInvestingActivities => _cashFromDiscontinuedInvestingActivities ??= new(_timeProvider, _securityIdentifier);
         private CashFromDiscontinuedInvestingActivitiesCashFlowStatement _cashFromDiscontinuedInvestingActivities;
 
@@ -194,7 +194,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26022
         /// </remarks>
-        [JsonProperty("26022")]
+        [JsonPropertyName("26022")]
         public ChangeInAccountPayableCashFlowStatement ChangeInAccountPayable => _changeInAccountPayable ??= new(_timeProvider, _securityIdentifier);
         private ChangeInAccountPayableCashFlowStatement _changeInAccountPayable;
 
@@ -204,7 +204,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26024
         /// </remarks>
-        [JsonProperty("26024")]
+        [JsonPropertyName("26024")]
         public ChangeInTaxPayableCashFlowStatement ChangeInTaxPayable => _changeInTaxPayable ??= new(_timeProvider, _securityIdentifier);
         private ChangeInTaxPayableCashFlowStatement _changeInTaxPayable;
 
@@ -214,7 +214,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26025
         /// </remarks>
-        [JsonProperty("26025")]
+        [JsonPropertyName("26025")]
         public ChangeInAccruedExpenseCashFlowStatement ChangeInAccruedExpense => _changeInAccruedExpense ??= new(_timeProvider, _securityIdentifier);
         private ChangeInAccruedExpenseCashFlowStatement _changeInAccruedExpense;
 
@@ -224,7 +224,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26026
         /// </remarks>
-        [JsonProperty("26026")]
+        [JsonPropertyName("26026")]
         public ChangeInAccruedInvestmentIncomeCashFlowStatement ChangeInAccruedInvestmentIncome => _changeInAccruedInvestmentIncome ??= new(_timeProvider, _securityIdentifier);
         private ChangeInAccruedInvestmentIncomeCashFlowStatement _changeInAccruedInvestmentIncome;
 
@@ -234,7 +234,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26027
         /// </remarks>
-        [JsonProperty("26027")]
+        [JsonPropertyName("26027")]
         public ChangesInCashCashFlowStatement ChangesInCash => _changesInCash ??= new(_timeProvider, _securityIdentifier);
         private ChangesInCashCashFlowStatement _changesInCash;
 
@@ -244,7 +244,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26028
         /// </remarks>
-        [JsonProperty("26028")]
+        [JsonPropertyName("26028")]
         public ChangeInDeferredAcquisitionCostsCashFlowStatement ChangeInDeferredAcquisitionCosts => _changeInDeferredAcquisitionCosts ??= new(_timeProvider, _securityIdentifier);
         private ChangeInDeferredAcquisitionCostsCashFlowStatement _changeInDeferredAcquisitionCosts;
 
@@ -254,7 +254,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26030
         /// </remarks>
-        [JsonProperty("26030")]
+        [JsonPropertyName("26030")]
         public ChangeInFederalFundsAndSecuritiesSoldForRepurchaseCashFlowStatement ChangeInFederalFundsAndSecuritiesSoldForRepurchase => _changeInFederalFundsAndSecuritiesSoldForRepurchase ??= new(_timeProvider, _securityIdentifier);
         private ChangeInFederalFundsAndSecuritiesSoldForRepurchaseCashFlowStatement _changeInFederalFundsAndSecuritiesSoldForRepurchase;
 
@@ -264,7 +264,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26031
         /// </remarks>
-        [JsonProperty("26031")]
+        [JsonPropertyName("26031")]
         public ChangeInFundsWithheldCashFlowStatement ChangeInFundsWithheld => _changeInFundsWithheld ??= new(_timeProvider, _securityIdentifier);
         private ChangeInFundsWithheldCashFlowStatement _changeInFundsWithheld;
 
@@ -274,7 +274,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26032
         /// </remarks>
-        [JsonProperty("26032")]
+        [JsonPropertyName("26032")]
         public ChangeInIncomeTaxPayableCashFlowStatement ChangeInIncomeTaxPayable => _changeInIncomeTaxPayable ??= new(_timeProvider, _securityIdentifier);
         private ChangeInIncomeTaxPayableCashFlowStatement _changeInIncomeTaxPayable;
 
@@ -284,7 +284,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26033
         /// </remarks>
-        [JsonProperty("26033")]
+        [JsonPropertyName("26033")]
         public ChangeInInterestPayableCashFlowStatement ChangeInInterestPayable => _changeInInterestPayable ??= new(_timeProvider, _securityIdentifier);
         private ChangeInInterestPayableCashFlowStatement _changeInInterestPayable;
 
@@ -294,7 +294,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26034
         /// </remarks>
-        [JsonProperty("26034")]
+        [JsonPropertyName("26034")]
         public ChangeInInventoryCashFlowStatement ChangeInInventory => _changeInInventory ??= new(_timeProvider, _securityIdentifier);
         private ChangeInInventoryCashFlowStatement _changeInInventory;
 
@@ -304,7 +304,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26035
         /// </remarks>
-        [JsonProperty("26035")]
+        [JsonPropertyName("26035")]
         public ChangeInLoansCashFlowStatement ChangeInLoans => _changeInLoans ??= new(_timeProvider, _securityIdentifier);
         private ChangeInLoansCashFlowStatement _changeInLoans;
 
@@ -314,7 +314,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26036
         /// </remarks>
-        [JsonProperty("26036")]
+        [JsonPropertyName("26036")]
         public ChangeInLossAndLossAdjustmentExpenseReservesCashFlowStatement ChangeInLossAndLossAdjustmentExpenseReserves => _changeInLossAndLossAdjustmentExpenseReserves ??= new(_timeProvider, _securityIdentifier);
         private ChangeInLossAndLossAdjustmentExpenseReservesCashFlowStatement _changeInLossAndLossAdjustmentExpenseReserves;
 
@@ -324,7 +324,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26040
         /// </remarks>
-        [JsonProperty("26040")]
+        [JsonPropertyName("26040")]
         public ChangeInPayableCashFlowStatement ChangeInPayable => _changeInPayable ??= new(_timeProvider, _securityIdentifier);
         private ChangeInPayableCashFlowStatement _changeInPayable;
 
@@ -334,7 +334,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26041
         /// </remarks>
-        [JsonProperty("26041")]
+        [JsonPropertyName("26041")]
         public ChangeInPayablesAndAccruedExpenseCashFlowStatement ChangeInPayablesAndAccruedExpense => _changeInPayablesAndAccruedExpense ??= new(_timeProvider, _securityIdentifier);
         private ChangeInPayablesAndAccruedExpenseCashFlowStatement _changeInPayablesAndAccruedExpense;
 
@@ -344,7 +344,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26043
         /// </remarks>
-        [JsonProperty("26043")]
+        [JsonPropertyName("26043")]
         public ChangeInPrepaidAssetsCashFlowStatement ChangeInPrepaidAssets => _changeInPrepaidAssets ??= new(_timeProvider, _securityIdentifier);
         private ChangeInPrepaidAssetsCashFlowStatement _changeInPrepaidAssets;
 
@@ -354,7 +354,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26045
         /// </remarks>
-        [JsonProperty("26045")]
+        [JsonPropertyName("26045")]
         public ChangeInReceivablesCashFlowStatement ChangeInReceivables => _changeInReceivables ??= new(_timeProvider, _securityIdentifier);
         private ChangeInReceivablesCashFlowStatement _changeInReceivables;
 
@@ -364,7 +364,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26047
         /// </remarks>
-        [JsonProperty("26047")]
+        [JsonPropertyName("26047")]
         public ChangeInReinsuranceRecoverableOnPaidAndUnpaidLossesCashFlowStatement ChangeInReinsuranceRecoverableOnPaidAndUnpaidLosses => _changeInReinsuranceRecoverableOnPaidAndUnpaidLosses ??= new(_timeProvider, _securityIdentifier);
         private ChangeInReinsuranceRecoverableOnPaidAndUnpaidLossesCashFlowStatement _changeInReinsuranceRecoverableOnPaidAndUnpaidLosses;
 
@@ -374,7 +374,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26049
         /// </remarks>
-        [JsonProperty("26049")]
+        [JsonPropertyName("26049")]
         public ChangeInRestrictedCashCashFlowStatement ChangeInRestrictedCash => _changeInRestrictedCash ??= new(_timeProvider, _securityIdentifier);
         private ChangeInRestrictedCashCashFlowStatement _changeInRestrictedCash;
 
@@ -384,7 +384,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26050
         /// </remarks>
-        [JsonProperty("26050")]
+        [JsonPropertyName("26050")]
         public ChangeInTradingAccountSecuritiesCashFlowStatement ChangeInTradingAccountSecurities => _changeInTradingAccountSecurities ??= new(_timeProvider, _securityIdentifier);
         private ChangeInTradingAccountSecuritiesCashFlowStatement _changeInTradingAccountSecurities;
 
@@ -394,7 +394,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26053
         /// </remarks>
-        [JsonProperty("26053")]
+        [JsonPropertyName("26053")]
         public ChangeInWorkingCapitalCashFlowStatement ChangeInWorkingCapital => _changeInWorkingCapital ??= new(_timeProvider, _securityIdentifier);
         private ChangeInWorkingCapitalCashFlowStatement _changeInWorkingCapital;
 
@@ -404,7 +404,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26056
         /// </remarks>
-        [JsonProperty("26056")]
+        [JsonPropertyName("26056")]
         public DeferredIncomeTaxCashFlowStatement DeferredIncomeTax => _deferredIncomeTax ??= new(_timeProvider, _securityIdentifier);
         private DeferredIncomeTaxCashFlowStatement _deferredIncomeTax;
 
@@ -414,7 +414,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26057
         /// </remarks>
-        [JsonProperty("26057")]
+        [JsonPropertyName("26057")]
         public DeferredTaxCashFlowStatement DeferredTax => _deferredTax ??= new(_timeProvider, _securityIdentifier);
         private DeferredTaxCashFlowStatement _deferredTax;
 
@@ -424,7 +424,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26058
         /// </remarks>
-        [JsonProperty("26058")]
+        [JsonPropertyName("26058")]
         public DepletionCashFlowStatement Depletion => _depletion ??= new(_timeProvider, _securityIdentifier);
         private DepletionCashFlowStatement _depletion;
 
@@ -434,7 +434,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26059
         /// </remarks>
-        [JsonProperty("26059")]
+        [JsonPropertyName("26059")]
         public DepreciationCashFlowStatement Depreciation => _depreciation ??= new(_timeProvider, _securityIdentifier);
         private DepreciationCashFlowStatement _depreciation;
 
@@ -444,7 +444,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26060
         /// </remarks>
-        [JsonProperty("26060")]
+        [JsonPropertyName("26060")]
         public DepreciationAndAmortizationCashFlowStatement DepreciationAndAmortization => _depreciationAndAmortization ??= new(_timeProvider, _securityIdentifier);
         private DepreciationAndAmortizationCashFlowStatement _depreciationAndAmortization;
 
@@ -454,7 +454,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26061
         /// </remarks>
-        [JsonProperty("26061")]
+        [JsonPropertyName("26061")]
         public DepreciationAmortizationDepletionCashFlowStatement DepreciationAmortizationDepletion => _depreciationAmortizationDepletion ??= new(_timeProvider, _securityIdentifier);
         private DepreciationAmortizationDepletionCashFlowStatement _depreciationAmortizationDepletion;
 
@@ -464,7 +464,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26063
         /// </remarks>
-        [JsonProperty("26063")]
+        [JsonPropertyName("26063")]
         public EffectOfExchangeRateChangesCashFlowStatement EffectOfExchangeRateChanges => _effectOfExchangeRateChanges ??= new(_timeProvider, _securityIdentifier);
         private EffectOfExchangeRateChangesCashFlowStatement _effectOfExchangeRateChanges;
 
@@ -474,7 +474,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26069
         /// </remarks>
-        [JsonProperty("26069")]
+        [JsonPropertyName("26069")]
         public IncreaseDecreaseInDepositCashFlowStatement IncreaseDecreaseInDeposit => _increaseDecreaseInDeposit ??= new(_timeProvider, _securityIdentifier);
         private IncreaseDecreaseInDepositCashFlowStatement _increaseDecreaseInDeposit;
 
@@ -484,7 +484,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26071
         /// </remarks>
-        [JsonProperty("26071")]
+        [JsonPropertyName("26071")]
         public NetCommonStockIssuanceCashFlowStatement NetCommonStockIssuance => _netCommonStockIssuance ??= new(_timeProvider, _securityIdentifier);
         private NetCommonStockIssuanceCashFlowStatement _netCommonStockIssuance;
 
@@ -494,7 +494,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26072
         /// </remarks>
-        [JsonProperty("26072")]
+        [JsonPropertyName("26072")]
         public NetIssuancePaymentsOfDebtCashFlowStatement NetIssuancePaymentsOfDebt => _netIssuancePaymentsOfDebt ??= new(_timeProvider, _securityIdentifier);
         private NetIssuancePaymentsOfDebtCashFlowStatement _netIssuancePaymentsOfDebt;
 
@@ -504,7 +504,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26073
         /// </remarks>
-        [JsonProperty("26073")]
+        [JsonPropertyName("26073")]
         public NetLongTermDebtIssuanceCashFlowStatement NetLongTermDebtIssuance => _netLongTermDebtIssuance ??= new(_timeProvider, _securityIdentifier);
         private NetLongTermDebtIssuanceCashFlowStatement _netLongTermDebtIssuance;
 
@@ -514,7 +514,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26074
         /// </remarks>
-        [JsonProperty("26074")]
+        [JsonPropertyName("26074")]
         public NetPreferredStockIssuanceCashFlowStatement NetPreferredStockIssuance => _netPreferredStockIssuance ??= new(_timeProvider, _securityIdentifier);
         private NetPreferredStockIssuanceCashFlowStatement _netPreferredStockIssuance;
 
@@ -524,7 +524,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26075
         /// </remarks>
-        [JsonProperty("26075")]
+        [JsonPropertyName("26075")]
         public NetShortTermDebtIssuanceCashFlowStatement NetShortTermDebtIssuance => _netShortTermDebtIssuance ??= new(_timeProvider, _securityIdentifier);
         private NetShortTermDebtIssuanceCashFlowStatement _netShortTermDebtIssuance;
 
@@ -534,7 +534,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26077
         /// </remarks>
-        [JsonProperty("26077")]
+        [JsonPropertyName("26077")]
         public NetCashFromDiscontinuedOperationsCashFlowStatement NetCashFromDiscontinuedOperations => _netCashFromDiscontinuedOperations ??= new(_timeProvider, _securityIdentifier);
         private NetCashFromDiscontinuedOperationsCashFlowStatement _netCashFromDiscontinuedOperations;
 
@@ -544,7 +544,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26078
         /// </remarks>
-        [JsonProperty("26078")]
+        [JsonPropertyName("26078")]
         public NetForeignCurrencyExchangeGainLossCashFlowStatement NetForeignCurrencyExchangeGainLoss => _netForeignCurrencyExchangeGainLoss ??= new(_timeProvider, _securityIdentifier);
         private NetForeignCurrencyExchangeGainLossCashFlowStatement _netForeignCurrencyExchangeGainLoss;
 
@@ -554,7 +554,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26080
         /// </remarks>
-        [JsonProperty("26080")]
+        [JsonPropertyName("26080")]
         public NetIncomeFromContinuingOperationsCashFlowStatement NetIncomeFromContinuingOperations => _netIncomeFromContinuingOperations ??= new(_timeProvider, _securityIdentifier);
         private NetIncomeFromContinuingOperationsCashFlowStatement _netIncomeFromContinuingOperations;
 
@@ -564,7 +564,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26087
         /// </remarks>
-        [JsonProperty("26087")]
+        [JsonPropertyName("26087")]
         public PaymentForLoansCashFlowStatement PaymentForLoans => _paymentForLoans ??= new(_timeProvider, _securityIdentifier);
         private PaymentForLoansCashFlowStatement _paymentForLoans;
 
@@ -574,7 +574,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26088
         /// </remarks>
-        [JsonProperty("26088")]
+        [JsonPropertyName("26088")]
         public CommonStockPaymentsCashFlowStatement CommonStockPayments => _commonStockPayments ??= new(_timeProvider, _securityIdentifier);
         private CommonStockPaymentsCashFlowStatement _commonStockPayments;
 
@@ -584,7 +584,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26089
         /// </remarks>
-        [JsonProperty("26089")]
+        [JsonPropertyName("26089")]
         public PreferredStockPaymentsCashFlowStatement PreferredStockPayments => _preferredStockPayments ??= new(_timeProvider, _securityIdentifier);
         private PreferredStockPaymentsCashFlowStatement _preferredStockPayments;
 
@@ -594,7 +594,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26090
         /// </remarks>
-        [JsonProperty("26090")]
+        [JsonPropertyName("26090")]
         public LongTermDebtPaymentsCashFlowStatement LongTermDebtPayments => _longTermDebtPayments ??= new(_timeProvider, _securityIdentifier);
         private LongTermDebtPaymentsCashFlowStatement _longTermDebtPayments;
 
@@ -604,7 +604,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26091
         /// </remarks>
-        [JsonProperty("26091")]
+        [JsonPropertyName("26091")]
         public ShortTermDebtPaymentsCashFlowStatement ShortTermDebtPayments => _shortTermDebtPayments ??= new(_timeProvider, _securityIdentifier);
         private ShortTermDebtPaymentsCashFlowStatement _shortTermDebtPayments;
 
@@ -614,7 +614,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26095
         /// </remarks>
-        [JsonProperty("26095")]
+        [JsonPropertyName("26095")]
         public ProceedsFromLoansCashFlowStatement ProceedsFromLoans => _proceedsFromLoans ??= new(_timeProvider, _securityIdentifier);
         private ProceedsFromLoansCashFlowStatement _proceedsFromLoans;
 
@@ -624,7 +624,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26097
         /// </remarks>
-        [JsonProperty("26097")]
+        [JsonPropertyName("26097")]
         public ProceedsFromStockOptionExercisedCashFlowStatement ProceedsFromStockOptionExercised => _proceedsFromStockOptionExercised ??= new(_timeProvider, _securityIdentifier);
         private ProceedsFromStockOptionExercisedCashFlowStatement _proceedsFromStockOptionExercised;
 
@@ -634,7 +634,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26098
         /// </remarks>
-        [JsonProperty("26098")]
+        [JsonPropertyName("26098")]
         public CommonStockIssuanceCashFlowStatement CommonStockIssuance => _commonStockIssuance ??= new(_timeProvider, _securityIdentifier);
         private CommonStockIssuanceCashFlowStatement _commonStockIssuance;
 
@@ -644,7 +644,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26099
         /// </remarks>
-        [JsonProperty("26099")]
+        [JsonPropertyName("26099")]
         public LongTermDebtIssuanceCashFlowStatement LongTermDebtIssuance => _longTermDebtIssuance ??= new(_timeProvider, _securityIdentifier);
         private LongTermDebtIssuanceCashFlowStatement _longTermDebtIssuance;
 
@@ -654,7 +654,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26100
         /// </remarks>
-        [JsonProperty("26100")]
+        [JsonPropertyName("26100")]
         public PreferredStockIssuanceCashFlowStatement PreferredStockIssuance => _preferredStockIssuance ??= new(_timeProvider, _securityIdentifier);
         private PreferredStockIssuanceCashFlowStatement _preferredStockIssuance;
 
@@ -664,7 +664,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26101
         /// </remarks>
-        [JsonProperty("26101")]
+        [JsonPropertyName("26101")]
         public ShortTermDebtIssuanceCashFlowStatement ShortTermDebtIssuance => _shortTermDebtIssuance ??= new(_timeProvider, _securityIdentifier);
         private ShortTermDebtIssuanceCashFlowStatement _shortTermDebtIssuance;
 
@@ -674,7 +674,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26103
         /// </remarks>
-        [JsonProperty("26103")]
+        [JsonPropertyName("26103")]
         public NetProceedsPaymentForLoanCashFlowStatement NetProceedsPaymentForLoan => _netProceedsPaymentForLoan ??= new(_timeProvider, _securityIdentifier);
         private NetProceedsPaymentForLoanCashFlowStatement _netProceedsPaymentForLoan;
 
@@ -684,7 +684,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26104
         /// </remarks>
-        [JsonProperty("26104")]
+        [JsonPropertyName("26104")]
         public ProceedsPaymentInInterestBearingDepositsInBankCashFlowStatement ProceedsPaymentInInterestBearingDepositsInBank => _proceedsPaymentInInterestBearingDepositsInBank ??= new(_timeProvider, _securityIdentifier);
         private ProceedsPaymentInInterestBearingDepositsInBankCashFlowStatement _proceedsPaymentInInterestBearingDepositsInBank;
 
@@ -694,7 +694,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26108
         /// </remarks>
-        [JsonProperty("26108")]
+        [JsonPropertyName("26108")]
         public PurchaseOfIntangiblesCashFlowStatement PurchaseOfIntangibles => _purchaseOfIntangibles ??= new(_timeProvider, _securityIdentifier);
         private PurchaseOfIntangiblesCashFlowStatement _purchaseOfIntangibles;
 
@@ -704,7 +704,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26110
         /// </remarks>
-        [JsonProperty("26110")]
+        [JsonPropertyName("26110")]
         public PurchaseOfInvestmentCashFlowStatement PurchaseOfInvestment => _purchaseOfInvestment ??= new(_timeProvider, _securityIdentifier);
         private PurchaseOfInvestmentCashFlowStatement _purchaseOfInvestment;
 
@@ -714,7 +714,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26112
         /// </remarks>
-        [JsonProperty("26112")]
+        [JsonPropertyName("26112")]
         public PurchaseOfPPECashFlowStatement PurchaseOfPPE => _purchaseOfPPE ??= new(_timeProvider, _securityIdentifier);
         private PurchaseOfPPECashFlowStatement _purchaseOfPPE;
 
@@ -724,7 +724,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26115
         /// </remarks>
-        [JsonProperty("26115")]
+        [JsonPropertyName("26115")]
         public PurchaseOfBusinessCashFlowStatement PurchaseOfBusiness => _purchaseOfBusiness ??= new(_timeProvider, _securityIdentifier);
         private PurchaseOfBusinessCashFlowStatement _purchaseOfBusiness;
 
@@ -734,7 +734,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26116
         /// </remarks>
-        [JsonProperty("26116")]
+        [JsonPropertyName("26116")]
         public NetBusinessPurchaseAndSaleCashFlowStatement NetBusinessPurchaseAndSale => _netBusinessPurchaseAndSale ??= new(_timeProvider, _securityIdentifier);
         private NetBusinessPurchaseAndSaleCashFlowStatement _netBusinessPurchaseAndSale;
 
@@ -744,7 +744,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26117
         /// </remarks>
-        [JsonProperty("26117")]
+        [JsonPropertyName("26117")]
         public NetIntangiblesPurchaseAndSaleCashFlowStatement NetIntangiblesPurchaseAndSale => _netIntangiblesPurchaseAndSale ??= new(_timeProvider, _securityIdentifier);
         private NetIntangiblesPurchaseAndSaleCashFlowStatement _netIntangiblesPurchaseAndSale;
 
@@ -754,7 +754,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26118
         /// </remarks>
-        [JsonProperty("26118")]
+        [JsonPropertyName("26118")]
         public NetInvestmentPurchaseAndSaleCashFlowStatement NetInvestmentPurchaseAndSale => _netInvestmentPurchaseAndSale ??= new(_timeProvider, _securityIdentifier);
         private NetInvestmentPurchaseAndSaleCashFlowStatement _netInvestmentPurchaseAndSale;
 
@@ -764,7 +764,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26119
         /// </remarks>
-        [JsonProperty("26119")]
+        [JsonPropertyName("26119")]
         public NetPPEPurchaseAndSaleCashFlowStatement NetPPEPurchaseAndSale => _netPPEPurchaseAndSale ??= new(_timeProvider, _securityIdentifier);
         private NetPPEPurchaseAndSaleCashFlowStatement _netPPEPurchaseAndSale;
 
@@ -774,7 +774,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26123
         /// </remarks>
-        [JsonProperty("26123")]
+        [JsonPropertyName("26123")]
         public SaleOfBusinessCashFlowStatement SaleOfBusiness => _saleOfBusiness ??= new(_timeProvider, _securityIdentifier);
         private SaleOfBusinessCashFlowStatement _saleOfBusiness;
 
@@ -784,7 +784,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26124
         /// </remarks>
-        [JsonProperty("26124")]
+        [JsonPropertyName("26124")]
         public SaleOfIntangiblesCashFlowStatement SaleOfIntangibles => _saleOfIntangibles ??= new(_timeProvider, _securityIdentifier);
         private SaleOfIntangiblesCashFlowStatement _saleOfIntangibles;
 
@@ -794,7 +794,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26125
         /// </remarks>
-        [JsonProperty("26125")]
+        [JsonPropertyName("26125")]
         public SaleOfInvestmentCashFlowStatement SaleOfInvestment => _saleOfInvestment ??= new(_timeProvider, _securityIdentifier);
         private SaleOfInvestmentCashFlowStatement _saleOfInvestment;
 
@@ -804,7 +804,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26127
         /// </remarks>
-        [JsonProperty("26127")]
+        [JsonPropertyName("26127")]
         public SaleOfPPECashFlowStatement SaleOfPPE => _saleOfPPE ??= new(_timeProvider, _securityIdentifier);
         private SaleOfPPECashFlowStatement _saleOfPPE;
 
@@ -814,7 +814,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26137
         /// </remarks>
-        [JsonProperty("26137")]
+        [JsonPropertyName("26137")]
         public ChangesInAccountReceivablesCashFlowStatement ChangesInAccountReceivables => _changesInAccountReceivables ??= new(_timeProvider, _securityIdentifier);
         private ChangesInAccountReceivablesCashFlowStatement _changesInAccountReceivables;
 
@@ -824,7 +824,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26141
         /// </remarks>
-        [JsonProperty("26141")]
+        [JsonPropertyName("26141")]
         public AmortizationOfFinancingCostsAndDiscountsCashFlowStatement AmortizationOfFinancingCostsAndDiscounts => _amortizationOfFinancingCostsAndDiscounts ??= new(_timeProvider, _securityIdentifier);
         private AmortizationOfFinancingCostsAndDiscountsCashFlowStatement _amortizationOfFinancingCostsAndDiscounts;
 
@@ -834,7 +834,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26142
         /// </remarks>
-        [JsonProperty("26142")]
+        [JsonPropertyName("26142")]
         public AmortizationOfSecuritiesCashFlowStatement AmortizationOfSecurities => _amortizationOfSecurities ??= new(_timeProvider, _securityIdentifier);
         private AmortizationOfSecuritiesCashFlowStatement _amortizationOfSecurities;
 
@@ -844,7 +844,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26143
         /// </remarks>
-        [JsonProperty("26143")]
+        [JsonPropertyName("26143")]
         public AssetImpairmentChargeCashFlowStatement AssetImpairmentCharge => _assetImpairmentCharge ??= new(_timeProvider, _securityIdentifier);
         private AssetImpairmentChargeCashFlowStatement _assetImpairmentCharge;
 
@@ -854,7 +854,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26144
         /// </remarks>
-        [JsonProperty("26144")]
+        [JsonPropertyName("26144")]
         public ChangeInDividendPayableCashFlowStatement ChangeInDividendPayable => _changeInDividendPayable ??= new(_timeProvider, _securityIdentifier);
         private ChangeInDividendPayableCashFlowStatement _changeInDividendPayable;
 
@@ -864,7 +864,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26145
         /// </remarks>
-        [JsonProperty("26145")]
+        [JsonPropertyName("26145")]
         public ChangeInDeferredChargesCashFlowStatement ChangeInDeferredCharges => _changeInDeferredCharges ??= new(_timeProvider, _securityIdentifier);
         private ChangeInDeferredChargesCashFlowStatement _changeInDeferredCharges;
 
@@ -874,7 +874,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26146
         /// </remarks>
-        [JsonProperty("26146")]
+        [JsonPropertyName("26146")]
         public ChangeInOtherCurrentAssetsCashFlowStatement ChangeInOtherCurrentAssets => _changeInOtherCurrentAssets ??= new(_timeProvider, _securityIdentifier);
         private ChangeInOtherCurrentAssetsCashFlowStatement _changeInOtherCurrentAssets;
 
@@ -884,7 +884,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26147
         /// </remarks>
-        [JsonProperty("26147")]
+        [JsonPropertyName("26147")]
         public ChangeInOtherCurrentLiabilitiesCashFlowStatement ChangeInOtherCurrentLiabilities => _changeInOtherCurrentLiabilities ??= new(_timeProvider, _securityIdentifier);
         private ChangeInOtherCurrentLiabilitiesCashFlowStatement _changeInOtherCurrentLiabilities;
 
@@ -894,7 +894,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26148
         /// </remarks>
-        [JsonProperty("26148")]
+        [JsonPropertyName("26148")]
         [Obsolete("ChangeInOtherWorkingCapital was retired by Morningstar in 2026 for all periods; no replacement is available.")]
         [JsonIgnore]
         public ChangeInOtherWorkingCapitalCashFlowStatement ChangeInOtherWorkingCapital => _changeInOtherWorkingCapital ??= new(_timeProvider, _securityIdentifier);
@@ -906,7 +906,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26152
         /// </remarks>
-        [JsonProperty("26152")]
+        [JsonPropertyName("26152")]
         public ChangeInUnearnedPremiumsCashFlowStatement ChangeInUnearnedPremiums => _changeInUnearnedPremiums ??= new(_timeProvider, _securityIdentifier);
         private ChangeInUnearnedPremiumsCashFlowStatement _changeInUnearnedPremiums;
 
@@ -916,7 +916,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26154
         /// </remarks>
-        [JsonProperty("26154")]
+        [JsonPropertyName("26154")]
         public CommonStockDividendPaidCashFlowStatement CommonStockDividendPaid => _commonStockDividendPaid ??= new(_timeProvider, _securityIdentifier);
         private CommonStockDividendPaidCashFlowStatement _commonStockDividendPaid;
 
@@ -926,7 +926,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26155
         /// </remarks>
-        [JsonProperty("26155")]
+        [JsonPropertyName("26155")]
         public EarningsLossesFromEquityInvestmentsCashFlowStatement EarningsLossesFromEquityInvestments => _earningsLossesFromEquityInvestments ??= new(_timeProvider, _securityIdentifier);
         private EarningsLossesFromEquityInvestmentsCashFlowStatement _earningsLossesFromEquityInvestments;
 
@@ -936,7 +936,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26156
         /// </remarks>
-        [JsonProperty("26156")]
+        [JsonPropertyName("26156")]
         public ExcessTaxBenefitFromStockBasedCompensationCashFlowStatement ExcessTaxBenefitFromStockBasedCompensation => _excessTaxBenefitFromStockBasedCompensation ??= new(_timeProvider, _securityIdentifier);
         private ExcessTaxBenefitFromStockBasedCompensationCashFlowStatement _excessTaxBenefitFromStockBasedCompensation;
 
@@ -946,7 +946,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26158
         /// </remarks>
-        [JsonProperty("26158")]
+        [JsonPropertyName("26158")]
         public GainLossOnInvestmentSecuritiesCashFlowStatement GainLossOnInvestmentSecurities => _gainLossOnInvestmentSecurities ??= new(_timeProvider, _securityIdentifier);
         private GainLossOnInvestmentSecuritiesCashFlowStatement _gainLossOnInvestmentSecurities;
 
@@ -956,7 +956,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26159
         /// </remarks>
-        [JsonProperty("26159")]
+        [JsonPropertyName("26159")]
         public GainLossOnSaleOfBusinessCashFlowStatement GainLossOnSaleOfBusiness => _gainLossOnSaleOfBusiness ??= new(_timeProvider, _securityIdentifier);
         private GainLossOnSaleOfBusinessCashFlowStatement _gainLossOnSaleOfBusiness;
 
@@ -966,7 +966,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26160
         /// </remarks>
-        [JsonProperty("26160")]
+        [JsonPropertyName("26160")]
         public GainLossOnSaleOfPPECashFlowStatement GainLossOnSaleOfPPE => _gainLossOnSaleOfPPE ??= new(_timeProvider, _securityIdentifier);
         private GainLossOnSaleOfPPECashFlowStatement _gainLossOnSaleOfPPE;
 
@@ -976,7 +976,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26161
         /// </remarks>
-        [JsonProperty("26161")]
+        [JsonPropertyName("26161")]
         public InterestCreditedOnPolicyholderDepositsCashFlowStatement InterestCreditedOnPolicyholderDeposits => _interestCreditedOnPolicyholderDeposits ??= new(_timeProvider, _securityIdentifier);
         private InterestCreditedOnPolicyholderDepositsCashFlowStatement _interestCreditedOnPolicyholderDeposits;
 
@@ -986,7 +986,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26162
         /// </remarks>
-        [JsonProperty("26162")]
+        [JsonPropertyName("26162")]
         public CashFromDiscontinuedOperatingActivitiesCashFlowStatement CashFromDiscontinuedOperatingActivities => _cashFromDiscontinuedOperatingActivities ??= new(_timeProvider, _securityIdentifier);
         private CashFromDiscontinuedOperatingActivitiesCashFlowStatement _cashFromDiscontinuedOperatingActivities;
 
@@ -996,7 +996,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26163
         /// </remarks>
-        [JsonProperty("26163")]
+        [JsonPropertyName("26163")]
         public OperatingGainsLossesCashFlowStatement OperatingGainsLosses => _operatingGainsLosses ??= new(_timeProvider, _securityIdentifier);
         private OperatingGainsLossesCashFlowStatement _operatingGainsLosses;
 
@@ -1006,7 +1006,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26164
         /// </remarks>
-        [JsonProperty("26164")]
+        [JsonPropertyName("26164")]
         public NetOtherFinancingChargesCashFlowStatement NetOtherFinancingCharges => _netOtherFinancingCharges ??= new(_timeProvider, _securityIdentifier);
         private NetOtherFinancingChargesCashFlowStatement _netOtherFinancingCharges;
 
@@ -1016,7 +1016,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26165
         /// </remarks>
-        [JsonProperty("26165")]
+        [JsonPropertyName("26165")]
         public NetOtherInvestingChangesCashFlowStatement NetOtherInvestingChanges => _netOtherInvestingChanges ??= new(_timeProvider, _securityIdentifier);
         private NetOtherInvestingChangesCashFlowStatement _netOtherInvestingChanges;
 
@@ -1026,7 +1026,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26166
         /// </remarks>
-        [JsonProperty("26166")]
+        [JsonPropertyName("26166")]
         public OtherNonCashItemsCashFlowStatement OtherNonCashItems => _otherNonCashItems ??= new(_timeProvider, _securityIdentifier);
         private OtherNonCashItemsCashFlowStatement _otherNonCashItems;
 
@@ -1036,7 +1036,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26167
         /// </remarks>
-        [JsonProperty("26167")]
+        [JsonPropertyName("26167")]
         public PensionAndEmployeeBenefitExpenseCashFlowStatement PensionAndEmployeeBenefitExpense => _pensionAndEmployeeBenefitExpense ??= new(_timeProvider, _securityIdentifier);
         private PensionAndEmployeeBenefitExpenseCashFlowStatement _pensionAndEmployeeBenefitExpense;
 
@@ -1046,7 +1046,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26168
         /// </remarks>
-        [JsonProperty("26168")]
+        [JsonPropertyName("26168")]
         public PreferredStockDividendPaidCashFlowStatement PreferredStockDividendPaid => _preferredStockDividendPaid ??= new(_timeProvider, _securityIdentifier);
         private PreferredStockDividendPaidCashFlowStatement _preferredStockDividendPaid;
 
@@ -1056,7 +1056,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26169
         /// </remarks>
-        [JsonProperty("26169")]
+        [JsonPropertyName("26169")]
         public ProceedsPaymentFederalFundsSoldAndSecuritiesPurchasedUnderAgreementToResellCashFlowStatement ProceedsPaymentFederalFundsSoldAndSecuritiesPurchasedUnderAgreementToResell => _proceedsPaymentFederalFundsSoldAndSecuritiesPurchasedUnderAgreementToResell ??= new(_timeProvider, _securityIdentifier);
         private ProceedsPaymentFederalFundsSoldAndSecuritiesPurchasedUnderAgreementToResellCashFlowStatement _proceedsPaymentFederalFundsSoldAndSecuritiesPurchasedUnderAgreementToResell;
 
@@ -1066,7 +1066,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26170
         /// </remarks>
-        [JsonProperty("26170")]
+        [JsonPropertyName("26170")]
         public ProvisionForLoanLeaseAndOtherLossesCashFlowStatement ProvisionForLoanLeaseAndOtherLosses => _provisionForLoanLeaseAndOtherLosses ??= new(_timeProvider, _securityIdentifier);
         private ProvisionForLoanLeaseAndOtherLossesCashFlowStatement _provisionForLoanLeaseAndOtherLosses;
 
@@ -1076,7 +1076,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26171
         /// </remarks>
-        [JsonProperty("26171")]
+        [JsonPropertyName("26171")]
         public RealizedGainLossOnSaleOfLoansAndLeaseCashFlowStatement RealizedGainLossOnSaleOfLoansAndLease => _realizedGainLossOnSaleOfLoansAndLease ??= new(_timeProvider, _securityIdentifier);
         private RealizedGainLossOnSaleOfLoansAndLeaseCashFlowStatement _realizedGainLossOnSaleOfLoansAndLease;
 
@@ -1086,7 +1086,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26172
         /// </remarks>
-        [JsonProperty("26172")]
+        [JsonPropertyName("26172")]
         public StockBasedCompensationCashFlowStatement StockBasedCompensation => _stockBasedCompensation ??= new(_timeProvider, _securityIdentifier);
         private StockBasedCompensationCashFlowStatement _stockBasedCompensation;
 
@@ -1096,7 +1096,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26173
         /// </remarks>
-        [JsonProperty("26173")]
+        [JsonPropertyName("26173")]
         public UnrealizedGainLossOnInvestmentSecuritiesCashFlowStatement UnrealizedGainLossOnInvestmentSecurities => _unrealizedGainLossOnInvestmentSecurities ??= new(_timeProvider, _securityIdentifier);
         private UnrealizedGainLossOnInvestmentSecuritiesCashFlowStatement _unrealizedGainLossOnInvestmentSecurities;
 
@@ -1106,7 +1106,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26174
         /// </remarks>
-        [JsonProperty("26174")]
+        [JsonPropertyName("26174")]
         public UnrealizedGainsLossesOnDerivativesCashFlowStatement UnrealizedGainsLossesOnDerivatives => _unrealizedGainsLossesOnDerivatives ??= new(_timeProvider, _securityIdentifier);
         private UnrealizedGainsLossesOnDerivativesCashFlowStatement _unrealizedGainsLossesOnDerivatives;
 
@@ -1116,7 +1116,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26175
         /// </remarks>
-        [JsonProperty("26175")]
+        [JsonPropertyName("26175")]
         public AmortizationOfIntangiblesCashFlowStatement AmortizationOfIntangibles => _amortizationOfIntangibles ??= new(_timeProvider, _securityIdentifier);
         private AmortizationOfIntangiblesCashFlowStatement _amortizationOfIntangibles;
 
@@ -1126,7 +1126,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26179
         /// </remarks>
-        [JsonProperty("26179")]
+        [JsonPropertyName("26179")]
         public IncomeTaxPaidSupplementalDataCashFlowStatement IncomeTaxPaidSupplementalData => _incomeTaxPaidSupplementalData ??= new(_timeProvider, _securityIdentifier);
         private IncomeTaxPaidSupplementalDataCashFlowStatement _incomeTaxPaidSupplementalData;
 
@@ -1136,7 +1136,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26180
         /// </remarks>
-        [JsonProperty("26180")]
+        [JsonPropertyName("26180")]
         public InterestPaidSupplementalDataCashFlowStatement InterestPaidSupplementalData => _interestPaidSupplementalData ??= new(_timeProvider, _securityIdentifier);
         private InterestPaidSupplementalDataCashFlowStatement _interestPaidSupplementalData;
 
@@ -1146,7 +1146,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26181
         /// </remarks>
-        [JsonProperty("26181")]
+        [JsonPropertyName("26181")]
         public IssuanceOfCapitalStockCashFlowStatement IssuanceOfCapitalStock => _issuanceOfCapitalStock ??= new(_timeProvider, _securityIdentifier);
         private IssuanceOfCapitalStockCashFlowStatement _issuanceOfCapitalStock;
 
@@ -1156,7 +1156,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26182
         /// </remarks>
-        [JsonProperty("26182")]
+        [JsonPropertyName("26182")]
         public IssuanceOfDebtCashFlowStatement IssuanceOfDebt => _issuanceOfDebt ??= new(_timeProvider, _securityIdentifier);
         private IssuanceOfDebtCashFlowStatement _issuanceOfDebt;
 
@@ -1166,7 +1166,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26183
         /// </remarks>
-        [JsonProperty("26183")]
+        [JsonPropertyName("26183")]
         public RepaymentOfDebtCashFlowStatement RepaymentOfDebt => _repaymentOfDebt ??= new(_timeProvider, _securityIdentifier);
         private RepaymentOfDebtCashFlowStatement _repaymentOfDebt;
 
@@ -1176,7 +1176,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26184
         /// </remarks>
-        [JsonProperty("26184")]
+        [JsonPropertyName("26184")]
         public RepurchaseOfCapitalStockCashFlowStatement RepurchaseOfCapitalStock => _repurchaseOfCapitalStock ??= new(_timeProvider, _securityIdentifier);
         private RepurchaseOfCapitalStockCashFlowStatement _repurchaseOfCapitalStock;
 
@@ -1186,7 +1186,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26185
         /// </remarks>
-        [JsonProperty("26185")]
+        [JsonPropertyName("26185")]
         public FreeCashFlowCashFlowStatement FreeCashFlow => _freeCashFlow ??= new(_timeProvider, _securityIdentifier);
         private FreeCashFlowCashFlowStatement _freeCashFlow;
 
@@ -1196,7 +1196,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26188
         /// </remarks>
-        [JsonProperty("26188")]
+        [JsonPropertyName("26188")]
         public DecreaseInInterestBearingDepositsInBankCashFlowStatement DecreaseInInterestBearingDepositsInBank => _decreaseInInterestBearingDepositsInBank ??= new(_timeProvider, _securityIdentifier);
         private DecreaseInInterestBearingDepositsInBankCashFlowStatement _decreaseInInterestBearingDepositsInBank;
 
@@ -1206,7 +1206,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26189
         /// </remarks>
-        [JsonProperty("26189")]
+        [JsonPropertyName("26189")]
         public IncreaseInInterestBearingDepositsInBankCashFlowStatement IncreaseInInterestBearingDepositsInBank => _increaseInInterestBearingDepositsInBank ??= new(_timeProvider, _securityIdentifier);
         private IncreaseInInterestBearingDepositsInBankCashFlowStatement _increaseInInterestBearingDepositsInBank;
 
@@ -1216,7 +1216,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26194
         /// </remarks>
-        [JsonProperty("26194")]
+        [JsonPropertyName("26194")]
         public InterestReceivedCFOCashFlowStatement InterestReceivedCFO => _interestReceivedCFO ??= new(_timeProvider, _securityIdentifier);
         private InterestReceivedCFOCashFlowStatement _interestReceivedCFO;
 
@@ -1226,7 +1226,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26195
         /// </remarks>
-        [JsonProperty("26195")]
+        [JsonPropertyName("26195")]
         public InterestPaidCFOCashFlowStatement InterestPaidCFO => _interestPaidCFO ??= new(_timeProvider, _securityIdentifier);
         private InterestPaidCFOCashFlowStatement _interestPaidCFO;
 
@@ -1236,7 +1236,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26196
         /// </remarks>
-        [JsonProperty("26196")]
+        [JsonPropertyName("26196")]
         [Obsolete("PurchaseOfSubsidiaries was retired by Morningstar in 2026 for all periods; no replacement is available.")]
         [JsonIgnore]
         public PurchaseOfSubsidiariesCashFlowStatement PurchaseOfSubsidiaries => _purchaseOfSubsidiaries ??= new(_timeProvider, _securityIdentifier);
@@ -1248,7 +1248,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26197
         /// </remarks>
-        [JsonProperty("26197")]
+        [JsonPropertyName("26197")]
         public PurchaseOfJointVentureAssociateCashFlowStatement PurchaseOfJointVentureAssociate => _purchaseOfJointVentureAssociate ??= new(_timeProvider, _securityIdentifier);
         private PurchaseOfJointVentureAssociateCashFlowStatement _purchaseOfJointVentureAssociate;
 
@@ -1258,7 +1258,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26198
         /// </remarks>
-        [JsonProperty("26198")]
+        [JsonPropertyName("26198")]
         [Obsolete("SaleOfSubsidiaries was retired by Morningstar in 2026 for all periods; no replacement is available.")]
         [JsonIgnore]
         public SaleOfSubsidiariesCashFlowStatement SaleOfSubsidiaries => _saleOfSubsidiaries ??= new(_timeProvider, _securityIdentifier);
@@ -1270,7 +1270,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26199
         /// </remarks>
-        [JsonProperty("26199")]
+        [JsonPropertyName("26199")]
         public SaleOfJointVentureAssociateCashFlowStatement SaleOfJointVentureAssociate => _saleOfJointVentureAssociate ??= new(_timeProvider, _securityIdentifier);
         private SaleOfJointVentureAssociateCashFlowStatement _saleOfJointVentureAssociate;
 
@@ -1280,7 +1280,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26200
         /// </remarks>
-        [JsonProperty("26200")]
+        [JsonPropertyName("26200")]
         public IncreaseDecreaseInLeaseFinancingCashFlowStatement IncreaseDecreaseInLeaseFinancing => _increaseDecreaseInLeaseFinancing ??= new(_timeProvider, _securityIdentifier);
         private IncreaseDecreaseInLeaseFinancingCashFlowStatement _increaseDecreaseInLeaseFinancing;
 
@@ -1290,7 +1290,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26201
         /// </remarks>
-        [JsonProperty("26201")]
+        [JsonPropertyName("26201")]
         public IncreaseInLeaseFinancingCashFlowStatement IncreaseInLeaseFinancing => _increaseInLeaseFinancing ??= new(_timeProvider, _securityIdentifier);
         private IncreaseInLeaseFinancingCashFlowStatement _increaseInLeaseFinancing;
 
@@ -1300,7 +1300,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26202
         /// </remarks>
-        [JsonProperty("26202")]
+        [JsonPropertyName("26202")]
         public RepaymentInLeaseFinancingCashFlowStatement RepaymentInLeaseFinancing => _repaymentInLeaseFinancing ??= new(_timeProvider, _securityIdentifier);
         private RepaymentInLeaseFinancingCashFlowStatement _repaymentInLeaseFinancing;
 
@@ -1310,7 +1310,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26203
         /// </remarks>
-        [JsonProperty("26203")]
+        [JsonPropertyName("26203")]
         [Obsolete("ShareOfAssociates was retired by Morningstar in 2026 for all periods; no replacement is available.")]
         [JsonIgnore]
         public ShareOfAssociatesCashFlowStatement ShareOfAssociates => _shareOfAssociates ??= new(_timeProvider, _securityIdentifier);
@@ -1322,7 +1322,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26204
         /// </remarks>
-        [JsonProperty("26204")]
+        [JsonPropertyName("26204")]
         [Obsolete("ProfitOnDisposals was retired by Morningstar in 2026 for all periods; no replacement is available.")]
         [JsonIgnore]
         public ProfitOnDisposalsCashFlowStatement ProfitOnDisposals => _profitOnDisposals ??= new(_timeProvider, _securityIdentifier);
@@ -1334,7 +1334,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26205
         /// </remarks>
-        [JsonProperty("26205")]
+        [JsonPropertyName("26205")]
         [Obsolete("ReorganizationOtherCosts was retired by Morningstar in 2026 for all periods; no replacement is available.")]
         [JsonIgnore]
         public ReorganizationOtherCostsCashFlowStatement ReorganizationOtherCosts => _reorganizationOtherCosts ??= new(_timeProvider, _securityIdentifier);
@@ -1346,7 +1346,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26207
         /// </remarks>
-        [JsonProperty("26207")]
+        [JsonPropertyName("26207")]
         public NetOutwardLoansCashFlowStatement NetOutwardLoans => _netOutwardLoans ??= new(_timeProvider, _securityIdentifier);
         private NetOutwardLoansCashFlowStatement _netOutwardLoans;
 
@@ -1356,7 +1356,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26208
         /// </remarks>
-        [JsonProperty("26208")]
+        [JsonPropertyName("26208")]
         public IssueExpensesCashFlowStatement IssueExpenses => _issueExpenses ??= new(_timeProvider, _securityIdentifier);
         private IssueExpensesCashFlowStatement _issueExpenses;
 
@@ -1366,7 +1366,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26219
         /// </remarks>
-        [JsonProperty("26219")]
+        [JsonPropertyName("26219")]
         public ChangeinDepositsbyBanksandCustomersCashFlowStatement ChangeinDepositsbyBanksandCustomers => _changeinDepositsbyBanksandCustomers ??= new(_timeProvider, _securityIdentifier);
         private ChangeinDepositsbyBanksandCustomersCashFlowStatement _changeinDepositsbyBanksandCustomers;
 
@@ -1376,7 +1376,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26220
         /// </remarks>
-        [JsonProperty("26220")]
+        [JsonPropertyName("26220")]
         public CashFlowsfromusedinOperatingActivitiesDirectCashFlowStatement CashFlowsfromusedinOperatingActivitiesDirect => _cashFlowsfromusedinOperatingActivitiesDirect ??= new(_timeProvider, _securityIdentifier);
         private CashFlowsfromusedinOperatingActivitiesDirectCashFlowStatement _cashFlowsfromusedinOperatingActivitiesDirect;
 
@@ -1386,7 +1386,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26221
         /// </remarks>
-        [JsonProperty("26221")]
+        [JsonPropertyName("26221")]
         public ClassesofCashReceiptsfromOperatingActivitiesCashFlowStatement ClassesofCashReceiptsfromOperatingActivities => _classesofCashReceiptsfromOperatingActivities ??= new(_timeProvider, _securityIdentifier);
         private ClassesofCashReceiptsfromOperatingActivitiesCashFlowStatement _classesofCashReceiptsfromOperatingActivities;
 
@@ -1396,7 +1396,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26222
         /// </remarks>
-        [JsonProperty("26222")]
+        [JsonPropertyName("26222")]
         public OtherCashReceiptsfromOperatingActivitiesCashFlowStatement OtherCashReceiptsfromOperatingActivities => _otherCashReceiptsfromOperatingActivities ??= new(_timeProvider, _securityIdentifier);
         private OtherCashReceiptsfromOperatingActivitiesCashFlowStatement _otherCashReceiptsfromOperatingActivities;
 
@@ -1406,7 +1406,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26223
         /// </remarks>
-        [JsonProperty("26223")]
+        [JsonPropertyName("26223")]
         public ClassesofCashPaymentsCashFlowStatement ClassesofCashPayments => _classesofCashPayments ??= new(_timeProvider, _securityIdentifier);
         private ClassesofCashPaymentsCashFlowStatement _classesofCashPayments;
 
@@ -1416,7 +1416,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26224
         /// </remarks>
-        [JsonProperty("26224")]
+        [JsonPropertyName("26224")]
         public PaymentstoSuppliersforGoodsandServicesCashFlowStatement PaymentstoSuppliersforGoodsandServices => _paymentstoSuppliersforGoodsandServices ??= new(_timeProvider, _securityIdentifier);
         private PaymentstoSuppliersforGoodsandServicesCashFlowStatement _paymentstoSuppliersforGoodsandServices;
 
@@ -1426,7 +1426,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26226
         /// </remarks>
-        [JsonProperty("26226")]
+        [JsonPropertyName("26226")]
         public PaymentsonBehalfofEmployeesCashFlowStatement PaymentsonBehalfofEmployees => _paymentsonBehalfofEmployees ??= new(_timeProvider, _securityIdentifier);
         private PaymentsonBehalfofEmployeesCashFlowStatement _paymentsonBehalfofEmployees;
 
@@ -1436,7 +1436,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26228
         /// </remarks>
-        [JsonProperty("26228")]
+        [JsonPropertyName("26228")]
         public OtherCashPaymentsfromOperatingActivitiesCashFlowStatement OtherCashPaymentsfromOperatingActivities => _otherCashPaymentsfromOperatingActivities ??= new(_timeProvider, _securityIdentifier);
         private OtherCashPaymentsfromOperatingActivitiesCashFlowStatement _otherCashPaymentsfromOperatingActivities;
 
@@ -1446,7 +1446,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26229
         /// </remarks>
-        [JsonProperty("26229")]
+        [JsonPropertyName("26229")]
         public DividendsPaidDirectCashFlowStatement DividendsPaidDirect => _dividendsPaidDirect ??= new(_timeProvider, _securityIdentifier);
         private DividendsPaidDirectCashFlowStatement _dividendsPaidDirect;
 
@@ -1456,7 +1456,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26230
         /// </remarks>
-        [JsonProperty("26230")]
+        [JsonPropertyName("26230")]
         public DividendsReceivedDirectCashFlowStatement DividendsReceivedDirect => _dividendsReceivedDirect ??= new(_timeProvider, _securityIdentifier);
         private DividendsReceivedDirectCashFlowStatement _dividendsReceivedDirect;
 
@@ -1466,7 +1466,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26231
         /// </remarks>
-        [JsonProperty("26231")]
+        [JsonPropertyName("26231")]
         public InterestPaidDirectCashFlowStatement InterestPaidDirect => _interestPaidDirect ??= new(_timeProvider, _securityIdentifier);
         private InterestPaidDirectCashFlowStatement _interestPaidDirect;
 
@@ -1476,7 +1476,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26232
         /// </remarks>
-        [JsonProperty("26232")]
+        [JsonPropertyName("26232")]
         public InterestReceivedDirectCashFlowStatement InterestReceivedDirect => _interestReceivedDirect ??= new(_timeProvider, _securityIdentifier);
         private InterestReceivedDirectCashFlowStatement _interestReceivedDirect;
 
@@ -1486,7 +1486,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26233
         /// </remarks>
-        [JsonProperty("26233")]
+        [JsonPropertyName("26233")]
         public TaxesRefundPaidDirectCashFlowStatement TaxesRefundPaidDirect => _taxesRefundPaidDirect ??= new(_timeProvider, _securityIdentifier);
         private TaxesRefundPaidDirectCashFlowStatement _taxesRefundPaidDirect;
 
@@ -1496,7 +1496,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26234
         /// </remarks>
-        [JsonProperty("26234")]
+        [JsonPropertyName("26234")]
         public TotalAdjustmentsforNonCashItemsCashFlowStatement TotalAdjustmentsforNonCashItems => _totalAdjustmentsforNonCashItems ??= new(_timeProvider, _securityIdentifier);
         private TotalAdjustmentsforNonCashItemsCashFlowStatement _totalAdjustmentsforNonCashItems;
 
@@ -1506,7 +1506,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26235
         /// </remarks>
-        [JsonProperty("26235")]
+        [JsonPropertyName("26235")]
         [Obsolete("ImpairmentLossReversalRecognizedinProfitorLoss was retired by Morningstar in 2026 for all periods; no replacement is available.")]
         [JsonIgnore]
         public ImpairmentLossReversalRecognizedinProfitorLossCashFlowStatement ImpairmentLossReversalRecognizedinProfitorLoss => _impairmentLossReversalRecognizedinProfitorLoss ??= new(_timeProvider, _securityIdentifier);
@@ -1518,7 +1518,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26238
         /// </remarks>
-        [JsonProperty("26238")]
+        [JsonPropertyName("26238")]
         public DividendPaidCFOCashFlowStatement DividendPaidCFO => _dividendPaidCFO ??= new(_timeProvider, _securityIdentifier);
         private DividendPaidCFOCashFlowStatement _dividendPaidCFO;
 
@@ -1528,7 +1528,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26239
         /// </remarks>
-        [JsonProperty("26239")]
+        [JsonPropertyName("26239")]
         public DividendReceivedCFOCashFlowStatement DividendReceivedCFO => _dividendReceivedCFO ??= new(_timeProvider, _securityIdentifier);
         private DividendReceivedCFOCashFlowStatement _dividendReceivedCFO;
 
@@ -1538,7 +1538,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26240
         /// </remarks>
-        [JsonProperty("26240")]
+        [JsonPropertyName("26240")]
         public TaxesRefundPaidCashFlowStatement TaxesRefundPaid => _taxesRefundPaid ??= new(_timeProvider, _securityIdentifier);
         private TaxesRefundPaidCashFlowStatement _taxesRefundPaid;
 
@@ -1548,7 +1548,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26241
         /// </remarks>
-        [JsonProperty("26241")]
+        [JsonPropertyName("26241")]
         public OtherOperatingInflowsOutflowsofCashCashFlowStatement OtherOperatingInflowsOutflowsofCash => _otherOperatingInflowsOutflowsofCash ??= new(_timeProvider, _securityIdentifier);
         private OtherOperatingInflowsOutflowsofCashCashFlowStatement _otherOperatingInflowsOutflowsofCash;
 
@@ -1558,7 +1558,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26243
         /// </remarks>
-        [JsonProperty("26243")]
+        [JsonPropertyName("26243")]
         public CashAdvancesandLoansMadetoOtherPartiesCashFlowStatement CashAdvancesandLoansMadetoOtherParties => _cashAdvancesandLoansMadetoOtherParties ??= new(_timeProvider, _securityIdentifier);
         private CashAdvancesandLoansMadetoOtherPartiesCashFlowStatement _cashAdvancesandLoansMadetoOtherParties;
 
@@ -1568,7 +1568,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26244
         /// </remarks>
-        [JsonProperty("26244")]
+        [JsonPropertyName("26244")]
         public CashReceiptsfromRepaymentofAdvancesandLoansMadetoOtherPartiesCashFlowStatement CashReceiptsfromRepaymentofAdvancesandLoansMadetoOtherParties => _cashReceiptsfromRepaymentofAdvancesandLoansMadetoOtherParties ??= new(_timeProvider, _securityIdentifier);
         private CashReceiptsfromRepaymentofAdvancesandLoansMadetoOtherPartiesCashFlowStatement _cashReceiptsfromRepaymentofAdvancesandLoansMadetoOtherParties;
 
@@ -1578,7 +1578,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26246
         /// </remarks>
-        [JsonProperty("26246")]
+        [JsonPropertyName("26246")]
         public DividendsReceivedCFICashFlowStatement DividendsReceivedCFI => _dividendsReceivedCFI ??= new(_timeProvider, _securityIdentifier);
         private DividendsReceivedCFICashFlowStatement _dividendsReceivedCFI;
 
@@ -1588,7 +1588,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26247
         /// </remarks>
-        [JsonProperty("26247")]
+        [JsonPropertyName("26247")]
         public InterestReceivedCFICashFlowStatement InterestReceivedCFI => _interestReceivedCFI ??= new(_timeProvider, _securityIdentifier);
         private InterestReceivedCFICashFlowStatement _interestReceivedCFI;
 
@@ -1598,7 +1598,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26253
         /// </remarks>
-        [JsonProperty("26253")]
+        [JsonPropertyName("26253")]
         public InterestPaidCFFCashFlowStatement InterestPaidCFF => _interestPaidCFF ??= new(_timeProvider, _securityIdentifier);
         private InterestPaidCFFCashFlowStatement _interestPaidCFF;
 
@@ -1608,7 +1608,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26255
         /// </remarks>
-        [JsonProperty("26255")]
+        [JsonPropertyName("26255")]
         [Obsolete("ChangeinAccruedIncome was retired by Morningstar in 2026 for all periods; no replacement is available.")]
         [JsonIgnore]
         public ChangeinAccruedIncomeCashFlowStatement ChangeinAccruedIncome => _changeinAccruedIncome ??= new(_timeProvider, _securityIdentifier);
@@ -1620,7 +1620,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26258
         /// </remarks>
-        [JsonProperty("26258")]
+        [JsonPropertyName("26258")]
         public ChangeinFinancialAssetsCashFlowStatement ChangeinFinancialAssets => _changeinFinancialAssets ??= new(_timeProvider, _securityIdentifier);
         private ChangeinFinancialAssetsCashFlowStatement _changeinFinancialAssets;
 
@@ -1630,7 +1630,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26259
         /// </remarks>
-        [JsonProperty("26259")]
+        [JsonPropertyName("26259")]
         public ChangeinAdvancesfromCentralBanksCashFlowStatement ChangeinAdvancesfromCentralBanks => _changeinAdvancesfromCentralBanks ??= new(_timeProvider, _securityIdentifier);
         private ChangeinAdvancesfromCentralBanksCashFlowStatement _changeinAdvancesfromCentralBanks;
 
@@ -1640,7 +1640,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26260
         /// </remarks>
-        [JsonProperty("26260")]
+        [JsonPropertyName("26260")]
         public ChangeinFinancialLiabilitiesCashFlowStatement ChangeinFinancialLiabilities => _changeinFinancialLiabilities ??= new(_timeProvider, _securityIdentifier);
         private ChangeinFinancialLiabilitiesCashFlowStatement _changeinFinancialLiabilities;
 
@@ -1650,7 +1650,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26261
         /// </remarks>
-        [JsonProperty("26261")]
+        [JsonPropertyName("26261")]
         public ChangeinInsuranceContractAssetsCashFlowStatement ChangeinInsuranceContractAssets => _changeinInsuranceContractAssets ??= new(_timeProvider, _securityIdentifier);
         private ChangeinInsuranceContractAssetsCashFlowStatement _changeinInsuranceContractAssets;
 
@@ -1660,7 +1660,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26262
         /// </remarks>
-        [JsonProperty("26262")]
+        [JsonPropertyName("26262")]
         [Obsolete("ChangeinReinsuranceReceivables was retired by Morningstar in 2026 for all periods; no replacement is available.")]
         [JsonIgnore]
         public ChangeinReinsuranceReceivablesCashFlowStatement ChangeinReinsuranceReceivables => _changeinReinsuranceReceivables ??= new(_timeProvider, _securityIdentifier);
@@ -1672,7 +1672,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26263
         /// </remarks>
-        [JsonProperty("26263")]
+        [JsonPropertyName("26263")]
         public ChangeinDeferredAcquisitionCostsNetCashFlowStatement ChangeinDeferredAcquisitionCostsNet => _changeinDeferredAcquisitionCostsNet ??= new(_timeProvider, _securityIdentifier);
         private ChangeinDeferredAcquisitionCostsNetCashFlowStatement _changeinDeferredAcquisitionCostsNet;
 
@@ -1682,7 +1682,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26264
         /// </remarks>
-        [JsonProperty("26264")]
+        [JsonPropertyName("26264")]
         public ChangeinInsuranceFundsCashFlowStatement ChangeinInsuranceFunds => _changeinInsuranceFunds ??= new(_timeProvider, _securityIdentifier);
         private ChangeinInsuranceFundsCashFlowStatement _changeinInsuranceFunds;
 
@@ -1692,7 +1692,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26266
         /// </remarks>
-        [JsonProperty("26266")]
+        [JsonPropertyName("26266")]
         public ChangeinInvestmentContractLiabilitiesCashFlowStatement ChangeinInvestmentContractLiabilities => _changeinInvestmentContractLiabilities ??= new(_timeProvider, _securityIdentifier);
         private ChangeinInvestmentContractLiabilitiesCashFlowStatement _changeinInvestmentContractLiabilities;
 
@@ -1702,7 +1702,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26267
         /// </remarks>
-        [JsonProperty("26267")]
+        [JsonPropertyName("26267")]
         public ChangeinInsuranceContractLiabilitiesCashFlowStatement ChangeinInsuranceContractLiabilities => _changeinInsuranceContractLiabilities ??= new(_timeProvider, _securityIdentifier);
         private ChangeinInsuranceContractLiabilitiesCashFlowStatement _changeinInsuranceContractLiabilities;
 
@@ -1712,7 +1712,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26269
         /// </remarks>
-        [JsonProperty("26269")]
+        [JsonPropertyName("26269")]
         public ProvisionandWriteOffofAssetsCashFlowStatement ProvisionandWriteOffofAssets => _provisionandWriteOffofAssets ??= new(_timeProvider, _securityIdentifier);
         private ProvisionandWriteOffofAssetsCashFlowStatement _provisionandWriteOffofAssets;
 
@@ -1722,7 +1722,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26270
         /// </remarks>
-        [JsonProperty("26270")]
+        [JsonPropertyName("26270")]
         public ReceiptsfromCustomersCashFlowStatement ReceiptsfromCustomers => _receiptsfromCustomers ??= new(_timeProvider, _securityIdentifier);
         private ReceiptsfromCustomersCashFlowStatement _receiptsfromCustomers;
 
@@ -1732,7 +1732,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26271
         /// </remarks>
-        [JsonProperty("26271")]
+        [JsonPropertyName("26271")]
         public ReceiptsfromGovernmentGrantsCashFlowStatement ReceiptsfromGovernmentGrants => _receiptsfromGovernmentGrants ??= new(_timeProvider, _securityIdentifier);
         private ReceiptsfromGovernmentGrantsCashFlowStatement _receiptsfromGovernmentGrants;
 
@@ -1742,7 +1742,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26272
         /// </remarks>
-        [JsonProperty("26272")]
+        [JsonPropertyName("26272")]
         [Obsolete("MinorityInterest was retired by Morningstar in 2026 for all periods; no replacement is available.")]
         [JsonIgnore]
         public MinorityInterestCashFlowStatement MinorityInterest => _minorityInterest ??= new(_timeProvider, _securityIdentifier);
@@ -1754,7 +1754,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26273
         /// </remarks>
-        [JsonProperty("26273")]
+        [JsonPropertyName("26273")]
         public CapExReportedCashFlowStatement CapExReported => _capExReported ??= new(_timeProvider, _securityIdentifier);
         private CapExReportedCashFlowStatement _capExReported;
 
@@ -1764,7 +1764,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26274
         /// </remarks>
-        [JsonProperty("26274")]
+        [JsonPropertyName("26274")]
         public CashReceiptsfromTaxRefundsCashFlowStatement CashReceiptsfromTaxRefunds => _cashReceiptsfromTaxRefunds ??= new(_timeProvider, _securityIdentifier);
         private CashReceiptsfromTaxRefundsCashFlowStatement _cashReceiptsfromTaxRefunds;
 
@@ -1774,7 +1774,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26276
         /// </remarks>
-        [JsonProperty("26276")]
+        [JsonPropertyName("26276")]
         public CashReceiptsfromDepositsbyBanksandCustomersCashFlowStatement CashReceiptsfromDepositsbyBanksandCustomers => _cashReceiptsfromDepositsbyBanksandCustomers ??= new(_timeProvider, _securityIdentifier);
         private CashReceiptsfromDepositsbyBanksandCustomersCashFlowStatement _cashReceiptsfromDepositsbyBanksandCustomers;
 
@@ -1784,7 +1784,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26277
         /// </remarks>
-        [JsonProperty("26277")]
+        [JsonPropertyName("26277")]
         public CashReceiptsfromLoansCashFlowStatement CashReceiptsfromLoans => _cashReceiptsfromLoans ??= new(_timeProvider, _securityIdentifier);
         private CashReceiptsfromLoansCashFlowStatement _cashReceiptsfromLoans;
 
@@ -1794,7 +1794,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26278
         /// </remarks>
-        [JsonProperty("26278")]
+        [JsonPropertyName("26278")]
         [Obsolete("CashReceiptsfromSecuritiesRelatedActivities was retired by Morningstar in 2026 for all periods; no replacement is available.")]
         [JsonIgnore]
         public CashReceiptsfromSecuritiesRelatedActivitiesCashFlowStatement CashReceiptsfromSecuritiesRelatedActivities => _cashReceiptsfromSecuritiesRelatedActivities ??= new(_timeProvider, _securityIdentifier);
@@ -1806,7 +1806,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26280
         /// </remarks>
-        [JsonProperty("26280")]
+        [JsonPropertyName("26280")]
         public CashReceiptsfromFeesandCommissionsCashFlowStatement CashReceiptsfromFeesandCommissions => _cashReceiptsfromFeesandCommissions ??= new(_timeProvider, _securityIdentifier);
         private CashReceiptsfromFeesandCommissionsCashFlowStatement _cashReceiptsfromFeesandCommissions;
 
@@ -1816,7 +1816,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26282
         /// </remarks>
-        [JsonProperty("26282")]
+        [JsonPropertyName("26282")]
         [Obsolete("CashPaymentsforDepositsbyBanksandCustomers was retired by Morningstar in 2026 for all periods; no replacement is available.")]
         [JsonIgnore]
         public CashPaymentsforDepositsbyBanksandCustomersCashFlowStatement CashPaymentsforDepositsbyBanksandCustomers => _cashPaymentsforDepositsbyBanksandCustomers ??= new(_timeProvider, _securityIdentifier);
@@ -1828,7 +1828,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26283
         /// </remarks>
-        [JsonProperty("26283")]
+        [JsonPropertyName("26283")]
         [Obsolete("CashPaymentsforLoans was retired by Morningstar in 2026 for all periods; no replacement is available.")]
         [JsonIgnore]
         public CashPaymentsforLoansCashFlowStatement CashPaymentsforLoans => _cashPaymentsforLoans ??= new(_timeProvider, _securityIdentifier);
@@ -1840,7 +1840,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26284
         /// </remarks>
-        [JsonProperty("26284")]
+        [JsonPropertyName("26284")]
         public InterestandCommissionPaidCashFlowStatement InterestandCommissionPaid => _interestandCommissionPaid ??= new(_timeProvider, _securityIdentifier);
         private InterestandCommissionPaidCashFlowStatement _interestandCommissionPaid;
 
@@ -1850,7 +1850,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26285
         /// </remarks>
-        [JsonProperty("26285")]
+        [JsonPropertyName("26285")]
         public AllTaxesPaidCashFlowStatement AllTaxesPaid => _allTaxesPaid ??= new(_timeProvider, _securityIdentifier);
         private AllTaxesPaidCashFlowStatement _allTaxesPaid;
 
@@ -1860,7 +1860,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26286
         /// </remarks>
-        [JsonProperty("26286")]
+        [JsonPropertyName("26286")]
         [Obsolete("CashReceivedfromInsuranceActivities was retired by Morningstar in 2026 for all periods; no replacement is available.")]
         [JsonIgnore]
         public CashReceivedfromInsuranceActivitiesCashFlowStatement CashReceivedfromInsuranceActivities => _cashReceivedfromInsuranceActivities ??= new(_timeProvider, _securityIdentifier);
@@ -1872,7 +1872,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26287
         /// </remarks>
-        [JsonProperty("26287")]
+        [JsonPropertyName("26287")]
         public PremiumReceivedCashFlowStatement PremiumReceived => _premiumReceived ??= new(_timeProvider, _securityIdentifier);
         private PremiumReceivedCashFlowStatement _premiumReceived;
 
@@ -1882,7 +1882,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26288
         /// </remarks>
-        [JsonProperty("26288")]
+        [JsonPropertyName("26288")]
         public ReinsuranceandOtherRecoveriesReceivedCashFlowStatement ReinsuranceandOtherRecoveriesReceived => _reinsuranceandOtherRecoveriesReceived ??= new(_timeProvider, _securityIdentifier);
         private ReinsuranceandOtherRecoveriesReceivedCashFlowStatement _reinsuranceandOtherRecoveriesReceived;
 
@@ -1892,7 +1892,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26289
         /// </remarks>
-        [JsonProperty("26289")]
+        [JsonPropertyName("26289")]
         public PolicyholderDepositInvestmentReceivedCashFlowStatement PolicyholderDepositInvestmentReceived => _policyholderDepositInvestmentReceived ??= new(_timeProvider, _securityIdentifier);
         private PolicyholderDepositInvestmentReceivedCashFlowStatement _policyholderDepositInvestmentReceived;
 
@@ -1902,7 +1902,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26290
         /// </remarks>
-        [JsonProperty("26290")]
+        [JsonPropertyName("26290")]
         public CashPaidforInsuranceActivitiesCashFlowStatement CashPaidforInsuranceActivities => _cashPaidforInsuranceActivities ??= new(_timeProvider, _securityIdentifier);
         private CashPaidforInsuranceActivitiesCashFlowStatement _cashPaidforInsuranceActivities;
 
@@ -1912,7 +1912,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26291
         /// </remarks>
-        [JsonProperty("26291")]
+        [JsonPropertyName("26291")]
         public ClaimsPaidCashFlowStatement ClaimsPaid => _claimsPaid ??= new(_timeProvider, _securityIdentifier);
         private ClaimsPaidCashFlowStatement _claimsPaid;
 
@@ -1922,7 +1922,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26292
         /// </remarks>
-        [JsonProperty("26292")]
+        [JsonPropertyName("26292")]
         public CommissionPaidCashFlowStatement CommissionPaid => _commissionPaid ??= new(_timeProvider, _securityIdentifier);
         private CommissionPaidCashFlowStatement _commissionPaid;
 
@@ -1932,7 +1932,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26293
         /// </remarks>
-        [JsonProperty("26293")]
+        [JsonPropertyName("26293")]
         public CashPaidtoReinsurersCashFlowStatement CashPaidtoReinsurers => _cashPaidtoReinsurers ??= new(_timeProvider, _securityIdentifier);
         private CashPaidtoReinsurersCashFlowStatement _cashPaidtoReinsurers;
 
@@ -1942,7 +1942,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26294
         /// </remarks>
-        [JsonProperty("26294")]
+        [JsonPropertyName("26294")]
         public OtherUnderwritingExpensesPaidCashFlowStatement OtherUnderwritingExpensesPaid => _otherUnderwritingExpensesPaid ??= new(_timeProvider, _securityIdentifier);
         private OtherUnderwritingExpensesPaidCashFlowStatement _otherUnderwritingExpensesPaid;
 
@@ -1952,7 +1952,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26295
         /// </remarks>
-        [JsonProperty("26295")]
+        [JsonPropertyName("26295")]
         public CashDividendsForMinoritiesCashFlowStatement CashDividendsForMinorities => _cashDividendsForMinorities ??= new(_timeProvider, _securityIdentifier);
         private CashDividendsForMinoritiesCashFlowStatement _cashDividendsForMinorities;
 
@@ -1962,7 +1962,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26298
         /// </remarks>
-        [JsonProperty("26298")]
+        [JsonPropertyName("26298")]
         public CashGeneratedfromOperatingActivitiesCashFlowStatement CashGeneratedfromOperatingActivities => _cashGeneratedfromOperatingActivities ??= new(_timeProvider, _securityIdentifier);
         private CashGeneratedfromOperatingActivitiesCashFlowStatement _cashGeneratedfromOperatingActivities;
 
@@ -1972,7 +1972,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26299
         /// </remarks>
-        [JsonProperty("26299")]
+        [JsonPropertyName("26299")]
         public FundFromOperationCashFlowStatement FundFromOperation => _fundFromOperation ??= new(_timeProvider, _securityIdentifier);
         private FundFromOperationCashFlowStatement _fundFromOperation;
 
@@ -1982,7 +1982,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26300
         /// </remarks>
-        [JsonProperty("26300")]
+        [JsonPropertyName("26300")]
         public NetInvestmentPropertiesPurchaseAndSaleCashFlowStatement NetInvestmentPropertiesPurchaseAndSale => _netInvestmentPropertiesPurchaseAndSale ??= new(_timeProvider, _securityIdentifier);
         private NetInvestmentPropertiesPurchaseAndSaleCashFlowStatement _netInvestmentPropertiesPurchaseAndSale;
 
@@ -1992,7 +1992,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26301
         /// </remarks>
-        [JsonProperty("26301")]
+        [JsonPropertyName("26301")]
         public PurchaseOfInvestmentPropertiesCashFlowStatement PurchaseOfInvestmentProperties => _purchaseOfInvestmentProperties ??= new(_timeProvider, _securityIdentifier);
         private PurchaseOfInvestmentPropertiesCashFlowStatement _purchaseOfInvestmentProperties;
 
@@ -2002,7 +2002,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26302
         /// </remarks>
-        [JsonProperty("26302")]
+        [JsonPropertyName("26302")]
         public SaleOfInvestmentPropertiesCashFlowStatement SaleOfInvestmentProperties => _saleOfInvestmentProperties ??= new(_timeProvider, _securityIdentifier);
         private SaleOfInvestmentPropertiesCashFlowStatement _saleOfInvestmentProperties;
 
@@ -2012,7 +2012,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26303
         /// </remarks>
-        [JsonProperty("26303")]
+        [JsonPropertyName("26303")]
         public OtherCashAdjustIncludedIntoChangeinCashCashFlowStatement OtherCashAdjustIncludedIntoChangeinCash => _otherCashAdjustIncludedIntoChangeinCash ??= new(_timeProvider, _securityIdentifier);
         private OtherCashAdjustIncludedIntoChangeinCashCashFlowStatement _otherCashAdjustIncludedIntoChangeinCash;
 
@@ -2022,7 +2022,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26304
         /// </remarks>
-        [JsonProperty("26304")]
+        [JsonPropertyName("26304")]
         public OtherCashAdjustExcludeFromChangeinCashCashFlowStatement OtherCashAdjustExcludeFromChangeinCash => _otherCashAdjustExcludeFromChangeinCash ??= new(_timeProvider, _securityIdentifier);
         private OtherCashAdjustExcludeFromChangeinCashCashFlowStatement _otherCashAdjustExcludeFromChangeinCash;
 
@@ -2032,7 +2032,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 26305
         /// </remarks>
-        [JsonProperty("26305")]
+        [JsonPropertyName("26305")]
         public ChangeinCashSupplementalAsReportedCashFlowStatement ChangeinCashSupplementalAsReported => _changeinCashSupplementalAsReported ??= new(_timeProvider, _securityIdentifier);
         private ChangeinCashSupplementalAsReportedCashFlowStatement _changeinCashSupplementalAsReported;
 
@@ -2045,7 +2045,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQMFF
         /// </remarks>
-        [JsonProperty("EQMFF")]
+        [JsonPropertyName("EQMFF")]
         public DepreciationAmortizationAndDepletionCashFlowStatement DepreciationAmortizationAndDepletion => _depreciationAmortizationAndDepletionCashFlowStatement ??= new(_timeProvider, _securityIdentifier);
         private DepreciationAmortizationAndDepletionCashFlowStatement _depreciationAmortizationAndDepletionCashFlowStatement;
 
@@ -2055,7 +2055,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQ1O0
         /// </remarks>
-        [JsonProperty("EQ1O0")]
+        [JsonPropertyName("EQ1O0")]
         public RepurchaseOfPreferredStockCashFlowStatement RepurchaseOfPreferredStock => _repurchaseOfPreferredStockCashFlowStatement ??= new(_timeProvider, _securityIdentifier);
         private RepurchaseOfPreferredStockCashFlowStatement _repurchaseOfPreferredStockCashFlowStatement;
 
@@ -2065,7 +2065,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQ2H2
         /// </remarks>
-        [JsonProperty("EQ2H2")]
+        [JsonPropertyName("EQ2H2")]
         public IssuanceOfPreferredStockCashFlowStatement IssuanceOfPreferredStock => _issuanceOfPreferredStockCashFlowStatement ??= new(_timeProvider, _securityIdentifier);
         private IssuanceOfPreferredStockCashFlowStatement _issuanceOfPreferredStockCashFlowStatement;
 
@@ -2075,7 +2075,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQ2LC
         /// </remarks>
-        [JsonProperty("EQ2LC")]
+        [JsonPropertyName("EQ2LC")]
         public IssuanceOfLeaseFinancingCashFlowStatement IssuanceOfLeaseFinancing => _issuanceOfLeaseFinancingCashFlowStatement ??= new(_timeProvider, _securityIdentifier);
         private IssuanceOfLeaseFinancingCashFlowStatement _issuanceOfLeaseFinancingCashFlowStatement;
 
@@ -2085,7 +2085,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQAUR
         /// </remarks>
-        [JsonProperty("EQAUR")]
+        [JsonPropertyName("EQAUR")]
         public RepaymentOfLongTermDebtCashFlowStatement RepaymentOfLongTermDebt => _repaymentOfLongTermDebtCashFlowStatement ??= new(_timeProvider, _securityIdentifier);
         private RepaymentOfLongTermDebtCashFlowStatement _repaymentOfLongTermDebtCashFlowStatement;
 
@@ -2095,7 +2095,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQBC0
         /// </remarks>
-        [JsonProperty("EQBC0")]
+        [JsonPropertyName("EQBC0")]
         public IssuanceOfLongTermDebtCashFlowStatement IssuanceOfLongTermDebt => _issuanceOfLongTermDebtCashFlowStatement ??= new(_timeProvider, _securityIdentifier);
         private IssuanceOfLongTermDebtCashFlowStatement _issuanceOfLongTermDebtCashFlowStatement;
 
@@ -2105,7 +2105,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQPVN
         /// </remarks>
-        [JsonProperty("EQPVN")]
+        [JsonPropertyName("EQPVN")]
         public IssuanceOfCommonStockCashFlowStatement IssuanceOfCommonStock => _issuanceOfCommonStockCashFlowStatement ??= new(_timeProvider, _securityIdentifier);
         private IssuanceOfCommonStockCashFlowStatement _issuanceOfCommonStockCashFlowStatement;
 
@@ -2115,7 +2115,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQRN5
         /// </remarks>
-        [JsonProperty("EQRN5")]
+        [JsonPropertyName("EQRN5")]
         public IssuanceOfShortTermDebtCashFlowStatement IssuanceOfShortTermDebt => _issuanceOfShortTermDebtCashFlowStatement ??= new(_timeProvider, _securityIdentifier);
         private IssuanceOfShortTermDebtCashFlowStatement _issuanceOfShortTermDebtCashFlowStatement;
 
@@ -2125,7 +2125,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQSDG
         /// </remarks>
-        [JsonProperty("EQSDG")]
+        [JsonPropertyName("EQSDG")]
         public RepurchaseOfCommonStockCashFlowStatement RepurchaseOfCommonStock => _repurchaseOfCommonStockCashFlowStatement ??= new(_timeProvider, _securityIdentifier);
         private RepurchaseOfCommonStockCashFlowStatement _repurchaseOfCommonStockCashFlowStatement;
 
@@ -2135,7 +2135,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQVD2
         /// </remarks>
-        [JsonProperty("EQVD2")]
+        [JsonPropertyName("EQVD2")]
         public RepaymentOfShortTermDebtCashFlowStatement RepaymentOfShortTermDebt => _repaymentOfShortTermDebtCashFlowStatement ??= new(_timeProvider, _securityIdentifier);
         private RepaymentOfShortTermDebtCashFlowStatement _repaymentOfShortTermDebtCashFlowStatement;
 
@@ -2145,7 +2145,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQW5V
         /// </remarks>
-        [JsonProperty("EQW5V")]
+        [JsonPropertyName("EQW5V")]
         public RepaymentOfLeaseFinancingCashFlowStatement RepaymentOfLeaseFinancing => _repaymentOfLeaseFinancingCashFlowStatement ??= new(_timeProvider, _securityIdentifier);
         private RepaymentOfLeaseFinancingCashFlowStatement _repaymentOfLeaseFinancingCashFlowStatement;
 
@@ -2155,7 +2155,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQLKF
         /// </remarks>
-        [JsonProperty("EQLKF")]
+        [JsonPropertyName("EQLKF")]
         public FreeCashFlowToEquityHoldersCashFlowStatement FreeCashFlowToEquityHolders => _freeCashFlowToEquityHoldersCashFlowStatement ??= new(_timeProvider, _securityIdentifier);
         private FreeCashFlowToEquityHoldersCashFlowStatement _freeCashFlowToEquityHoldersCashFlowStatement;
 
@@ -2165,7 +2165,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQS11
         /// </remarks>
-        [JsonProperty("EQS11")]
+        [JsonPropertyName("EQS11")]
         public CashFlowFromOperationsCashFlowStatement CashFlowFromOperations => _cashFlowFromOperationsCashFlowStatement ??= new(_timeProvider, _securityIdentifier);
         private CashFlowFromOperationsCashFlowStatement _cashFlowFromOperationsCashFlowStatement;
 
@@ -2175,7 +2175,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQ42O
         /// </remarks>
-        [JsonProperty("EQ42O")]
+        [JsonPropertyName("EQ42O")]
         public IncomeLossBeforeNonCashAdjustmentCashFlowStatement IncomeLossBeforeNonCashAdjustment => _incomeLossBeforeNonCashAdjustmentCashFlowStatement ??= new(_timeProvider, _securityIdentifier);
         private IncomeLossBeforeNonCashAdjustmentCashFlowStatement _incomeLossBeforeNonCashAdjustmentCashFlowStatement;
 
@@ -2185,7 +2185,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQADA
         /// </remarks>
-        [JsonProperty("EQADA")]
+        [JsonPropertyName("EQADA")]
         public IrregularIncomeLossNonCashAdjustmentCashFlowStatement IrregularIncomeLossNonCashAdjustment => _irregularIncomeLossNonCashAdjustmentCashFlowStatement ??= new(_timeProvider, _securityIdentifier);
         private IrregularIncomeLossNonCashAdjustmentCashFlowStatement _irregularIncomeLossNonCashAdjustmentCashFlowStatement;
 
@@ -2195,7 +2195,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQDIO
         /// </remarks>
-        [JsonProperty("EQDIO")]
+        [JsonPropertyName("EQDIO")]
         public NetInvestmentIncomeLossNonCashAdjustmentCashFlowStatement NetInvestmentIncomeLossNonCashAdjustment => _netInvestmentIncomeLossNonCashAdjustmentCashFlowStatement ??= new(_timeProvider, _securityIdentifier);
         private NetInvestmentIncomeLossNonCashAdjustmentCashFlowStatement _netInvestmentIncomeLossNonCashAdjustmentCashFlowStatement;
 
@@ -2205,7 +2205,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQXE6
         /// </remarks>
-        [JsonProperty("EQXE6")]
+        [JsonPropertyName("EQXE6")]
         public GainLossOnDisposalsNonCashAdjustmentCashFlowStatement GainLossOnDisposalsNonCashAdjustment => _gainLossOnDisposalsNonCashAdjustmentCashFlowStatement ??= new(_timeProvider, _securityIdentifier);
         private GainLossOnDisposalsNonCashAdjustmentCashFlowStatement _gainLossOnDisposalsNonCashAdjustmentCashFlowStatement;
 
@@ -2215,7 +2215,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQ91C
         /// </remarks>
-        [JsonProperty("EQ91C")]
+        [JsonPropertyName("EQ91C")]
         public CashDividendsAndInterestPaidCashFlowStatement CashDividendsAndInterestPaid => _cashDividendsAndInterestPaidCashFlowStatement ??= new(_timeProvider, _securityIdentifier);
         private CashDividendsAndInterestPaidCashFlowStatement _cashDividendsAndInterestPaidCashFlowStatement;
 
@@ -2225,7 +2225,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQZ4K
         /// </remarks>
-        [JsonProperty("EQZ4K")]
+        [JsonPropertyName("EQZ4K")]
         public ChangeInOtherOperatingCapitalCashFlowStatement ChangeInOtherOperatingCapital => _changeInOtherOperatingCapitalCashFlowStatement ??= new(_timeProvider, _securityIdentifier);
         private ChangeInOtherOperatingCapitalCashFlowStatement _changeInOtherOperatingCapitalCashFlowStatement;
 

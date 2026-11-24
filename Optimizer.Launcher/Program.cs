@@ -1,4 +1,4 @@
-/*
+﻿/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -13,7 +13,6 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
 using QuantConnect.Configuration;
 using QuantConnect.Logging;
 using QuantConnect.Optimizer.Objectives;
@@ -54,12 +53,12 @@ namespace QuantConnect.Optimizer.Launcher
                 {
                     OptimizationId = optimizationId,
                     OptimizationStrategy = optimizationStrategyName,
-                    OptimizationStrategySettings = (OptimizationStrategySettings)JsonConvert.DeserializeObject(Config.Get(
+                    OptimizationStrategySettings = JsonSerialization.Deserialize<OptimizationStrategySettings>(Config.Get(
                         "optimization-strategy-settings",
-                        "{\"$type\":\"QuantConnect.Optimizer.Strategies.OptimizationStrategySettings, QuantConnect.Optimizer\"}"), new JsonSerializerSettings(){TypeNameHandling = TypeNameHandling.All}),
-                    Criterion = JsonConvert.DeserializeObject<Target>(Config.Get("optimization-criterion", "{\"target\":\"Statistics.TotalProfit\", \"extremum\": \"max\"}")),
-                    Constraints = JsonConvert.DeserializeObject<List<Constraint>>(Config.Get("constraints", "[]")).AsReadOnly(),
-                    OptimizationParameters = JsonConvert.DeserializeObject<HashSet<OptimizationParameter>>(Config.Get("parameters", "[]")),
+                        "{\"$type\":\"QuantConnect.Optimizer.Strategies.OptimizationStrategySettings, QuantConnect.Optimizer\"}"), JsonSerialization.Create(converters: new QuantConnect.Util.Json.TypeNameHandlingJsonConverter(typeof(OptimizationStrategySettings)))),
+                    Criterion = JsonSerialization.Deserialize<Target>(Config.Get("optimization-criterion", "{\"target\":\"Statistics.TotalProfit\", \"extremum\": \"max\"}")),
+                    Constraints = JsonSerialization.Deserialize<List<Constraint>>(Config.Get("constraints", "[]")).AsReadOnly(),
+                    OptimizationParameters = JsonSerialization.Deserialize<HashSet<OptimizationParameter>>(Config.Get("parameters", "[]")),
                     MaximumConcurrentBacktests = Config.GetInt("maximum-concurrent-backtests", Math.Max(1, Environment.ProcessorCount / 2)),
                     Channel = channel,
                 };

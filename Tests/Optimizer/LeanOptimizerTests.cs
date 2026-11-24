@@ -15,7 +15,6 @@
 */
 
 using System;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using QuantConnect.Optimizer;
 using QuantConnect.Util;
@@ -80,7 +79,7 @@ namespace QuantConnect.Tests.Optimizer
             Assert.NotNull(result);
             Assert.AreEqual(
                 110,
-                JsonConvert.DeserializeObject<BacktestResult>(result.JsonBacktestResult).Statistics.Profit);
+                JsonSerialization.Deserialize<BacktestResult>(result.JsonBacktestResult).Statistics.Profit);
 
             Assert.AreEqual(10, result.ParameterSet.Value["ema-slow"].ToDecimal());
             Assert.AreEqual(100, result.ParameterSet.Value["ema-fast"].ToDecimal());
@@ -119,7 +118,7 @@ namespace QuantConnect.Tests.Optimizer
             Assert.NotNull(result);
             Assert.GreaterOrEqual(
                 20,
-                JsonConvert.DeserializeObject<BacktestResult>(result.JsonBacktestResult).Statistics.Profit);
+                JsonSerialization.Deserialize<BacktestResult>(result.JsonBacktestResult).Statistics.Profit);
         }
 
         [Test]
@@ -156,10 +155,10 @@ namespace QuantConnect.Tests.Optimizer
             Assert.NotNull(result);
             Assert.AreEqual(
                 15,
-                JsonConvert.DeserializeObject<BacktestResult>(result.JsonBacktestResult).Statistics.Profit);
+                JsonSerialization.Deserialize<BacktestResult>(result.JsonBacktestResult).Statistics.Profit);
             Assert.AreEqual(
                 0.15m,
-                JsonConvert.DeserializeObject<BacktestResult>(result.JsonBacktestResult).Statistics.Drawdown);
+                JsonSerialization.Deserialize<BacktestResult>(result.JsonBacktestResult).Statistics.Drawdown);
 
         }
 
@@ -199,10 +198,10 @@ namespace QuantConnect.Tests.Optimizer
             Assert.NotNull(result);
             Assert.AreEqual(
                 15,
-                JsonConvert.DeserializeObject<BacktestResult>(result.JsonBacktestResult).Statistics.Profit);
+                JsonSerialization.Deserialize<BacktestResult>(result.JsonBacktestResult).Statistics.Profit);
             Assert.AreEqual(
                 0.15m,
-                JsonConvert.DeserializeObject<BacktestResult>(result.JsonBacktestResult).Statistics.Drawdown);
+                JsonSerialization.Deserialize<BacktestResult>(result.JsonBacktestResult).Statistics.Drawdown);
 
         }
 
@@ -240,10 +239,10 @@ namespace QuantConnect.Tests.Optimizer
             Assert.NotNull(result);
             Assert.GreaterOrEqual(
                 20,
-                JsonConvert.DeserializeObject<BacktestResult>(result.JsonBacktestResult).Statistics.Profit);
+                JsonSerialization.Deserialize<BacktestResult>(result.JsonBacktestResult).Statistics.Profit);
             Assert.GreaterOrEqual(
                 0.15m,
-                JsonConvert.DeserializeObject<BacktestResult>(result.JsonBacktestResult).Statistics.Drawdown);
+                JsonSerialization.Deserialize<BacktestResult>(result.JsonBacktestResult).Statistics.Drawdown);
 
         }
 

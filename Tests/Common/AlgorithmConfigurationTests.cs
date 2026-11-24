@@ -18,12 +18,10 @@ using System.Collections.Generic;
 using NUnit.Framework;
 
 using System;
-using Newtonsoft.Json;
 using QuantConnect.Packets;
 using QuantConnect.Algorithm;
 using QuantConnect.Brokerages;
 using QuantConnect.Util;
-using Newtonsoft.Json.Serialization;
 
 namespace QuantConnect.Tests.Common
 {
@@ -67,18 +65,8 @@ namespace QuantConnect.Tests.Common
             };
             var algorithmConfiguration = AlgorithmConfiguration.Create(algorithm, backtestNode);
 
-            var settings = new JsonSerializerSettings()
-            {
-                ContractResolver = new DefaultContractResolver
-                {
-                    NamingStrategy = new CamelCaseNamingStrategy
-                    {
-                        ProcessDictionaryKeys = false,
-                        OverrideSpecifiedNames = true
-                    }
-                }
-            };
-            var serialized = JsonConvert.SerializeObject(algorithmConfiguration, settings);
+            var settings = JsonSerialization.Create(camelCase: true);
+            var serialized = JsonSerialization.Serialize(algorithmConfiguration, settings);
             if (backwardsCompatible)
             {
                 serialized = $"{{\"Name\":\"Backtest name\",\"Tags\":[\"tag1\",\"tag2\"],\"AccountCurrency\":\"GBP\",\"Brokerage\":32," +
@@ -92,7 +80,7 @@ namespace QuantConnect.Tests.Common
                 $"\"outOfSampleDays\":30,\"startDate\":\"1998-01-01T00:00:00Z\",\"endDate\":\"{algorithm.EndDate.ToString(DateFormat.ISOShort)}\",\"tradingDaysPerYear\":252}}", serialized);
             }
 
-            var deserialize = JsonConvert.DeserializeObject<AlgorithmConfiguration>(serialized);
+            var deserialize = JsonSerialization.Deserialize<AlgorithmConfiguration>(serialized);
 
             Assert.AreEqual(algorithmConfiguration.Name, deserialize.Name);
             Assert.AreEqual(algorithmConfiguration.Parameters, deserialize.Parameters);
@@ -116,7 +104,7 @@ namespace QuantConnect.Tests.Common
             // not set, e.g. backtesting
             var algorithmConfiguration = AlgorithmConfiguration.Create(algorithm, null);
             Assert.IsNull(algorithmConfiguration.DeploymentDetails);
-            var serialized = JsonConvert.SerializeObject(algorithmConfiguration);
+            var serialized = JsonSerialization.Serialize(algorithmConfiguration);
             Assert.IsFalse(serialized.Contains("DeploymentDetails", StringComparison.InvariantCultureIgnoreCase));
 
             // set, e.g. live trading
@@ -135,10 +123,10 @@ namespace QuantConnect.Tests.Common
             algorithmConfiguration = AlgorithmConfiguration.Create(algorithm, null);
             CollectionAssert.AreEquivalent(deploymentDetails, algorithmConfiguration.DeploymentDetails);
 
-            serialized = JsonConvert.SerializeObject(algorithmConfiguration);
+            serialized = JsonSerialization.Serialize(algorithmConfiguration);
             Assert.IsTrue(serialized.Contains("\"DeploymentDetails\":{\"some-key\":\"\"}", StringComparison.InvariantCulture));
 
-            var deserialized = JsonConvert.DeserializeObject<AlgorithmConfiguration>(serialized);
+            var deserialized = JsonSerialization.Deserialize<AlgorithmConfiguration>(serialized);
             CollectionAssert.AreEquivalent(deploymentDetails, deserialized.DeploymentDetails);
         }
 

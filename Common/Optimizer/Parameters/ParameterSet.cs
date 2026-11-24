@@ -14,7 +14,7 @@
 */
 
 using System.Linq;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuantConnect.Api;
 using QuantConnect.Util;
 using System.Collections.Generic;
@@ -32,13 +32,13 @@ namespace QuantConnect.Optimizer.Parameters
         /// </summary>
         /// <remarks>Internal id, useful for the optimization strategy to id each generated parameter sets,
         /// even before there is any backtest id</remarks>
-        [JsonProperty(PropertyName = "id")]
+        [JsonPropertyName("id")]
         public int Id { get; }
 
         /// <summary>
         /// Represent a combination as key value of parameters, i.e. order doesn't matter
         /// </summary>
-        [JsonProperty(PropertyName = "value", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonPropertyName("value"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IReadOnlyDictionary<string, string> Value { get; }
 
         /// <summary>

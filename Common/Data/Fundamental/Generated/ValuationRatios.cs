@@ -17,7 +17,7 @@
 using System;
 using System.Linq;
 using Python.Runtime;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using QuantConnect.Data.UniverseSelection;
 
@@ -34,7 +34,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14000
         /// </remarks>
-        [JsonProperty("14000")]
+        [JsonPropertyName("14000")]
         public double PayoutRatio => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PayoutRatio);
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14001
         /// </remarks>
-        [JsonProperty("14001")]
+        [JsonPropertyName("14001")]
         public double SustainableGrowthRate => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_SustainableGrowthRate);
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14002
         /// </remarks>
-        [JsonProperty("14002")]
+        [JsonPropertyName("14002")]
         public double CashReturn => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_CashReturn);
 
         /// <summary>
@@ -61,7 +61,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14003
         /// </remarks>
-        [JsonProperty("14003")]
+        [JsonPropertyName("14003")]
         public double SalesPerShare => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_SalesPerShare);
 
         /// <summary>
@@ -70,7 +70,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14004
         /// </remarks>
-        [JsonProperty("14004")]
+        [JsonPropertyName("14004")]
         public double BookValuePerShare => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_BookValuePerShare);
 
         /// <summary>
@@ -79,7 +79,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14005
         /// </remarks>
-        [JsonProperty("14005")]
+        [JsonPropertyName("14005")]
         public double CFOPerShare => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_CFOPerShare);
 
         /// <summary>
@@ -88,7 +88,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14006
         /// </remarks>
-        [JsonProperty("14006")]
+        [JsonPropertyName("14006")]
         public double FCFPerShare => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_FCFPerShare);
 
         /// <summary>
@@ -97,7 +97,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14007
         /// </remarks>
-        [JsonProperty("14007")]
+        [JsonPropertyName("14007")]
         public double EarningYield => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EarningYield);
 
         /// <summary>
@@ -106,7 +106,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14008
         /// </remarks>
-        [JsonProperty("14008")]
+        [JsonPropertyName("14008")]
         public double PERatio => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PERatio);
 
         /// <summary>
@@ -115,7 +115,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14009
         /// </remarks>
-        [JsonProperty("14009")]
+        [JsonPropertyName("14009")]
         public double SalesYield => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_SalesYield);
 
         /// <summary>
@@ -124,7 +124,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14010
         /// </remarks>
-        [JsonProperty("14010")]
+        [JsonPropertyName("14010")]
         public double PSRatio => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PSRatio);
 
         /// <summary>
@@ -133,7 +133,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14011
         /// </remarks>
-        [JsonProperty("14011")]
+        [JsonPropertyName("14011")]
         public double BookValueYield => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_BookValueYield);
 
         /// <summary>
@@ -142,7 +142,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14012
         /// </remarks>
-        [JsonProperty("14012")]
+        [JsonPropertyName("14012")]
         public double PBRatio => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PBRatio);
 
         /// <summary>
@@ -151,7 +151,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14013
         /// </remarks>
-        [JsonProperty("14013")]
+        [JsonPropertyName("14013")]
         public double CFYield => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_CFYield);
 
         /// <summary>
@@ -160,7 +160,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14014
         /// </remarks>
-        [JsonProperty("14014")]
+        [JsonPropertyName("14014")]
         public double PCFRatio => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PCFRatio);
 
         /// <summary>
@@ -169,7 +169,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14015
         /// </remarks>
-        [JsonProperty("14015")]
+        [JsonPropertyName("14015")]
         public double FCFYield => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_FCFYield);
 
         /// <summary>
@@ -178,7 +178,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14016
         /// </remarks>
-        [JsonProperty("14016")]
+        [JsonPropertyName("14016")]
         public double FCFRatio => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_FCFRatio);
 
         /// <summary>
@@ -187,7 +187,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14017
         /// </remarks>
-        [JsonProperty("14017")]
+        [JsonPropertyName("14017")]
         public double TrailingDividendYield => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_TrailingDividendYield);
 
         /// <summary>
@@ -196,7 +196,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14018
         /// </remarks>
-        [JsonProperty("14018")]
+        [JsonPropertyName("14018")]
         public double ForwardDividendYield => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_ForwardDividendYield);
 
         /// <summary>
@@ -205,7 +205,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14019
         /// </remarks>
-        [JsonProperty("14019")]
+        [JsonPropertyName("14019")]
         public double ForwardEarningYield => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_ForwardEarningYield);
 
         /// <summary>
@@ -214,7 +214,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14020
         /// </remarks>
-        [JsonProperty("14020")]
+        [JsonPropertyName("14020")]
         public double ForwardPERatio => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_ForwardPERatio);
 
         /// <summary>
@@ -223,7 +223,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14021
         /// </remarks>
-        [JsonProperty("14021")]
+        [JsonPropertyName("14021")]
         public double PEGRatio => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PEGRatio);
 
         /// <summary>
@@ -232,7 +232,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14022
         /// </remarks>
-        [JsonProperty("14022")]
+        [JsonPropertyName("14022")]
         public double PEGPayback => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PEGPayback);
 
         /// <summary>
@@ -241,7 +241,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14023
         /// </remarks>
-        [JsonProperty("14023")]
+        [JsonPropertyName("14023")]
         public double TangibleBookValuePerShare => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_TangibleBookValuePerShare);
 
         /// <summary>
@@ -250,7 +250,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14024
         /// </remarks>
-        [JsonProperty("14024")]
+        [JsonPropertyName("14024")]
         public double TangibleBVPerShare3YrAvg => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_TangibleBVPerShare3YrAvg);
 
         /// <summary>
@@ -259,7 +259,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14025
         /// </remarks>
-        [JsonProperty("14025")]
+        [JsonPropertyName("14025")]
         public double TangibleBVPerShare5YrAvg => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_TangibleBVPerShare5YrAvg);
 
         /// <summary>
@@ -268,7 +268,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14026
         /// </remarks>
-        [JsonProperty("14026")]
+        [JsonPropertyName("14026")]
         public double ForwardDividend => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_ForwardDividend);
 
         /// <summary>
@@ -277,7 +277,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14027
         /// </remarks>
-        [JsonProperty("14027")]
+        [JsonPropertyName("14027")]
         public double WorkingCapitalPerShare => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_WorkingCapitalPerShare);
 
         /// <summary>
@@ -286,7 +286,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14028
         /// </remarks>
-        [JsonProperty("14028")]
+        [JsonPropertyName("14028")]
         public double WorkingCapitalPerShare3YrAvg => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_WorkingCapitalPerShare3YrAvg);
 
         /// <summary>
@@ -295,7 +295,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14029
         /// </remarks>
-        [JsonProperty("14029")]
+        [JsonPropertyName("14029")]
         public double WorkingCapitalPerShare5YrAvg => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_WorkingCapitalPerShare5YrAvg);
 
         /// <summary>
@@ -304,7 +304,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14030
         /// </remarks>
-        [JsonProperty("14030")]
+        [JsonPropertyName("14030")]
         public double EVToEBITDA => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToEBITDA);
 
         /// <summary>
@@ -313,7 +313,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14031
         /// </remarks>
-        [JsonProperty("14031")]
+        [JsonPropertyName("14031")]
         public double BuyBackYield => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_BuyBackYield);
 
         /// <summary>
@@ -322,7 +322,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14032
         /// </remarks>
-        [JsonProperty("14032")]
+        [JsonPropertyName("14032")]
         public double TotalYield => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_TotalYield);
 
         /// <summary>
@@ -331,7 +331,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14033
         /// </remarks>
-        [JsonProperty("14033")]
+        [JsonPropertyName("14033")]
         public double RatioPE5YearAverage => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_RatioPE5YearAverage);
 
         /// <summary>
@@ -340,7 +340,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14034
         /// </remarks>
-        [JsonProperty("14034")]
+        [JsonPropertyName("14034")]
         public double PriceChange1M => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PriceChange1M);
 
         /// <summary>
@@ -349,7 +349,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14035
         /// </remarks>
-        [JsonProperty("14035")]
+        [JsonPropertyName("14035")]
         public double NormalizedPERatio => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_NormalizedPERatio);
 
         /// <summary>
@@ -358,7 +358,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14036
         /// </remarks>
-        [JsonProperty("14036")]
+        [JsonPropertyName("14036")]
         public double PriceToEBITDA => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PriceToEBITDA);
 
         /// <summary>
@@ -367,7 +367,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14037
         /// </remarks>
-        [JsonProperty("14037")]
+        [JsonPropertyName("14037")]
         public double DivYield5Year => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_DivYield5Year);
 
         /// <summary>
@@ -376,7 +376,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14038
         /// </remarks>
-        [JsonProperty("14038")]
+        [JsonPropertyName("14038")]
         public double ForwardROE => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_ForwardROE);
 
         /// <summary>
@@ -385,7 +385,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14039
         /// </remarks>
-        [JsonProperty("14039")]
+        [JsonPropertyName("14039")]
         public double ForwardROA => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_ForwardROA);
 
         /// <summary>
@@ -394,7 +394,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14040
         /// </remarks>
-        [JsonProperty("14040")]
+        [JsonPropertyName("14040")]
         public double TwoYearsForwardEarningYield => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_TwoYearsForwardEarningYield);
 
         /// <summary>
@@ -403,7 +403,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14041
         /// </remarks>
-        [JsonProperty("14041")]
+        [JsonPropertyName("14041")]
         public double TwoYearsForwardPERatio => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_TwoYearsForwardPERatio);
 
         /// <summary>
@@ -412,7 +412,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14042
         /// </remarks>
-        [JsonProperty("14042")]
+        [JsonPropertyName("14042")]
         [Obsolete("ForwardCalculationStyle was retired by Morningstar in 2026; no replacement is available.")]
         [JsonIgnore]
         public string ForwardCalculationStyle => throw new NotSupportedException("ForwardCalculationStyle was retired by Morningstar in 2026; no replacement is available.");
@@ -423,7 +423,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14043
         /// </remarks>
-        [JsonProperty("14043")]
+        [JsonPropertyName("14043")]
         public double ActualForwardDividend => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_ActualForwardDividend);
 
         /// <summary>
@@ -432,7 +432,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14044
         /// </remarks>
-        [JsonProperty("14044")]
+        [JsonPropertyName("14044")]
         [Obsolete("TrailingCalculationStyle was retired by Morningstar in 2026; no replacement is available.")]
         [JsonIgnore]
         public string TrailingCalculationStyle => throw new NotSupportedException("TrailingCalculationStyle was retired by Morningstar in 2026; no replacement is available.");
@@ -443,7 +443,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14045
         /// </remarks>
-        [JsonProperty("14045")]
+        [JsonPropertyName("14045")]
         public double ActualTrailingDividend => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_ActualTrailingDividend);
 
         /// <summary>
@@ -452,7 +452,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14046
         /// </remarks>
-        [JsonProperty("14046")]
+        [JsonPropertyName("14046")]
         public double TotalAssetPerShare => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_TotalAssetPerShare);
 
         /// <summary>
@@ -461,7 +461,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14047
         /// </remarks>
-        [JsonProperty("14047")]
+        [JsonPropertyName("14047")]
         public double ExpectedDividendGrowthRate => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_ExpectedDividendGrowthRate);
 
         /// <summary>
@@ -470,7 +470,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14048
         /// </remarks>
-        [JsonProperty("14048")]
+        [JsonPropertyName("14048")]
         public double EVToRevenue => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToRevenue);
 
         /// <summary>
@@ -479,7 +479,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14049
         /// </remarks>
-        [JsonProperty("14049")]
+        [JsonPropertyName("14049")]
         public double EVToPreTaxIncome => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToPreTaxIncome);
 
         /// <summary>
@@ -488,7 +488,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14050
         /// </remarks>
-        [JsonProperty("14050")]
+        [JsonPropertyName("14050")]
         public double EVToTotalAssets => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToTotalAssets);
 
         /// <summary>
@@ -497,7 +497,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14051
         /// </remarks>
-        [JsonProperty("14051")]
+        [JsonPropertyName("14051")]
         public double EVToFCF => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToFCF);
 
         /// <summary>
@@ -506,7 +506,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14052
         /// </remarks>
-        [JsonProperty("14052")]
+        [JsonPropertyName("14052")]
         public double EVToEBIT => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToEBIT);
 
         /// <summary>
@@ -515,7 +515,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14053
         /// </remarks>
-        [JsonProperty("14053")]
+        [JsonPropertyName("14053")]
         public double FFOPerShare => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_FFOPerShare);
 
         /// <summary>
@@ -524,7 +524,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14054
         /// </remarks>
-        [JsonProperty("14054")]
+        [JsonPropertyName("14054")]
         public double PriceToCashRatio => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PriceToCashRatio);
 
         /// <summary>
@@ -533,7 +533,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14055
         /// </remarks>
-        [JsonProperty("14055")]
+        [JsonPropertyName("14055")]
         public double EVToForwardEBITDA => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToForwardEBITDA);
 
         /// <summary>
@@ -542,7 +542,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14056
         /// </remarks>
-        [JsonProperty("14056")]
+        [JsonPropertyName("14056")]
         public double EVToForwardRevenue => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToForwardRevenue);
 
         /// <summary>
@@ -551,7 +551,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14057
         /// </remarks>
-        [JsonProperty("14057")]
+        [JsonPropertyName("14057")]
         public double EVToForwardEBIT => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToForwardEBIT);
 
         /// <summary>
@@ -560,7 +560,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14058
         /// </remarks>
-        [JsonProperty("14058")]
+        [JsonPropertyName("14058")]
         public double EVToEBITDA1YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToEBITDA1YearGrowth);
 
         /// <summary>
@@ -569,7 +569,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14059
         /// </remarks>
-        [JsonProperty("14059")]
+        [JsonPropertyName("14059")]
         public double EVToFCF1YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToFCF1YearGrowth);
 
         /// <summary>
@@ -578,7 +578,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14060
         /// </remarks>
-        [JsonProperty("14060")]
+        [JsonPropertyName("14060")]
         public double EVToRevenue1YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToRevenue1YearGrowth);
 
         /// <summary>
@@ -587,7 +587,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14061
         /// </remarks>
-        [JsonProperty("14061")]
+        [JsonPropertyName("14061")]
         public double EVToTotalAssets1YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToTotalAssets1YearGrowth);
 
         /// <summary>
@@ -596,7 +596,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14062
         /// </remarks>
-        [JsonProperty("14062")]
+        [JsonPropertyName("14062")]
         public double PFCFRatio1YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PFCFRatio1YearGrowth);
 
         /// <summary>
@@ -605,7 +605,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14063
         /// </remarks>
-        [JsonProperty("14063")]
+        [JsonPropertyName("14063")]
         public double PBRatio1YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PBRatio1YearGrowth);
 
         /// <summary>
@@ -614,7 +614,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14064
         /// </remarks>
-        [JsonProperty("14064")]
+        [JsonPropertyName("14064")]
         public double PERatio1YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PERatio1YearGrowth);
 
         /// <summary>
@@ -623,7 +623,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14065
         /// </remarks>
-        [JsonProperty("14065")]
+        [JsonPropertyName("14065")]
         public double PSRatio1YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PSRatio1YearGrowth);
 
         /// <summary>
@@ -632,7 +632,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14066
         /// </remarks>
-        [JsonProperty("14066")]
+        [JsonPropertyName("14066")]
         public double EVToEBIT3YrAvg => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToEBIT3YrAvg);
 
         /// <summary>
@@ -641,7 +641,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14067
         /// </remarks>
-        [JsonProperty("14067")]
+        [JsonPropertyName("14067")]
         public double EVToEBITDA3YrAvg => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToEBITDA3YrAvg);
 
         /// <summary>
@@ -650,7 +650,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14068
         /// </remarks>
-        [JsonProperty("14068")]
+        [JsonPropertyName("14068")]
         public double EVToFCF3YrAvg => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToFCF3YrAvg);
 
         /// <summary>
@@ -659,7 +659,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14069
         /// </remarks>
-        [JsonProperty("14069")]
+        [JsonPropertyName("14069")]
         public double EVToRevenue3YrAvg => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToRevenue3YrAvg);
 
         /// <summary>
@@ -668,7 +668,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14070
         /// </remarks>
-        [JsonProperty("14070")]
+        [JsonPropertyName("14070")]
         public double EVToTotalAssets3YrAvg => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToTotalAssets3YrAvg);
 
         /// <summary>
@@ -677,7 +677,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14071
         /// </remarks>
-        [JsonProperty("14071")]
+        [JsonPropertyName("14071")]
         public double EVToEBIT3YrAvgChange => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToEBIT3YrAvgChange);
 
         /// <summary>
@@ -686,7 +686,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14072
         /// </remarks>
-        [JsonProperty("14072")]
+        [JsonPropertyName("14072")]
         public double EVToEBITDA3YrAvgChange => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToEBITDA3YrAvgChange);
 
         /// <summary>
@@ -695,7 +695,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14073
         /// </remarks>
-        [JsonProperty("14073")]
+        [JsonPropertyName("14073")]
         public double EVToFCF3YrAvgChange => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToFCF3YrAvgChange);
 
         /// <summary>
@@ -704,7 +704,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14074
         /// </remarks>
-        [JsonProperty("14074")]
+        [JsonPropertyName("14074")]
         public double EVToRevenue3YrAvgChange => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToRevenue3YrAvgChange);
 
         /// <summary>
@@ -713,7 +713,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14075
         /// </remarks>
-        [JsonProperty("14075")]
+        [JsonPropertyName("14075")]
         public double EVToTotalAssets3YrAvgChange => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToTotalAssets3YrAvgChange);
 
         /// <summary>
@@ -722,7 +722,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14076
         /// </remarks>
-        [JsonProperty("14076")]
+        [JsonPropertyName("14076")]
         public double PFCFRatio3YrAvg => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PFCFRatio3YrAvg);
 
         /// <summary>
@@ -731,7 +731,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14077
         /// </remarks>
-        [JsonProperty("14077")]
+        [JsonPropertyName("14077")]
         public double PBRatio3YrAvg => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PBRatio3YrAvg);
 
         /// <summary>
@@ -740,7 +740,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14078
         /// </remarks>
-        [JsonProperty("14078")]
+        [JsonPropertyName("14078")]
         public double PSRatio3YrAvg => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PSRatio3YrAvg);
 
         /// <summary>
@@ -749,7 +749,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14079
         /// </remarks>
-        [JsonProperty("14079")]
+        [JsonPropertyName("14079")]
         public double PCashRatio3YrAvg => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PCashRatio3YrAvg);
 
         /// <summary>
@@ -758,7 +758,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14080
         /// </remarks>
-        [JsonProperty("14080")]
+        [JsonPropertyName("14080")]
         public double PERatio3YrAvg => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PERatio3YrAvg);
 
         /// <summary>
@@ -767,7 +767,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14081
         /// </remarks>
-        [JsonProperty("14081")]
+        [JsonPropertyName("14081")]
         public double PFCFRatio3YrAvgChange => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PFCFRatio3YrAvgChange);
 
         /// <summary>
@@ -776,7 +776,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14082
         /// </remarks>
-        [JsonProperty("14082")]
+        [JsonPropertyName("14082")]
         public double PBRatio3YrAvgChange => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PBRatio3YrAvgChange);
 
         /// <summary>
@@ -785,7 +785,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14083
         /// </remarks>
-        [JsonProperty("14083")]
+        [JsonPropertyName("14083")]
         public double PSRatio3YrAvgChange => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PSRatio3YrAvgChange);
 
         /// <summary>
@@ -794,7 +794,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14084
         /// </remarks>
-        [JsonProperty("14084")]
+        [JsonPropertyName("14084")]
         public double PERatio3YrAvgChange => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PERatio3YrAvgChange);
 
         /// <summary>
@@ -803,7 +803,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14085
         /// </remarks>
-        [JsonProperty("14085")]
+        [JsonPropertyName("14085")]
         public double PERatio1YearHigh => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PERatio1YearHigh);
 
         /// <summary>
@@ -812,7 +812,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14086
         /// </remarks>
-        [JsonProperty("14086")]
+        [JsonPropertyName("14086")]
         public double PERatio1YearLow => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PERatio1YearLow);
 
         /// <summary>
@@ -821,7 +821,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14087
         /// </remarks>
-        [JsonProperty("14087")]
+        [JsonPropertyName("14087")]
         public double PERatio1YearAverage => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PERatio1YearAverage);
 
         /// <summary>
@@ -830,7 +830,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14088
         /// </remarks>
-        [JsonProperty("14088")]
+        [JsonPropertyName("14088")]
         public double PERatio5YearHigh => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PERatio5YearHigh);
 
         /// <summary>
@@ -839,7 +839,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14089
         /// </remarks>
-        [JsonProperty("14089")]
+        [JsonPropertyName("14089")]
         public double PERatio5YearLow => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PERatio5YearLow);
 
         /// <summary>
@@ -848,7 +848,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14090
         /// </remarks>
-        [JsonProperty("14090")]
+        [JsonPropertyName("14090")]
         public double PERatio5YearAverage => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PERatio5YearAverage);
 
         /// <summary>
@@ -857,7 +857,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14091
         /// </remarks>
-        [JsonProperty("14091")]
+        [JsonPropertyName("14091")]
         public double PERatio10YearHigh => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PERatio10YearHigh);
 
         /// <summary>
@@ -866,7 +866,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14092
         /// </remarks>
-        [JsonProperty("14092")]
+        [JsonPropertyName("14092")]
         public double PERatio10YearLow => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PERatio10YearLow);
 
         /// <summary>
@@ -875,7 +875,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14093
         /// </remarks>
-        [JsonProperty("14093")]
+        [JsonPropertyName("14093")]
         public double PERatio10YearAverage => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PERatio10YearAverage);
 
         /// <summary>
@@ -884,7 +884,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14094
         /// </remarks>
-        [JsonProperty("14094")]
+        [JsonPropertyName("14094")]
         public double CAPERatio => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_CAPERatio);
 
         /// <summary>
@@ -893,7 +893,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14095
         /// </remarks>
-        [JsonProperty("14095")]
+        [JsonPropertyName("14095")]
         public double EVToEBITDA3YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToEBITDA3YearGrowth);
 
         /// <summary>
@@ -902,7 +902,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14096
         /// </remarks>
-        [JsonProperty("14096")]
+        [JsonPropertyName("14096")]
         public double EVToFCF3YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToFCF3YearGrowth);
 
         /// <summary>
@@ -911,7 +911,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14097
         /// </remarks>
-        [JsonProperty("14097")]
+        [JsonPropertyName("14097")]
         public double EVToRevenue3YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToRevenue3YearGrowth);
 
         /// <summary>
@@ -920,7 +920,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14098
         /// </remarks>
-        [JsonProperty("14098")]
+        [JsonPropertyName("14098")]
         public double EVToTotalAssets3YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToTotalAssets3YearGrowth);
 
         /// <summary>
@@ -929,7 +929,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14099
         /// </remarks>
-        [JsonProperty("14099")]
+        [JsonPropertyName("14099")]
         public double PFCFRatio3YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PFCFRatio3YearGrowth);
 
         /// <summary>
@@ -938,7 +938,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14100
         /// </remarks>
-        [JsonProperty("14100")]
+        [JsonPropertyName("14100")]
         public double PBRatio3YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PBRatio3YearGrowth);
 
         /// <summary>
@@ -947,7 +947,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14101
         /// </remarks>
-        [JsonProperty("14101")]
+        [JsonPropertyName("14101")]
         public double PERatio3YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PERatio3YearGrowth);
 
         /// <summary>
@@ -956,7 +956,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14102
         /// </remarks>
-        [JsonProperty("14102")]
+        [JsonPropertyName("14102")]
         public double PSRatio3YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PSRatio3YearGrowth);
 
         /// <summary>
@@ -965,7 +965,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14103
         /// </remarks>
-        [JsonProperty("14103")]
+        [JsonPropertyName("14103")]
         public double EVToEBITDA5YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToEBITDA5YearGrowth);
 
         /// <summary>
@@ -974,7 +974,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14104
         /// </remarks>
-        [JsonProperty("14104")]
+        [JsonPropertyName("14104")]
         public double EVToFCF5YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToFCF5YearGrowth);
 
         /// <summary>
@@ -983,7 +983,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14105
         /// </remarks>
-        [JsonProperty("14105")]
+        [JsonPropertyName("14105")]
         public double EVToRevenue5YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToRevenue5YearGrowth);
 
         /// <summary>
@@ -992,7 +992,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14106
         /// </remarks>
-        [JsonProperty("14106")]
+        [JsonPropertyName("14106")]
         public double EVToTotalAssets5YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToTotalAssets5YearGrowth);
 
         /// <summary>
@@ -1001,7 +1001,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14107
         /// </remarks>
-        [JsonProperty("14107")]
+        [JsonPropertyName("14107")]
         public double PFCFRatio5YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PFCFRatio5YearGrowth);
 
         /// <summary>
@@ -1010,7 +1010,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14108
         /// </remarks>
-        [JsonProperty("14108")]
+        [JsonPropertyName("14108")]
         public double PBRatio5YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PBRatio5YearGrowth);
 
         /// <summary>
@@ -1019,7 +1019,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14109
         /// </remarks>
-        [JsonProperty("14109")]
+        [JsonPropertyName("14109")]
         public double PERatio5YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PERatio5YearGrowth);
 
         /// <summary>
@@ -1028,7 +1028,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14110
         /// </remarks>
-        [JsonProperty("14110")]
+        [JsonPropertyName("14110")]
         public double PSRatio5YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PSRatio5YearGrowth);
 
         /// <summary>
@@ -1037,7 +1037,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14111
         /// </remarks>
-        [JsonProperty("14111")]
+        [JsonPropertyName("14111")]
         public double EVToEBITDA10YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToEBITDA10YearGrowth);
 
         /// <summary>
@@ -1046,7 +1046,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14112
         /// </remarks>
-        [JsonProperty("14112")]
+        [JsonPropertyName("14112")]
         public double EVToFCF10YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToFCF10YearGrowth);
 
         /// <summary>
@@ -1055,7 +1055,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14113
         /// </remarks>
-        [JsonProperty("14113")]
+        [JsonPropertyName("14113")]
         public double EVToRevenue10YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToRevenue10YearGrowth);
 
         /// <summary>
@@ -1064,7 +1064,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14114
         /// </remarks>
-        [JsonProperty("14114")]
+        [JsonPropertyName("14114")]
         public double EVToTotalAssets10YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToTotalAssets10YearGrowth);
 
         /// <summary>
@@ -1073,7 +1073,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14115
         /// </remarks>
-        [JsonProperty("14115")]
+        [JsonPropertyName("14115")]
         public double PFCFRatio10YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PFCFRatio10YearGrowth);
 
         /// <summary>
@@ -1082,7 +1082,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14116
         /// </remarks>
-        [JsonProperty("14116")]
+        [JsonPropertyName("14116")]
         public double PBRatio10YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PBRatio10YearGrowth);
 
         /// <summary>
@@ -1091,7 +1091,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14117
         /// </remarks>
-        [JsonProperty("14117")]
+        [JsonPropertyName("14117")]
         public double PERatio10YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PERatio10YearGrowth);
 
         /// <summary>
@@ -1100,7 +1100,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14118
         /// </remarks>
-        [JsonProperty("14118")]
+        [JsonPropertyName("14118")]
         public double PSRatio10YearGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PSRatio10YearGrowth);
 
         /// <summary>
@@ -1109,7 +1109,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14119
         /// </remarks>
-        [JsonProperty("14119")]
+        [JsonPropertyName("14119")]
         public double TwoYrsEVToForwardEBIT => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_TwoYrsEVToForwardEBIT);
 
         /// <summary>
@@ -1118,7 +1118,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14120
         /// </remarks>
-        [JsonProperty("14120")]
+        [JsonPropertyName("14120")]
         public double TwoYrsEVToForwardEBITDA => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_TwoYrsEVToForwardEBITDA);
 
         /// <summary>
@@ -1127,7 +1127,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14121
         /// </remarks>
-        [JsonProperty("14121")]
+        [JsonPropertyName("14121")]
         public double FirstYearEstimatedEPSGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_FirstYearEstimatedEPSGrowth);
 
         /// <summary>
@@ -1136,7 +1136,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14122
         /// </remarks>
-        [JsonProperty("14122")]
+        [JsonPropertyName("14122")]
         public double SecondYearEstimatedEPSGrowth => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_SecondYearEstimatedEPSGrowth);
 
         /// <summary>
@@ -1145,7 +1145,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 14123
         /// </remarks>
-        [JsonProperty("14123")]
+        [JsonPropertyName("14123")]
         public double NormalizedPEGRatio => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_NormalizedPEGRatio);
 
         /// <summary>
@@ -1154,7 +1154,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQXW6
         /// </remarks>
-        [JsonProperty("EQXW6")]
+        [JsonPropertyName("EQXW6")]
         public double NormalizedEarningsYield => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_NormalizedEarningsYield);
 
         /// <summary>
@@ -1163,7 +1163,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQWA6
         /// </remarks>
-        [JsonProperty("EQWA6")]
+        [JsonPropertyName("EQWA6")]
         public double DilutedEVToAssets => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_DilutedEVToAssets);
 
         /// <summary>
@@ -1172,7 +1172,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQS15
         /// </remarks>
-        [JsonProperty("EQS15")]
+        [JsonPropertyName("EQS15")]
         public double DilutedEVToRevenue => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_DilutedEVToRevenue);
 
         /// <summary>
@@ -1181,7 +1181,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQK4H
         /// </remarks>
-        [JsonProperty("EQK4H")]
+        [JsonPropertyName("EQK4H")]
         public double DilutedEVToEBITDA => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_DilutedEVToEBITDA);
 
         /// <summary>
@@ -1190,7 +1190,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQVQR
         /// </remarks>
-        [JsonProperty("EQVQR")]
+        [JsonPropertyName("EQVQR")]
         public double DilutedEVToEBIT => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_DilutedEVToEBIT);
 
         /// <summary>
@@ -1199,7 +1199,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQENX
         /// </remarks>
-        [JsonProperty("EQENX")]
+        [JsonPropertyName("EQENX")]
         public double DilutedEVToFCF => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_DilutedEVToFCF);
 
         /// <summary>
@@ -1208,7 +1208,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQ03L
         /// </remarks>
-        [JsonProperty("EQ03L")]
+        [JsonPropertyName("EQ03L")]
         public double DilutedEVToNormalizedEBITDA => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_DilutedEVToNormalizedEBITDA);
 
         /// <summary>
@@ -1217,7 +1217,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQ49U
         /// </remarks>
-        [JsonProperty("EQ49U")]
+        [JsonPropertyName("EQ49U")]
         public double DilutedEVToNormalizedEBIT => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_DilutedEVToNormalizedEBIT);
 
         /// <summary>
@@ -1226,7 +1226,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQU5W
         /// </remarks>
-        [JsonProperty("EQU5W")]
+        [JsonPropertyName("EQU5W")]
         public double NormalizedEVToEBITDA => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_NormalizedEVToEBITDA);
 
         /// <summary>
@@ -1235,7 +1235,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQA80
         /// </remarks>
-        [JsonProperty("EQA80")]
+        [JsonPropertyName("EQA80")]
         public double NormalizedEVToEBIT => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_NormalizedEVToEBIT);
 
         /// <summary>
@@ -1244,7 +1244,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQYLK
         /// </remarks>
-        [JsonProperty("EQYLK")]
+        [JsonPropertyName("EQYLK")]
         public double TotalDebtToEV => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_TotalDebtToEV);
 
         /// <summary>
@@ -1253,7 +1253,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQJQN
         /// </remarks>
-        [JsonProperty("EQJQN")]
+        [JsonPropertyName("EQJQN")]
         public double EVToEBITDA5YrAvg => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToEBITDA5YrAvg);
 
         /// <summary>
@@ -1262,7 +1262,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQ324
         /// </remarks>
-        [JsonProperty("EQ324")]
+        [JsonPropertyName("EQ324")]
         public double EVToEBIT5YrAvg => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EVToEBIT5YrAvg);
 
         /// <summary>
@@ -1271,7 +1271,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQSC9
         /// </remarks>
-        [JsonProperty("EQSC9")]
+        [JsonPropertyName("EQSC9")]
         public double PBRatio5YrAvg => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PBRatio5YrAvg);
 
         /// <summary>
@@ -1280,7 +1280,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQPRD
         /// </remarks>
-        [JsonProperty("EQPRD")]
+        [JsonPropertyName("EQPRD")]
         public double PSRatio5YrAvg => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PSRatio5YrAvg);
 
         /// <summary>
@@ -1289,7 +1289,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQWY2
         /// </remarks>
-        [JsonProperty("EQWY2")]
+        [JsonPropertyName("EQWY2")]
         public double FCFRatio1YrAvg => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_FCFRatio1YrAvg);
 
         /// <summary>
@@ -1298,7 +1298,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQY80
         /// </remarks>
-        [JsonProperty("EQY80")]
+        [JsonPropertyName("EQY80")]
         public double FCFRatio5YrAvg => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_FCFRatio5YrAvg);
 
         /// <summary>
@@ -1307,7 +1307,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQGOU
         /// </remarks>
-        [JsonProperty("EQGOU")]
+        [JsonPropertyName("EQGOU")]
         public double FCFRatio10YrAvg => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_FCFRatio10YrAvg);
 
         /// <summary>
@@ -1316,7 +1316,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQ7GK
         /// </remarks>
-        [JsonProperty("EQ7GK")]
+        [JsonPropertyName("EQ7GK")]
         public double PCashRatio5YrAvg => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PCashRatio5YrAvg);
 
         /// <summary>
@@ -1325,7 +1325,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQIEM
         /// </remarks>
-        [JsonProperty("EQIEM")]
+        [JsonPropertyName("EQIEM")]
         public double EarningYield5YrAvg => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EarningYield5YrAvg);
 
         /// <summary>
@@ -1334,7 +1334,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQ0L7
         /// </remarks>
-        [JsonProperty("EQ0L7")]
+        [JsonPropertyName("EQ0L7")]
         public double BuyBackYield5YrAvg => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_BuyBackYield5YrAvg);
 
         /// <summary>
@@ -1343,7 +1343,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQCSM
         /// </remarks>
-        [JsonProperty("EQCSM")]
+        [JsonPropertyName("EQCSM")]
         public double TotalYield5YrAvg => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_TotalYield5YrAvg);
 
         /// <summary>
@@ -1352,7 +1352,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQGUS
         /// </remarks>
-        [JsonProperty("EQGUS")]
+        [JsonPropertyName("EQGUS")]
         public double CashAndCashEquivalentsPerShare => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_CashAndCashEquivalentsPerShare);
 
         /// <summary>
@@ -1361,7 +1361,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQ0I2
         /// </remarks>
-        [JsonProperty("EQ0I2")]
+        [JsonPropertyName("EQ0I2")]
         public double RetentionRate => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_RetentionRate);
 
         /// <summary>
@@ -1370,7 +1370,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQ8MC
         /// </remarks>
-        [JsonProperty("EQ8MC")]
+        [JsonPropertyName("EQ8MC")]
         public double NormalizedRetentionRate => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_NormalizedRetentionRate);
 
         /// <summary>
@@ -1379,7 +1379,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQCGE
         /// </remarks>
-        [JsonProperty("EQCGE")]
+        [JsonPropertyName("EQCGE")]
         public double NormalizedDividendPayOutRatio => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_NormalizedDividendPayOutRatio);
 
         /// <summary>
@@ -1388,7 +1388,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQ9DZ
         /// </remarks>
-        [JsonProperty("EQ9DZ")]
+        [JsonPropertyName("EQ9DZ")]
         public double ReinvestmentRate => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_ReinvestmentRate);
 
         /// <summary>
@@ -1397,7 +1397,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQZ6G
         /// </remarks>
-        [JsonProperty("EQZ6G")]
+        [JsonPropertyName("EQZ6G")]
         public double NormalizedReinvestmentRate => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_NormalizedReinvestmentRate);
 
         /// <summary>
@@ -1406,7 +1406,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQC0T
         /// </remarks>
-        [JsonProperty("EQC0T")]
+        [JsonPropertyName("EQC0T")]
         public double CashCashEquivalentsAndShortTermInvestmentsPerShare => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_CashCashEquivalentsAndShortTermInvestmentsPerShare);
 
         /// <summary>
@@ -1415,7 +1415,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQIFE
         /// </remarks>
-        [JsonProperty("EQIFE")]
+        [JsonPropertyName("EQIFE")]
         public double SalesPerShareMomentum => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_SalesPerShareMomentum);
 
         /// <summary>
@@ -1424,7 +1424,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQ0SB
         /// </remarks>
-        [JsonProperty("EQ0SB")]
+        [JsonPropertyName("EQ0SB")]
         public double PriceToTangibleBookValueRatio => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PriceToTangibleBookValueRatio);
 
         /// <summary>
@@ -1433,7 +1433,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQCT8
         /// </remarks>
-        [JsonProperty("EQCT8")]
+        [JsonPropertyName("EQCT8")]
         public double NetIntangibleAssetsPerShare => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_NetIntangibleAssetsPerShare);
 
         /// <summary>
@@ -1442,7 +1442,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQQOW
         /// </remarks>
-        [JsonProperty("EQQOW")]
+        [JsonPropertyName("EQQOW")]
         public double EarningsPerShareMomentum => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EarningsPerShareMomentum);
 
         /// <summary>
@@ -1451,7 +1451,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQQPE
         /// </remarks>
-        [JsonProperty("EQQPE")]
+        [JsonPropertyName("EQQPE")]
         public double CashFlowPerShareMomentum => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_CashFlowPerShareMomentum);
 
         /// <summary>
@@ -1460,7 +1460,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQYWA
         /// </remarks>
-        [JsonProperty("EQYWA")]
+        [JsonPropertyName("EQYWA")]
         public double EBITDAPerShareMomentum => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_EBITDAPerShareMomentum);
 
         /// <summary>
@@ -1469,7 +1469,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQHT6
         /// </remarks>
-        [JsonProperty("EQHT6")]
+        [JsonPropertyName("EQHT6")]
         public double NormalizedEBITDAPerShareMomentum => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_NormalizedEBITDAPerShareMomentum);
 
         /// <summary>
@@ -1478,7 +1478,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQ9JW
         /// </remarks>
-        [JsonProperty("EQ9JW")]
+        [JsonPropertyName("EQ9JW")]
         public double PriceToEBITDARRatio => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PriceToEBITDARRatio);
 
         /// <summary>
@@ -1487,7 +1487,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQFGM
         /// </remarks>
-        [JsonProperty("EQFGM")]
+        [JsonPropertyName("EQFGM")]
         public double NormalizedPriceToEBITDARRatio => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_NormalizedPriceToEBITDARRatio);
 
         /// <summary>
@@ -1496,7 +1496,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQI4Z
         /// </remarks>
-        [JsonProperty("EQI4Z")]
+        [JsonPropertyName("EQI4Z")]
         public double NormalizedPriceToEBITDARatio => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_NormalizedPriceToEBITDARatio);
 
         /// <summary>
@@ -1505,7 +1505,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQTIL
         /// </remarks>
-        [JsonProperty("EQTIL")]
+        [JsonPropertyName("EQTIL")]
         public double PriceToEBITRatio => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_PriceToEBITRatio);
 
         /// <summary>
@@ -1514,7 +1514,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQS52
         /// </remarks>
-        [JsonProperty("EQS52")]
+        [JsonPropertyName("EQS52")]
         public double NormalizedPriceToEBITRatio => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_NormalizedPriceToEBITRatio);
 
         /// <summary>
@@ -1523,7 +1523,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQHHA
         /// </remarks>
-        [JsonProperty("EQHHA")]
+        [JsonPropertyName("EQHHA")]
         public double DividendPayoutRatio5YrAvg => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.ValuationRatios_DividendPayoutRatio5YrAvg);
 
         /// <summary>

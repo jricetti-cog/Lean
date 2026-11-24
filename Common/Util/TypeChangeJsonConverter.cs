@@ -1,4 +1,4 @@
-﻿/*
+/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -15,8 +15,8 @@
 */
 
 using System;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace QuantConnect.Util
 {
@@ -26,11 +26,8 @@ namespace QuantConnect.Util
     /// </summary>
     /// <typeparam name="T">The type to be serialized</typeparam>
     /// <typeparam name="TResult">The output serialized type</typeparam>
-    public abstract class TypeChangeJsonConverter<T, TResult> : JsonConverter
+    public abstract class TypeChangeJsonConverter<T, TResult> : JsonConverter<T>
     {
-        // we use a json serializer which allows using non public default constructor
-        private readonly JsonSerializer _jsonSerializer = new JsonSerializer {ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor};
-
         /// <summary>
         /// True will populate TResult object returned by <see cref="Convert(TResult)"/> with json properties
         /// </summary>
@@ -39,43 +36,19 @@ namespace QuantConnect.Util
         /// <summary>
         /// Reads the JSON representation of the object.
         /// </summary>
-        /// <param name="reader">The <see cref="T:Newtonsoft.Json.JsonReader"/> to read from.</param><param name="objectType">Type of the object.</param><param name="existingValue">The existing value of object being read.</param><param name="serializer">The calling serializer.</param>
-        /// <returns>
-        /// The object value.
-        /// </returns>
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            // Load token from stream
-            var token = JToken.Load(reader);
-
-            // Create target object based on token
-            var target = Create(objectType, token);
-
-            return target;
+            using var document = JsonDocument.ParseValue(ref reader);
+            return Create(typeToConvert, document.RootElement, options);
         }
 
         /// <summary>
         /// Writes the JSON representation of the object.
         /// </summary>
-        /// <param name="writer">The <see cref="T:Newtonsoft.Json.JsonWriter"/> to write to.</param><param name="value">The value.</param><param name="serializer">The calling serializer.</param>
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
         {
-            // Convert the value into TResult to be serialized
-            var valueToSerialize = Convert((T)value);
-
-            serializer.Serialize(writer, valueToSerialize);
-        }
-
-        /// <summary>
-        /// Determines whether this instance can convert the specified object type.
-        /// </summary>
-        /// <param name="objectType">Type of the object.</param>
-        /// <returns>
-        /// <c>true</c> if this instance can convert the specified object type; otherwise, <c>false</c>.
-        /// </returns>
-        public override bool CanConvert(Type objectType)
-        {
-            return typeof(T) == objectType;
+            var valueToSerialize = Convert(value);
+            JsonSerializer.Serialize(writer, valueToSerialize, valueToSerialize?.GetType() ?? typeof(TResult), options);
         }
 
         /// <summary>
@@ -83,17 +56,11 @@ namespace QuantConnect.Util
         /// </summary>
         /// <param name="type">The input object type, this is the data held in the token</param>
         /// <param name="token">The input data to be converted into a T</param>
+        /// <param name="options">The serializer options</param>
         /// <returns>A new instance of T that is to be serialized using default rules</returns>
-        protected virtual T Create(Type type, JToken token)
+        protected virtual T Create(Type type, JsonElement token, JsonSerializerOptions options)
         {
-            // reads the token as an object type
-            if (typeof(TResult).IsClass && typeof(T) != typeof(string))
-            {
-                return Convert(token.ToObject<TResult>(_jsonSerializer));
-            }
-
-            // reads the token as a value type
-            return Convert(token.Value<TResult>());
+            return Convert(token.Deserialize<TResult>(options));
         }
 
         /// <summary>

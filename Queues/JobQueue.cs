@@ -14,7 +14,6 @@
 */
 
 using Fasterflect;
-using Newtonsoft.Json;
 using QuantConnect.Brokerages;
 using QuantConnect.Configuration;
 using QuantConnect.Data;
@@ -134,7 +133,7 @@ namespace QuantConnect.Queues
             var parametersConfigString = Config.Get("parameters");
             if (!string.IsNullOrEmpty(parametersConfigString))
             {
-                parameters = JsonConvert.DeserializeObject<Dictionary<string, string>>(parametersConfigString);
+                parameters = JsonSerialization.Deserialize<Dictionary<string, string>>(parametersConfigString);
             }
 
             var controls = new Controls()

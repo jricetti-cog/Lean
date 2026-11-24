@@ -19,7 +19,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using QuantConnect.Algorithm.CSharp;
 using QuantConnect.Lean.Engine.DataFeeds;
@@ -302,7 +301,7 @@ namespace QuantConnect.Tests.Common.Securities
         {
             var sid = SPY;
             var str = sid.ToString();
-            var serialized = JsonConvert.SerializeObject(sid);
+            var serialized = JsonSerialization.Serialize(sid);
             Assert.AreEqual("\"" + str + "\"", serialized);
         }
 
@@ -311,7 +310,7 @@ namespace QuantConnect.Tests.Common.Securities
         {
             var sid = SPY;
             var str = "\"" + sid + "\"";
-            var deserialized = JsonConvert.DeserializeObject<SecurityIdentifier>(str);
+            var deserialized = JsonSerialization.Deserialize<SecurityIdentifier>(str);
             Assert.AreEqual(sid, deserialized);
         }
 
@@ -324,7 +323,7 @@ namespace QuantConnect.Tests.Common.Securities
 {
     'sid': '" + SPY + @"'
 }";
-            var deserialized = JsonConvert.DeserializeObject<Container>(str);
+            var deserialized = JsonSerialization.Deserialize<Container>(str);
             Assert.AreEqual(sid.sid, deserialized.sid);
         }
 

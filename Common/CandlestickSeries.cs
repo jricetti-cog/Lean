@@ -16,7 +16,7 @@
 using System.Collections.Generic;
 using System;
 using QuantConnect.Data.Market;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuantConnect.Util;
 
 namespace QuantConnect

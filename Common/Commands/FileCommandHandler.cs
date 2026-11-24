@@ -1,4 +1,4 @@
-/*
+﻿/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -14,12 +14,11 @@
 */
 
 using System;
+using QuantConnect.Util.Json;
 using System.IO;
-using Newtonsoft.Json;
 using QuantConnect.Logging;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json.Linq;
 
 namespace QuantConnect.Commands
 {
@@ -82,7 +81,7 @@ namespace QuantConnect.Commands
                 return;
             }
             var resultFilePath = $"{_resultFileBaseName}-{command.Id}.json";
-            File.WriteAllText(resultFilePath, JsonConvert.SerializeObject(commandResultPacket));
+            File.WriteAllText(resultFilePath, JsonSerialization.Serialize(commandResultPacket));
         }
 
         /// <summary>
@@ -102,7 +101,7 @@ namespace QuantConnect.Commands
                     return;
                 }
                 contents = File.ReadAllText(commandFilePath);
-                deserialized = JsonConvert.DeserializeObject(contents, Settings);
+                deserialized = TypeNameHandlingJsonConverter.Deserialize(contents, typeof(ICommand), Settings);
             }
             catch (Exception err)
             {

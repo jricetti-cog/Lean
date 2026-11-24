@@ -18,7 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 using MathNet.Numerics.Distributions;
 using MathNet.Numerics.Statistics;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuantConnect.Data;
 using QuantConnect.Util;
 

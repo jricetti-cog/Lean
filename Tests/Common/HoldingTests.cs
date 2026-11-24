@@ -15,7 +15,6 @@
 
 using System;
 using NUnit.Framework;
-using Newtonsoft.Json;
 using QuantConnect.Securities;
 using QuantConnect.Data.Market;
 using QuantConnect.Tests.Engine.DataFeeds;
@@ -79,11 +78,11 @@ namespace QuantConnect.Tests.Common
 
             var holding = new Holding(security);
 
-            var result = JsonConvert.SerializeObject(holding);
+            var result = JsonSerialization.Serialize(holding);
 
             Assert.AreEqual("{\"a\":10.1,\"q\":10,\"p\":10,\"v\":100,\"u\":-2,\"up\":-1.98}", result);
 
-            var deserialized = JsonConvert.DeserializeObject<Holding>(result);
+            var deserialized = JsonSerialization.Deserialize<Holding>(result);
 
             Assert.AreEqual(deserialized.AveragePrice, holding.AveragePrice);
             Assert.AreEqual(deserialized.Quantity, holding.Quantity);
@@ -110,7 +109,7 @@ namespace QuantConnect.Tests.Common
                 source = "{\"symbol\":{\"value\":\"A\",\"id\":\"A RPTMYV3VC57P\",\"permtick\":\"A\"},\"type\":1,\"currencySymbol\":\"$\",\"averagePrice\":148.34,\"quantity\":192.0," +
                     "\"marketPrice\":145.21,\"conversionRate\":1.0,\"marketValue\":27880.3200,\"unrealizedPnl\":-601.96,\"unrealizedPnLPercent\":-2.11}";
             }
-            var deserialized = JsonConvert.DeserializeObject<Holding>(source);
+            var deserialized = JsonSerialization.Deserialize<Holding>(source);
 
             Assert.IsNotNull(deserialized.Symbol);
             Assert.AreEqual("A", deserialized.Symbol.Value);
@@ -129,11 +128,11 @@ namespace QuantConnect.Tests.Common
             var security = algo.AddEquity("SPY");
             var holding = new Holding(security);
 
-            var result = JsonConvert.SerializeObject(new Dictionary<string, Holding> { { security.Symbol.ID.ToString(), holding } });
+            var result = JsonSerialization.Serialize(new Dictionary<string, Holding> { { security.Symbol.ID.ToString(), holding } });
 
             Assert.AreEqual("{\"SPY R735QTJ8XC9X\":{}}", result);
 
-            var deserialized = JsonConvert.DeserializeObject<Dictionary<string, Holding>>(result);
+            var deserialized = JsonSerialization.Deserialize<Dictionary<string, Holding>>(result);
             Assert.AreEqual(0, deserialized[security.Symbol.ID.ToString()].AveragePrice);
         }
     }

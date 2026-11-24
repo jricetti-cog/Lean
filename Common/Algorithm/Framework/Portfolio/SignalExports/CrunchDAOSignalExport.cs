@@ -13,7 +13,7 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 using QuantConnect.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -193,7 +193,7 @@ namespace QuantConnect.Algorithm.Framework.Portfolio.SignalExports
             if (response.StatusCode == System.Net.HttpStatusCode.Locked || response.StatusCode == System.Net.HttpStatusCode.Forbidden)
             {
                 var responseContent = response.Content.ReadAsStringAsync().Result;
-                var parsedResponseContent = JObject.Parse(responseContent);
+                var parsedResponseContent = JsonNode.Parse(responseContent);
                 _algorithm.Error($"CrunchDAO API returned code: {parsedResponseContent["code"]} message:{parsedResponseContent["message"]}");
                 return false;
             }
@@ -221,7 +221,7 @@ namespace QuantConnect.Algorithm.Framework.Portfolio.SignalExports
             if (roundIdResponse.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 var responseContent = roundIdResponse.Content.ReadAsStringAsync().Result;
-                var parsedResponseContent = JObject.Parse(responseContent);
+                var parsedResponseContent = JsonNode.Parse(responseContent);
                 _algorithm.Error($"CrunchDAO API returned code: {parsedResponseContent["code"]} message:{parsedResponseContent["message"]}");
                 return false;
             } 
@@ -232,7 +232,7 @@ namespace QuantConnect.Algorithm.Framework.Portfolio.SignalExports
             }
 
             var roundIdResponseContent = roundIdResponse.Content.ReadAsStringAsync().Result;
-            currentRoundId = (int)(JObject.Parse(roundIdResponseContent)["id"]);
+            currentRoundId = JsonNode.Parse(roundIdResponseContent)["id"].GetValue<int>();
             return true;
         }
 
@@ -255,15 +255,15 @@ namespace QuantConnect.Algorithm.Framework.Portfolio.SignalExports
             }
 
             var submissionIdResponseContent = submissionIdResponse.Content.ReadAsStringAsync().Result;
-            var parsedSubmissionIdResponseContent = JArray.Parse(submissionIdResponseContent);
-            if (!parsedSubmissionIdResponseContent.HasValues)
+            var parsedSubmissionIdResponseContent = JsonNode.Parse(submissionIdResponseContent).AsArray();
+            if (parsedSubmissionIdResponseContent.Count == 0)
             {
                 // Default value for lastSubmissionId
                 lastSubmissionId = -1;
                 return false;
             }
 
-            lastSubmissionId = (int)parsedSubmissionIdResponseContent[0]["id"];
+            lastSubmissionId = parsedSubmissionIdResponseContent[0]["id"].GetValue<int>();
             return true;
         }
 
@@ -278,7 +278,7 @@ namespace QuantConnect.Algorithm.Framework.Portfolio.SignalExports
             if (!deleteSubmissionResponse.IsSuccessStatusCode)
             {
                 var responseContent = deleteSubmissionResponse.Content.ReadAsStringAsync().Result;
-                var parsedResponseContent = JObject.Parse(responseContent);
+                var parsedResponseContent = JsonNode.Parse(responseContent);
                 _algorithm.Error($"CrunchDAO API returned code: {parsedResponseContent["code"]} message:{parsedResponseContent["message"]}. Last submission could not be deleted");
                 return false;
             }

@@ -14,7 +14,7 @@
 */
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuantConnect.Interfaces;
 using QuantConnect.Securities;
 
@@ -28,25 +28,25 @@ namespace QuantConnect.Orders
         /// <summary>
         /// Stop price for this stop market order.
         /// </summary>
-        [JsonProperty(PropertyName = "stopPrice")]
+        [JsonPropertyName("stopPrice")]
         public decimal StopPrice { get; internal set; }
 
         /// <summary>
         /// Signal showing the "StopLimitOrder" has been converted into a Limit Order
         /// </summary>
-        [JsonProperty(PropertyName = "stopTriggered")]
+        [JsonPropertyName("stopTriggered")]
         public bool StopTriggered { get; internal set; }
 
         /// <summary>
         /// Time in UTC at which the stop was triggered, the end time of the data that triggered it, if any
         /// </summary>
-        [JsonProperty(PropertyName = "stopTriggeredTime", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonPropertyName("stopTriggeredTime"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public DateTime? StopTriggeredTime { get; internal set; }
 
         /// <summary>
         /// Limit price for the stop limit order
         /// </summary>
-        [JsonProperty(PropertyName = "limitPrice")]
+        [JsonPropertyName("limitPrice")]
         public decimal LimitPrice { get; internal set; }
 
         /// <summary>

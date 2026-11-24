@@ -16,7 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using Newtonsoft.Json.Converters;
+using QuantConnect.Util;
 using NodaTime;
 using QuantConnect.Logging;
 using QuantConnect.Securities;
@@ -841,14 +841,14 @@ namespace QuantConnect
         /// <summary>
         /// Helper method to deserialize month/year
         /// </summary>
-        public class MonthYearJsonConverter : IsoDateTimeConverter
+        public class MonthYearJsonConverter : DateTimeJsonConverter
         {
             /// <summary>
             /// Creates a new instance
             /// </summary>
             public MonthYearJsonConverter()
+                : base(@"MM/yy")
             {
-                DateTimeFormat = @"MM/yy";
             }
         }
     }

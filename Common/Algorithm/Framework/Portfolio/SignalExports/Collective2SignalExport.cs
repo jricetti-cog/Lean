@@ -13,7 +13,7 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuantConnect.Interfaces;
 using QuantConnect.Securities;
 using QuantConnect.Util;
@@ -265,8 +265,9 @@ namespace QuantConnect.Algorithm.Framework.Portfolio.SignalExports
                 Positions = positions,
             };
 
-            var settings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
-            var jsonMessage = JsonConvert.SerializeObject(payload, settings);
+            var settings = JsonSerialization.Create();
+            settings.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+            var jsonMessage = JsonSerialization.Serialize(payload, settings);
             return jsonMessage;
         }
 
@@ -329,11 +330,11 @@ namespace QuantConnect.Algorithm.Framework.Portfolio.SignalExports
         /// </summary>
         private class C2Response
         {
-            [JsonProperty(PropertyName = "Results")]
+            [JsonPropertyName("Results")]
             public virtual List<DesiredPositionResponse> Results { get; set; }
 
 
-            [JsonProperty(PropertyName = "ResponseStatus")]
+            [JsonPropertyName("ResponseStatus")]
             public ResponseStatus ResponseStatus { get; set; }
         }
 
@@ -342,11 +343,11 @@ namespace QuantConnect.Algorithm.Framework.Portfolio.SignalExports
         /// </summary>
         private class DesiredPositionResponse
         {
-            [JsonProperty(PropertyName = "NewSignals")]
+            [JsonPropertyName("NewSignals")]
             public List<long> NewSignals { get; set; } = new List<long>();
 
 
-            [JsonProperty(PropertyName = "CanceledSignals")]
+            [JsonPropertyName("CanceledSignals")]
             public List<long> CanceledSignals { get; set; } = new List<long>();
         }
 
@@ -535,15 +536,15 @@ namespace QuantConnect.Algorithm.Framework.Portfolio.SignalExports
             */
 
 
-            [JsonProperty(PropertyName = "ErrorCode")]
+            [JsonPropertyName("ErrorCode")]
             public string ErrorCode { get; set; }
 
 
-            [JsonProperty(PropertyName = "Message")]
+            [JsonPropertyName("Message")]
             public string Message { get; set; }
 
 
-            [JsonProperty(PropertyName = "Errors")]
+            [JsonPropertyName("Errors")]
             public List<ResponseError> Errors { get; set; }
 
         }
@@ -553,15 +554,15 @@ namespace QuantConnect.Algorithm.Framework.Portfolio.SignalExports
         /// </summary>
         private class ResponseError
         {
-            [JsonProperty(PropertyName = "ErrorCode")]
+            [JsonPropertyName("ErrorCode")]
             public string ErrorCode { get; set; }
 
 
-            [JsonProperty(PropertyName = "FieldName")]
+            [JsonPropertyName("FieldName")]
             public string FieldName { get; set; }
 
 
-            [JsonProperty(PropertyName = "Message")]
+            [JsonPropertyName("Message")]
             public string Message { get; set; }
         }
 
@@ -574,14 +575,14 @@ namespace QuantConnect.Algorithm.Framework.Portfolio.SignalExports
             /// <summary>
             /// Position symbol
             /// </summary>
-            [JsonProperty(PropertyName = "exchangeSymbol")]
+            [JsonPropertyName("exchangeSymbol")]
             public C2ExchangeSymbol ExchangeSymbol { get; set; }
 
             /// <summary>
             /// Number of shares/contracts of the given symbol. Positive quantites are long positions
             /// and negative short positions.
             /// </summary>
-            [JsonProperty(PropertyName = "quantity")]
+            [JsonPropertyName("quantity")]
             public decimal Quantity { get; set; } // number of shares, not % of the portfolio
         }
 
@@ -593,13 +594,13 @@ namespace QuantConnect.Algorithm.Framework.Portfolio.SignalExports
             /// <summary>
             /// The exchange root symbol e.g. AAPL
             /// </summary>
-            [JsonProperty(PropertyName = "symbol")]
+            [JsonPropertyName("symbol")]
             public string Symbol { get; set; }
 
             /// <summary>
             /// The 3-character ISO instrument currency. E.g. 'USD'
             /// </summary>
-            [JsonProperty(PropertyName = "currency")]
+            [JsonPropertyName("currency")]
             public string Currency { get; set; }
 
             /// <summary>
@@ -607,32 +608,32 @@ namespace QuantConnect.Algorithm.Framework.Portfolio.SignalExports
             /// XCME, XEUR, XICE, XLIF, XNYB, XNYM, XASX, XCBF, XCBT, XCEC,
             /// XKBT, XSES. See details at http://www.iso15022.org/MIC/homepageMIC.htm
             /// </summary>
-            [JsonProperty(PropertyName = "securityExchange")]
+            [JsonPropertyName("securityExchange")]
             public string SecurityExchange { get; set; }
 
 
             /// <summary>
             /// The SecurityType e.g. 'CS'(Common Stock), 'FUT' (Future), 'OPT' (Option), 'FOR' (Forex)
             /// </summary>
-            [JsonProperty(PropertyName = "securityType")]
+            [JsonPropertyName("securityType")]
             public string SecurityType { get; set; }
 
             /// <summary>
             /// The MaturityMonthYear e.g. '202103' (March 2021), or if the contract requires a day: '20210521' (May 21, 2021)
             /// </summary>
-            [JsonProperty(PropertyName = "maturityMonthYear")]
+            [JsonPropertyName("maturityMonthYear")]
             public string MaturityMonthYear { get; set; }
 
             /// <summary>
             /// The Option PutOrCall e.g. 0 = Put, 1 = Call
             /// </summary>
-            [JsonProperty(PropertyName = "putOrCall")]
+            [JsonPropertyName("putOrCall")]
             public int? PutOrCall { get; set; }
 
             /// <summary>
             /// The ISO Option Strike Price. Zero means none
             /// </summary>
-            [JsonProperty(PropertyName = "strikePrice")]
+            [JsonPropertyName("strikePrice")]
             public decimal? StrikePrice { get; set; }
         }
     }

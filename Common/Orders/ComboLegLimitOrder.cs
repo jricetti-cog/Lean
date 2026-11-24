@@ -14,7 +14,7 @@
 */
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuantConnect.Interfaces;
 using QuantConnect.Securities;
 
@@ -34,7 +34,7 @@ namespace QuantConnect.Orders
         /// <summary>
         /// Limit price for this order.
         /// </summary>
-        [JsonProperty(PropertyName = "limitPrice")]
+        [JsonPropertyName("limitPrice")]
         public decimal LimitPrice { get; internal set; }
 
         /// <summary>

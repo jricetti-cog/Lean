@@ -13,7 +13,7 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuantConnect.Api;
 using System.Collections.Generic;
 using QuantConnect.Orders.Serialization;
@@ -28,25 +28,25 @@ namespace QuantConnect.Orders
         /// <summary>
         /// Returns the total order collection length, not only the amount we are sending here
         /// </summary>
-        [JsonProperty(PropertyName = "length")]
+        [JsonPropertyName("length")]
         public int Length { get; set; }
 
         /// <summary>
         /// Collection of summarized Orders objects
         /// </summary>
-        [JsonProperty(PropertyName = "orders")]
+        [JsonPropertyName("orders")]
         public List<ApiOrderResponse> Orders { get; set; } = new();
 
         /// <summary>
         /// Status of the order generation process, "loading" while the orders are not ready yet
         /// </summary>
-        [JsonProperty(PropertyName = "status")]
+        [JsonPropertyName("status")]
         public string Status { get; set; }
 
         /// <summary>
         /// Loading percentage of the order generation process
         /// </summary>
-        [JsonProperty(PropertyName = "progress")]
+        [JsonPropertyName("progress")]
         public decimal Progress { get; set; }
     }
 

@@ -15,7 +15,9 @@
 
 using System;
 using System.Globalization;
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 
 namespace QuantConnect.Util
 {
@@ -23,7 +25,7 @@ namespace QuantConnect.Util
     /// Helper <see cref="JsonConverter"/> that will round decimal and double types,
     /// to <see cref="FractionalDigits"/> fractional digits
     /// </summary>
-    public class JsonRoundingConverter : JsonConverter
+    public class JsonRoundingConverter : JsonConverterFactory
     {
         /// <summary>
         /// The number of fractional digits to round to
@@ -31,52 +33,66 @@ namespace QuantConnect.Util
         public const int FractionalDigits = 4;
 
         /// <summary>
-        /// Will always return false.
-        /// Gets a value indicating whether this <see cref="T:Newtonsoft.Json.JsonConverter" /> can read JSON.
-        /// </summary>
-        public override bool CanRead => false;
-
-        /// <summary>
         /// Determines whether this instance can convert the specified object type.
         /// </summary>
-        /// <param name="objectType">Type of the object.</param>
-        /// <returns>True if this instance can convert the specified object type</returns>
         public override bool CanConvert(Type objectType)
         {
-            return objectType == typeof(decimal)
-                || objectType == typeof(double);
+            return objectType == typeof(decimal) || objectType == typeof(double) || objectType == typeof(int);
         }
 
         /// <summary>
-        /// Not implemented, will throw <see cref="NotImplementedException"/>
+        /// Creates the converter for the given type
         /// </summary>
-        /// <param name="reader">The <see cref="T:Newtonsoft.Json.JsonReader"/> to read from.</param>
-        /// <param name="objectType">Type of the object.</param>
-        /// <param name="existingValue">The existing value of object being read.</param>
-        /// <param name="serializer">The calling serializer.</param>
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
         {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Writes the JSON representation of the object.
-        /// </summary>
-        /// <param name="writer">The <see cref="T:Newtonsoft.Json.JsonWriter"/> to write to.</param>
-        /// <param name="value">The value.</param>
-        /// <param name="serializer">The calling serializer.</param>
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-        {
-            if (value is double)
+            if (typeToConvert == typeof(int))
             {
-                var rounded = Math.Round((double)value, FractionalDigits);
-                writer.WriteValue(rounded.ToString(CultureInfo.InvariantCulture));
+                return new Int32Converter();
             }
-            else
+            return typeToConvert == typeof(double) ? new DoubleConverter() : new DecimalConverter();
+        }
+
+        private sealed class Int32Converter : JsonConverter<int>
+        {
+            public override int Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            {
+                return JsonSerializer.Deserialize<int>(ref reader, options);
+            }
+
+            public override void Write(Utf8JsonWriter writer, int value, JsonSerializerOptions options)
+            {
+                writer.WriteStringValue(value.ToString(CultureInfo.InvariantCulture));
+            }
+        }
+
+        private sealed class DecimalConverter : JsonConverter<decimal>
+        {
+            private static readonly LeanDecimalConverter Reader = new();
+
+            public override decimal Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            {
+                return Reader.Read(ref reader, typeToConvert, options);
+            }
+
+            public override void Write(Utf8JsonWriter writer, decimal value, JsonSerializerOptions options)
             {
                 // we serialize decimal as string so that json doesn't use exponential notation which actually will lose precision
-                var rounded = Math.Round(Convert.ToDecimal(value, CultureInfo.InvariantCulture), FractionalDigits);
-                writer.WriteValue(rounded.ToString(CultureInfo.InvariantCulture));
+                writer.WriteStringValue(Math.Round(value, FractionalDigits).ToString(CultureInfo.InvariantCulture));
+            }
+        }
+
+        private sealed class DoubleConverter : JsonConverter<double>
+        {
+            private static readonly LeanDoubleConverter Reader = new();
+
+            public override double Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            {
+                return Reader.Read(ref reader, typeToConvert, options);
+            }
+
+            public override void Write(Utf8JsonWriter writer, double value, JsonSerializerOptions options)
+            {
+                writer.WriteStringValue(Math.Round(value, FractionalDigits).ToString(CultureInfo.InvariantCulture));
             }
         }
     }

@@ -14,8 +14,6 @@
 */
 
 using NUnit.Framework;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using QuantConnect.Brokerages.Authentication;
 
 namespace QuantConnect.Tests.Brokerages.Authentication
@@ -29,12 +27,9 @@ namespace QuantConnect.Tests.Brokerages.Authentication
         [TestCase("{\"accessToken\":\"abc\",\"tokenType\":\"Bearer\",\"success\":true}", TokenType.Bearer, TestName = "DeserializesBearerWhenTokenTypePresent")]
         public void OAuthTokenResponseTokenTypeIsBearer(string json, TokenType expectedTokenType)
         {
-            var settings = new JsonSerializerSettings
-            {
-                ContractResolver = new CamelCasePropertyNamesContractResolver()
-            };
+            var settings = JsonSerialization.Create();
 
-            var response = JsonConvert.DeserializeObject<LeanTokenCredentials>(json, settings);
+            var response = JsonSerialization.Deserialize<LeanTokenCredentials>(json, settings);
 
             Assert.AreEqual(expectedTokenType, response.TokenType);
             Assert.AreEqual("abc", response.AccessToken);

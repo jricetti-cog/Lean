@@ -17,7 +17,7 @@
 using System;
 using System.Linq;
 using Python.Runtime;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using QuantConnect.Data.UniverseSelection;
 
@@ -36,13 +36,13 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the SixMonths period value for the field
         /// </summary>
-        [JsonProperty("EQQWH")]
+        [JsonPropertyName("EQQWH")]
         public double SixMonths => FundamentalService.Get<double>(TimeProvider.GetUtcNow(), SecurityIdentifier, FundamentalProperty.OperationRatios_TotalOperatingProfitLossGrowth_SixMonths);
 
         /// <summary>
         /// Gets/sets the OneYear period value for the field
         /// </summary>
-        [JsonProperty("EQZD1")]
+        [JsonPropertyName("EQZD1")]
         public double OneYear => FundamentalService.Get<double>(TimeProvider.GetUtcNow(), SecurityIdentifier, FundamentalProperty.OperationRatios_TotalOperatingProfitLossGrowth_OneYear);
 
         /// <summary>

@@ -13,7 +13,7 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 using NUnit.Framework;
 using QuantConnect.Configuration;
 using QuantConnect.Interfaces;
@@ -52,8 +52,8 @@ namespace QuantConnect.Tests
             {
                 UpdateResearchRegressionOutputInSourceFile(parameters.NotebookName, actualOutput);
             }
-            var actualCells = JToken.Parse(CleanDispensableEscapeCharacters(actualOutput))["cells"];
-            var expectedCells = JToken.Parse(parameters.ExpectedOutput)["cells"];
+            var actualCells = JsonSerialization.Parse(CleanDispensableEscapeCharacters(actualOutput))["cells"].AsArray();
+            var expectedCells = JsonSerialization.Parse(parameters.ExpectedOutput)["cells"].AsArray();
             var expectedAndActualCells = expectedCells.Zip(actualCells, (e, a) => new { Expected = e, Actual = a });
 
             foreach (var cell in expectedAndActualCells)
@@ -71,7 +71,7 @@ namespace QuantConnect.Tests
                         Assert.Fail("Shouldn't be null when expected is not null");
                     }
                     // Iterate over all outputs for the given notebook cell
-                    var expectedCellOutputsAndActualCellOutputs = expectedCellOutputs.Zip(actualCellOutputs, (e, a) => new { Expected = e, Actual = a });
+                    var expectedCellOutputsAndActualCellOutputs = expectedCellOutputs.AsArray().Zip(actualCellOutputs.AsArray(), (e, a) => new { Expected = e, Actual = a });
                     foreach (var cellOutputsItem in expectedCellOutputsAndActualCellOutputs)
                     {
                         if (cellOutputsItem.Expected["data"] != null && cellOutputsItem.Expected["data"]["text/html"] != null)

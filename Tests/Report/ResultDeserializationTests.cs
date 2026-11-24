@@ -13,7 +13,6 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
 using NUnit.Framework;
 using QuantConnect.Api;
 using QuantConnect.Orders;
@@ -151,7 +150,7 @@ namespace QuantConnect.Tests.Report
         [TestCase("Charts")]
         public void ValidBacktestResultDefaultSerializer(string chartKey)
         {
-            var result = JsonConvert.DeserializeObject<BacktestResponseWrapper>(ValidBacktestResultJson2.Replace("charts", chartKey, StringComparison.InvariantCulture)).Backtest;
+            var result = JsonSerialization.Deserialize<BacktestResponseWrapper>(ValidBacktestResultJson2.Replace("charts", chartKey, StringComparison.InvariantCulture)).Backtest;
 
             Assert.AreEqual(7, result.Charts.Count);
             Assert.IsTrue(result.Charts.Where(x => x.Key == "Drawdown").All(kvp => !kvp.Value.IsEmpty()));
@@ -160,13 +159,9 @@ namespace QuantConnect.Tests.Report
         [Test]
         public void ValidBacktestResult()
         {
-            var settings = new JsonSerializerSettings
-            {
-                Converters = new List<JsonConverter> { new NullResultValueTypeJsonConverter<BacktestResult>() },
-                FloatParseHandling = FloatParseHandling.Decimal
-            };
+            var settings = JsonSerialization.Create(floatAsDecimal: true, converters: new System.Text.Json.Serialization.JsonConverter[] { new NullResultValueTypeJsonConverter<BacktestResult>() });
 
-            var result = JsonConvert.DeserializeObject<BacktestResult>(ValidBacktestResultJson, settings);
+            var result = JsonSerialization.Deserialize<BacktestResult>(ValidBacktestResultJson, settings);
 
             Assert.AreEqual(7, result.Charts.Count);
             Assert.IsTrue(result.Charts.All(kvp => !kvp.Value.IsEmpty()));
@@ -176,13 +171,10 @@ namespace QuantConnect.Tests.Report
         public void BacktestResult_NullChartPoint_IsSkipped()
         {
             var converter = new NullResultValueTypeJsonConverter<BacktestResult>();
-            var settings = new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore
-            };
+            var settings = JsonSerialization.Create();
 
-            var deWithoutConverter = JsonConvert.DeserializeObject<BacktestResult>(InvalidBacktestResultJson.Replace(OrderStringReplace, EmptyJson), settings);
-            var deWithConverter = JsonConvert.DeserializeObject<BacktestResult>(InvalidBacktestResultJson.Replace(OrderStringReplace, EmptyJson), converter);
+            var deWithoutConverter = JsonSerialization.Deserialize<BacktestResult>(InvalidBacktestResultJson.Replace(OrderStringReplace, EmptyJson), settings);
+            var deWithConverter = JsonSerialization.Deserialize<BacktestResult>(InvalidBacktestResultJson.Replace(OrderStringReplace, EmptyJson), JsonSerialization.Create(converters: converter));
 
             var noConverterPoints = GetChartPoints(deWithoutConverter).ToList();
             var withConverterPoints = GetChartPoints(deWithConverter).ToList();
@@ -193,8 +185,8 @@ namespace QuantConnect.Tests.Report
             Assert.AreEqual(1, noConverterPoints.Count(kvp => !kvp.Value.HasValue));
             Assert.AreEqual(5, noConverterPoints.Count);
 
-            var convertedSerialized = JsonConvert.SerializeObject(deWithConverter);
-            var roundtripDeserialization = JsonConvert.DeserializeObject<BacktestResult>(convertedSerialized);
+            var convertedSerialized = JsonSerialization.Serialize(deWithConverter);
+            var roundtripDeserialization = JsonSerialization.Deserialize<BacktestResult>(convertedSerialized);
 
             Assert.IsTrue(withConverterPoints.SequenceEqual(GetChartPoints(roundtripDeserialization).ToList()));
         }
@@ -203,13 +195,10 @@ namespace QuantConnect.Tests.Report
         public void LiveResult_NullChartPoint_IsSkipped()
         {
             var converter = new NullResultValueTypeJsonConverter<LiveResult>();
-            var settings = new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore
-            };
+            var settings = JsonSerialization.Create();
 
-            var deWithoutConverter = JsonConvert.DeserializeObject<LiveResult>(InvalidLiveResultJson.Replace(OrderStringReplace, EmptyJson), settings);
-            var deWithConverter = JsonConvert.DeserializeObject<LiveResult>(InvalidLiveResultJson.Replace(OrderStringReplace, EmptyJson), converter);
+            var deWithoutConverter = JsonSerialization.Deserialize<LiveResult>(InvalidLiveResultJson.Replace(OrderStringReplace, EmptyJson), settings);
+            var deWithConverter = JsonSerialization.Deserialize<LiveResult>(InvalidLiveResultJson.Replace(OrderStringReplace, EmptyJson), JsonSerialization.Create(converters: converter));
 
             var noConverterPoints = GetChartPoints(deWithoutConverter).ToList();
             var withConverterPoints = GetChartPoints(deWithConverter).ToList();
@@ -220,8 +209,8 @@ namespace QuantConnect.Tests.Report
             Assert.AreEqual(1, noConverterPoints.Count(kvp => !kvp.Value.HasValue));
             Assert.AreEqual(5, noConverterPoints.Count);
 
-            var convertedSerialized = JsonConvert.SerializeObject(deWithConverter);
-            var roundtripDeserialization = JsonConvert.DeserializeObject<LiveResult>(convertedSerialized);
+            var convertedSerialized = JsonSerialization.Serialize(deWithConverter);
+            var roundtripDeserialization = JsonSerialization.Deserialize<LiveResult>(convertedSerialized);
 
             Assert.IsTrue(withConverterPoints.SequenceEqual(GetChartPoints(roundtripDeserialization).ToList()));
         }
@@ -230,14 +219,11 @@ namespace QuantConnect.Tests.Report
         public void NullCandleStickPoint_IsSkipped()
         {
             var converter = new NullResultValueTypeJsonConverter<LiveResult>();
-            var settings = new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore
-            };
+            var settings = JsonSerialization.Create();
 
             var nullCandlestick = "{\"Charts\":{\"Strategy Equity\":{\"Name\":\"Strategy Equity\",\"ChartType\":0,\"Series\":{\"Equity\":{\"Name\":\"Equity\",\"Values\":[[1695991900,null,null,null,null],[1695992500,10000000,10000000,10000000,10000000]],\"SeriesType\":2,\"Index\":2,\"Unit\":\"\"}}}}}";
-            var deWithoutConverter = JsonConvert.DeserializeObject<LiveResult>(nullCandlestick, settings);
-            var deWithConverter = JsonConvert.DeserializeObject<LiveResult>(nullCandlestick, converter);
+            var deWithoutConverter = JsonSerialization.Deserialize<LiveResult>(nullCandlestick, settings);
+            var deWithConverter = JsonSerialization.Deserialize<LiveResult>(nullCandlestick, JsonSerialization.Create(converters: converter));
 
             var noConverterPoints = deWithoutConverter.Charts["Strategy Equity"].Series["Equity"].Values.Cast<Candlestick>().ToList();
             var withConverterPoints = deWithConverter.Charts["Strategy Equity"].Series["Equity"].Values.Cast<Candlestick>().ToList();
@@ -248,8 +234,8 @@ namespace QuantConnect.Tests.Report
             Assert.AreEqual(1, noConverterPoints.Count(kvp => !kvp.Close.HasValue));
             Assert.AreEqual(2, noConverterPoints.Count);
 
-            var convertedSerialized = JsonConvert.SerializeObject(deWithConverter);
-            var roundtripDeserialization = JsonConvert.DeserializeObject<LiveResult>(convertedSerialized);
+            var convertedSerialized = JsonSerialization.Serialize(deWithConverter);
+            var roundtripDeserialization = JsonSerialization.Deserialize<LiveResult>(convertedSerialized);
             var roundTripCandlestick = roundtripDeserialization.Charts["Strategy Equity"].Series["Equity"].Values.Cast<Candlestick>();
 
             Assert.IsTrue(withConverterPoints.Select(x => x.Close).SequenceEqual(roundTripCandlestick.Select(x => x.Close)));
@@ -259,10 +245,7 @@ namespace QuantConnect.Tests.Report
         public void OrderTypeEnumStringAndValueDeserialization()
         {
 
-            var settings = new JsonSerializerSettings
-            {
-                Converters = new[] { new NullResultValueTypeJsonConverter<LiveResult>() }
-            };
+            var settings = JsonSerialization.Create(converters: new System.Text.Json.Serialization.JsonConverter[] { new NullResultValueTypeJsonConverter<LiveResult>() });
 
             foreach (var orderType in (OrderType[])Enum.GetValues(typeof(OrderType)))
             {
@@ -275,9 +258,9 @@ namespace QuantConnect.Tests.Report
                 var upperCaseLiveResult = InvalidLiveResultJson.Replace(OrderStringReplace, upperCaseJson);
                 var camelCaseLiveResult = InvalidLiveResultJson.Replace(OrderStringReplace, camelCaseJson);
 
-                var intInstance = JsonConvert.DeserializeObject<LiveResult>(intValueLiveResult, settings).Orders.Values.Single();
-                var upperCaseInstance = JsonConvert.DeserializeObject<LiveResult>(upperCaseLiveResult, settings).Orders.Values.Single();
-                var camelCaseInstance = JsonConvert.DeserializeObject<LiveResult>(camelCaseLiveResult, settings).Orders.Values.Single();
+                var intInstance = JsonSerialization.Deserialize<LiveResult>(intValueLiveResult, settings).Orders.Values.Single();
+                var upperCaseInstance = JsonSerialization.Deserialize<LiveResult>(upperCaseLiveResult, settings).Orders.Values.Single();
+                var camelCaseInstance = JsonSerialization.Deserialize<LiveResult>(camelCaseLiveResult, settings).Orders.Values.Single();
 
                 CollectionAssert.AreEqual(intInstance.BrokerId, upperCaseInstance.BrokerId);
                 Assert.AreEqual(intInstance.ContingentId, upperCaseInstance.ContingentId);

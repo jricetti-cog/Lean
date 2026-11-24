@@ -15,7 +15,6 @@
 
 using System;
 using System.Linq;
-using Newtonsoft.Json;
 using System.Threading;
 using QuantConnect.Data;
 using QuantConnect.Orders;
@@ -444,7 +443,7 @@ namespace QuantConnect.Brokerages
                 }
 
                 // remove the key, we really only want to return the cached value on the first request
-                var result = JsonConvert.DeserializeObject<List<Holding>>(value);
+                var result = JsonSerialization.Deserialize<List<Holding>>(value);
                 if (result == null)
                 {
                     return new List<Holding>();
@@ -473,7 +472,7 @@ namespace QuantConnect.Brokerages
             if (brokerageData != null && brokerageData.Remove("live-cash-balance", out var value) && !string.IsNullOrEmpty(value))
             {
                 // remove the key, we really only want to return the cached value on the first request
-                var result = JsonConvert.DeserializeObject<List<CashAmount>>(value);
+                var result = JsonSerialization.Deserialize<List<CashAmount>>(value);
                 if (result == null)
                 {
                     return new List<CashAmount>();

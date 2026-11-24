@@ -17,8 +17,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 using QuantConnect.Optimizer.Parameters;
 using QuantConnect.Statistics;
 using QuantConnect.Util;
@@ -28,7 +30,7 @@ namespace QuantConnect.Api
     /// <summary>
     /// Json converter for <see cref="OptimizationBacktest"/> which creates a light weight easy to consume serialized version
     /// </summary>
-    public class OptimizationBacktestJsonConverter : JsonConverter
+    public class OptimizationBacktestJsonConverter : JsonConverter<OptimizationBacktest>
     {
         private static Dictionary<string, int> StatisticsIndices = new()
         {
@@ -68,75 +70,48 @@ namespace QuantConnect.Api
         private static int ArrayStatisticsCount = 21;
 
         /// <summary>
-        /// Determines whether this instance can convert the specified object type.
-        /// </summary>
-        /// <param name="objectType">Type of the object.</param>
-        /// <returns>
-        /// <c>true</c> if this instance can convert the specified object type; otherwise, <c>false</c>.
-        /// </returns>
-        public override bool CanConvert(Type objectType)
-        {
-            return objectType == typeof(OptimizationBacktest);
-        }
-
-        /// <summary>
         /// Writes the JSON representation of the object.
         /// </summary>
         /// <param name="writer">The <see cref="T:Newtonsoft.Json.JsonWriter"/> to write to.</param>
         /// <param name="value">The value.</param>
         /// <param name="serializer">The calling serializer.</param>
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        public override void Write(Utf8JsonWriter writer, OptimizationBacktest optimizationBacktest, JsonSerializerOptions options)
         {
-            var optimizationBacktest = value as OptimizationBacktest;
-            if (ReferenceEquals(optimizationBacktest, null)) return;
-
             writer.WriteStartObject();
 
             if (!string.IsNullOrEmpty(optimizationBacktest.Name))
             {
-                writer.WritePropertyName("name");
-                writer.WriteValue(optimizationBacktest.Name);
+                writer.WriteString("name", optimizationBacktest.Name);
             }
 
             if (!string.IsNullOrEmpty(optimizationBacktest.BacktestId))
             {
-                writer.WritePropertyName("id");
-                writer.WriteValue(optimizationBacktest.BacktestId);
-
+                writer.WriteString("id", optimizationBacktest.BacktestId);
                 writer.WritePropertyName("progress");
-                writer.WriteValue(optimizationBacktest.Progress);
-
-                writer.WritePropertyName("exitCode");
-                writer.WriteValue(optimizationBacktest.ExitCode);
+                JsonSerializer.Serialize(writer, optimizationBacktest.Progress, options);
+                writer.WriteNumber("exitCode", optimizationBacktest.ExitCode);
             }
 
             if (optimizationBacktest.StartDate != default)
             {
-                writer.WritePropertyName("startDate");
-                writer.WriteValue(optimizationBacktest.StartDate.ToStringInvariant(DateFormat.ISOShort));
+                writer.WriteString("startDate", optimizationBacktest.StartDate.ToStringInvariant(DateFormat.ISOShort));
             }
 
             if (optimizationBacktest.EndDate != default)
             {
-                writer.WritePropertyName("endDate");
-                writer.WriteValue(optimizationBacktest.EndDate.ToStringInvariant(DateFormat.ISOShort));
+                writer.WriteString("endDate", optimizationBacktest.EndDate.ToStringInvariant(DateFormat.ISOShort));
             }
 
             if (optimizationBacktest.OutOfSampleMaxEndDate != null)
             {
-                writer.WritePropertyName("outOfSampleMaxEndDate");
-                writer.WriteValue(optimizationBacktest.OutOfSampleMaxEndDate.ToStringInvariant(DateFormat.ISOShort));
-
-                writer.WritePropertyName("outOfSampleDays");
-                writer.WriteValue(optimizationBacktest.OutOfSampleDays);
+                writer.WriteString("outOfSampleMaxEndDate", optimizationBacktest.OutOfSampleMaxEndDate.ToStringInvariant(DateFormat.ISOShort));
+                writer.WriteNumber("outOfSampleDays", optimizationBacktest.OutOfSampleDays);
             }
 
             if (!optimizationBacktest.Statistics.IsNullOrEmpty())
             {
                 writer.WritePropertyName("statistics");
                 writer.WriteStartObject();
-
-                var customStatisticsNames = new HashSet<string>();
 
                 foreach (var (name, statisticValue, index) in optimizationBacktest.Statistics
                     .Select(kvp => (Name: kvp.Key, kvp.Value, Index: StatisticsIndices.TryGetValue(kvp.Key, out var index) ? index : int.MaxValue))
@@ -147,23 +122,23 @@ namespace QuantConnect.Api
                     if (Currencies.TryParse(statistic, out var result))
                     {
                         writer.WritePropertyName(index < StatisticsIndices.Count ? index.ToStringInvariant() : name);
-                        writer.WriteValue(result);
+                        JsonSerializer.Serialize(writer, result, options);
                     }
                 }
+
                 writer.WriteEndObject();
             }
 
             if (optimizationBacktest.ParameterSet != null)
             {
                 writer.WritePropertyName("parameterSet");
-                serializer.Serialize(writer, optimizationBacktest.ParameterSet.Value);
+                JsonSerializer.Serialize(writer, optimizationBacktest.ParameterSet.Value, options);
             }
 
             if (optimizationBacktest.Equity != null)
             {
                 writer.WritePropertyName("equity");
-
-                var equity = JsonConvert.SerializeObject(optimizationBacktest.Equity.Values);
+                var equity = JsonSerialization.Serialize(optimizationBacktest.Equity.Values);
                 writer.WriteRawValue(equity);
             }
 
@@ -173,23 +148,15 @@ namespace QuantConnect.Api
         /// <summary>
         /// Reads the JSON representation of the object.
         /// </summary>
-        /// <param name="reader">The <see cref="T:Newtonsoft.Json.JsonReader"/> to read from.</param>
-        /// <param name="objectType">Type of the object.</param>
-        /// <param name="existingValue">The existing value of object being read.</param>
-        /// <param name="serializer">The calling serializer.</param>
-        /// <returns>
-        /// The object value.
-        /// </returns>
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override OptimizationBacktest Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            var jObject = JObject.Load(reader);
+            var jObject = JsonNode.Parse(ref reader).AsObject();
 
             var name = jObject["name"].Value<string>();
             var hostName = jObject["hostName"]?.Value<string>();
             var backtestId = jObject["id"].Value<string>();
             var progress = jObject["progress"].Value<decimal>();
             var exitCode = jObject["exitCode"].Value<int>();
-
             var outOfSampleDays = jObject["outOfSampleDays"]?.Value<int>() ?? default;
             var startDate = jObject["startDate"]?.Value<DateTime?>() ?? default;
             var endDate = jObject["endDate"]?.Value<DateTime?>() ?? default;
@@ -199,33 +166,33 @@ namespace QuantConnect.Api
             Dictionary<string, string> statistics = default;
             if (jStatistics != null)
             {
-                if (jStatistics.Type == JTokenType.Array)
+                if (jStatistics is JsonArray jArray)
                 {
-                    var statsCount = Math.Min(ArrayStatisticsCount, (jStatistics as JArray).Count);
+                    var statsCount = Math.Min(ArrayStatisticsCount, jArray.Count);
                     statistics = new Dictionary<string, string>(StatisticsIndices
                         .Where(kvp => kvp.Value < statsCount)
-                        .Select(kvp => KeyValuePair.Create(kvp.Key, jStatistics[kvp.Value].Value<string>()))
+                        .Select(kvp => KeyValuePair.Create(kvp.Key, jArray[kvp.Value].Value<string>()))
                         .Where(kvp => kvp.Value != null));
                 }
                 else
                 {
                     statistics = new();
-                    foreach (var statistic in jStatistics.Children<JProperty>())
+                    foreach (var statistic in jStatistics.AsObject())
                     {
-                        var statisticName = TryConvertToLeanStatisticIndex(statistic.Name, out var index)
+                        var statisticName = TryConvertToLeanStatisticIndex(statistic.Key, out var index)
                             ? StatisticNames[index]
-                            : statistic.Name;
+                            : statistic.Key;
                         statistics[statisticName] = statistic.Value.Value<string>();
                     }
                 }
             }
 
-            var parameterSet = serializer.Deserialize<ParameterSet>(jObject["parameterSet"].CreateReader());
+            var parameterSet = jObject["parameterSet"].ToObject<ParameterSet>(options);
 
             var equity = new CandlestickSeries();
             if (jObject["equity"] != null)
             {
-                foreach (var point in JsonConvert.DeserializeObject<List<Candlestick>>(jObject["equity"].ToString()))
+                foreach (var point in JsonSerialization.Deserialize<List<Candlestick>>(jObject["equity"].ToJsonString()))
                 {
                     equity.AddPoint(point);
                 }

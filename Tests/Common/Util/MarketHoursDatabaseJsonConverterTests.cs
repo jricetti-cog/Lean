@@ -14,12 +14,11 @@
 */
 
 using System;
+using System.Text.Json.Nodes;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using NodaTime;
 using NUnit.Framework;
 using QuantConnect.Securities;
@@ -34,8 +33,8 @@ namespace QuantConnect.Tests.Common.Util
         public void HandlesRoundTrip()
         {
             var database = MarketHoursDatabase.FromDataFolder();
-            var result = JsonConvert.SerializeObject(database, Formatting.Indented);
-            var deserializedDatabase = JsonConvert.DeserializeObject<MarketHoursDatabase>(result);
+            var result = JsonSerialization.Serialize(database, JsonSerialization.Indented());
+            var deserializedDatabase = JsonSerialization.Deserialize<MarketHoursDatabase>(result);
 
             var originalListing = database.ExchangeHoursListing.ToDictionary();
             foreach (var kvp in deserializedDatabase.ExchangeHoursListing)
@@ -63,7 +62,7 @@ namespace QuantConnect.Tests.Common.Util
 
         public static void TestOverriddenEarlyClosesAndLateOpens(IReadOnlyDictionary<DateTime, TimeSpan> commonDateTimes,
             IReadOnlyDictionary<DateTime, TimeSpan> specificDateTimes,
-            JObject jsonDatabase,
+            JsonObject jsonDatabase,
             string testKey,
             string specificEntryKey)
         {
@@ -80,7 +79,7 @@ namespace QuantConnect.Tests.Common.Util
                 if (commonDateTimes[date] != specificDateTimes[date])
                 {
                     var dateStr = date.ToStringInvariant("MM/dd/yyyy");
-                    var timeStr = jsonDatabase["entries"][specificEntryKey][testKey][dateStr].Value<string>();
+                    var timeStr = jsonDatabase["entries"][specificEntryKey][testKey][dateStr].GetValue<string>();
                     var time = TimeSpan.Parse(timeStr, CultureInfo.InvariantCulture);
                     Assert.AreEqual(time, specificDateTimes[date]);
 
@@ -94,7 +93,7 @@ namespace QuantConnect.Tests.Common.Util
         [Test]
         public void HandlesOverridingLateOpens()
         {
-            var jsonDatabase = JObject.Parse(SampleMHDBWithOverriddenEarlyOpens);
+            var jsonDatabase = JsonSerialization.ParseObject(SampleMHDBWithOverriddenEarlyOpens);
             var database = jsonDatabase.ToObject<MarketHoursDatabase>();
 
             var googEntry = database.GetEntry(Market.USA, "GOOG", SecurityType.Equity);
@@ -110,7 +109,7 @@ namespace QuantConnect.Tests.Common.Util
         [Test]
         public void HandlesOverridingEarlyCloses()
         {
-            var jsonDatabase = JObject.Parse(SampleMHDBWithOverriddenEarlyOpens);
+            var jsonDatabase = JsonSerialization.ParseObject(SampleMHDBWithOverriddenEarlyOpens);
             var database = jsonDatabase.ToObject<MarketHoursDatabase>();
 
             var googEntry = database.GetEntry(Market.USA, "GOOG", SecurityType.Equity);
@@ -269,7 +268,7 @@ namespace QuantConnect.Tests.Common.Util
                 return new KeyValuePair<string, IEnumerable<DateTime>>(market, dates);
             }).ToDictionary();
             var database = FromCsvFile(input, allHolidays);
-            File.WriteAllText(output, JsonConvert.SerializeObject(database, Formatting.Indented));
+            File.WriteAllText(output, JsonSerialization.Serialize(database, JsonSerialization.Indented()));
         }
 
         #region These methods represent the old way of reading MarketHoursDatabase from csv and are left here to allow users to convert

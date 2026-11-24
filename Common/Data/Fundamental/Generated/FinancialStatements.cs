@@ -17,7 +17,7 @@
 using System;
 using System.Linq;
 using Python.Runtime;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using QuantConnect.Data.UniverseSelection;
 
@@ -34,7 +34,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 20001
         /// </remarks>
-        [JsonProperty("20001")]
+        [JsonPropertyName("20001")]
         public FinancialStatementsPeriodEndingDate PeriodEndingDate => _periodEndingDate ??= new(_timeProvider, _securityIdentifier);
         private FinancialStatementsPeriodEndingDate _periodEndingDate;
 
@@ -44,7 +44,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 20002
         /// </remarks>
-        [JsonProperty("20002")]
+        [JsonPropertyName("20002")]
         public FinancialStatementsFileDate FileDate => _fileDate ??= new(_timeProvider, _securityIdentifier);
         private FinancialStatementsFileDate _fileDate;
 
@@ -54,7 +54,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 20003
         /// </remarks>
-        [JsonProperty("20003")]
+        [JsonPropertyName("20003")]
         public FinancialStatementsAccessionNumber AccessionNumber => _accessionNumber ??= new(_timeProvider, _securityIdentifier);
         private FinancialStatementsAccessionNumber _accessionNumber;
 
@@ -64,7 +64,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 20004
         /// </remarks>
-        [JsonProperty("20004")]
+        [JsonPropertyName("20004")]
         public FinancialStatementsFormType FormType => _formType ??= new(_timeProvider, _securityIdentifier);
         private FinancialStatementsFormType _formType;
 
@@ -74,7 +74,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 28000
         /// </remarks>
-        [JsonProperty("28000")]
+        [JsonPropertyName("28000")]
         [Obsolete("PeriodAuditor was retired by Morningstar in 2026 for all periods; no replacement is available.")]
         [JsonIgnore]
         public PeriodAuditor PeriodAuditor => _periodAuditor ??= new(_timeProvider, _securityIdentifier);
@@ -86,7 +86,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 28001
         /// </remarks>
-        [JsonProperty("28001")]
+        [JsonPropertyName("28001")]
         public AuditorReportStatus AuditorReportStatus => _auditorReportStatus ??= new(_timeProvider, _securityIdentifier);
         private AuditorReportStatus _auditorReportStatus;
 
@@ -96,7 +96,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 28002
         /// </remarks>
-        [JsonProperty("28002")]
+        [JsonPropertyName("28002")]
         [Obsolete("InventoryValuationMethod was retired by Morningstar in 2026 for all periods; no replacement is available.")]
         [JsonIgnore]
         public InventoryValuationMethod InventoryValuationMethod => _inventoryValuationMethod ??= new(_timeProvider, _securityIdentifier);
@@ -108,7 +108,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 28003
         /// </remarks>
-        [JsonProperty("28003")]
+        [JsonPropertyName("28003")]
         [Obsolete("NumberOfShareHolders was retired by Morningstar in 2026 for all periods; no replacement is available.")]
         [JsonIgnore]
         public NumberOfShareHolders NumberOfShareHolders => _numberOfShareHolders ??= new(_timeProvider, _securityIdentifier);
@@ -120,7 +120,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 28006
         /// </remarks>
-        [JsonProperty("28006")]
+        [JsonPropertyName("28006")]
         public FinancialStatementsPeriodType PeriodType => _periodType ??= new(_timeProvider, _securityIdentifier);
         private FinancialStatementsPeriodType _periodType;
 
@@ -130,7 +130,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 28004
         /// </remarks>
-        [JsonProperty("28004")]
+        [JsonPropertyName("28004")]
         public TotalRiskBasedCapital TotalRiskBasedCapital => _totalRiskBasedCapital ??= new(_timeProvider, _securityIdentifier);
         private TotalRiskBasedCapital _totalRiskBasedCapital;
 
@@ -161,7 +161,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQFBJ
         /// </remarks>
-        [JsonProperty("EQFBJ")]
+        [JsonPropertyName("EQFBJ")]
         public CommonEquityTier1CapitalRatio CommonEquityTier1CapitalRatio => _commonEquityTier1CapitalRatio ??= new(_timeProvider, _securityIdentifier);
         private CommonEquityTier1CapitalRatio _commonEquityTier1CapitalRatio;
 
@@ -171,7 +171,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQ3EP
         /// </remarks>
-        [JsonProperty("EQ3EP")]
+        [JsonPropertyName("EQ3EP")]
         public CommonEquityTier1Capital CommonEquityTier1Capital => _commonEquityTier1Capital ??= new(_timeProvider, _securityIdentifier);
         private CommonEquityTier1Capital _commonEquityTier1Capital;
 
@@ -181,7 +181,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQ1PN
         /// </remarks>
-        [JsonProperty("EQ1PN")]
+        [JsonPropertyName("EQ1PN")]
         public LiquidityCoverageRatio LiquidityCoverageRatio => _liquidityCoverageRatio ??= new(_timeProvider, _securityIdentifier);
         private LiquidityCoverageRatio _liquidityCoverageRatio;
 
@@ -191,7 +191,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQDG2
         /// </remarks>
-        [JsonProperty("EQDG2")]
+        [JsonPropertyName("EQDG2")]
         public NetInterestMargin NetInterestMargin => _netInterestMargin ??= new(_timeProvider, _securityIdentifier);
         private NetInterestMargin _netInterestMargin;
 
@@ -201,7 +201,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQZVG
         /// </remarks>
-        [JsonProperty("EQZVG")]
+        [JsonPropertyName("EQZVG")]
         public NetInterestSpread NetInterestSpread => _netInterestSpread ??= new(_timeProvider, _securityIdentifier);
         private NetInterestSpread _netInterestSpread;
 
@@ -211,7 +211,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQSVY
         /// </remarks>
-        [JsonProperty("EQSVY")]
+        [JsonPropertyName("EQSVY")]
         public NonPerformingAssetsLoans NonPerformingAssetsLoans => _nonPerformingAssetsLoans ??= new(_timeProvider, _securityIdentifier);
         private NonPerformingAssetsLoans _nonPerformingAssetsLoans;
 
@@ -221,7 +221,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQYE4
         /// </remarks>
-        [JsonProperty("EQYE4")]
+        [JsonPropertyName("EQYE4")]
         public RiskWeightedAsset RiskWeightedAsset => _riskWeightedAsset ??= new(_timeProvider, _securityIdentifier);
         private RiskWeightedAsset _riskWeightedAsset;
 
@@ -231,7 +231,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQ10O
         /// </remarks>
-        [JsonProperty("EQ10O")]
+        [JsonPropertyName("EQ10O")]
         public Tier1CapitalRatio Tier1CapitalRatio => _tier1CapitalRatio ??= new(_timeProvider, _securityIdentifier);
         private Tier1CapitalRatio _tier1CapitalRatio;
 
@@ -241,7 +241,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQRDJ
         /// </remarks>
-        [JsonProperty("EQRDJ")]
+        [JsonPropertyName("EQRDJ")]
         public Tier1Capital Tier1Capital => _tier1Capital ??= new(_timeProvider, _securityIdentifier);
         private Tier1Capital _tier1Capital;
 
@@ -251,7 +251,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQXCI
         /// </remarks>
-        [JsonProperty("EQXCI")]
+        [JsonPropertyName("EQXCI")]
         public Tier1LeverageRatio Tier1LeverageRatio => _tier1LeverageRatio ??= new(_timeProvider, _securityIdentifier);
         private Tier1LeverageRatio _tier1LeverageRatio;
 
@@ -261,7 +261,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQLHW
         /// </remarks>
-        [JsonProperty("EQLHW")]
+        [JsonPropertyName("EQLHW")]
         public Tier2CapitalRatio Tier2CapitalRatio => _tier2CapitalRatio ??= new(_timeProvider, _securityIdentifier);
         private Tier2CapitalRatio _tier2CapitalRatio;
 
@@ -271,7 +271,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQU9Q
         /// </remarks>
-        [JsonProperty("EQU9Q")]
+        [JsonPropertyName("EQU9Q")]
         public Tier2Capital Tier2Capital => _tier2Capital ??= new(_timeProvider, _securityIdentifier);
         private Tier2Capital _tier2Capital;
 
@@ -281,7 +281,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQFUM
         /// </remarks>
-        [JsonProperty("EQFUM")]
+        [JsonPropertyName("EQFUM")]
         public TotalCapital TotalCapital => _totalCapital ??= new(_timeProvider, _securityIdentifier);
         private TotalCapital _totalCapital;
 
@@ -291,7 +291,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQLKW
         /// </remarks>
-        [JsonProperty("EQLKW")]
+        [JsonPropertyName("EQLKW")]
         public AdjustedBasicNetAssetValue AdjustedBasicNetAssetValue => _adjustedBasicNetAssetValue ??= new(_timeProvider, _securityIdentifier);
         private AdjustedBasicNetAssetValue _adjustedBasicNetAssetValue;
 
@@ -301,7 +301,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQDFU
         /// </remarks>
-        [JsonProperty("EQDFU")]
+        [JsonPropertyName("EQDFU")]
         public AdjustedDilutedNetAssetValue AdjustedDilutedNetAssetValue => _adjustedDilutedNetAssetValue ??= new(_timeProvider, _securityIdentifier);
         private AdjustedDilutedNetAssetValue _adjustedDilutedNetAssetValue;
 
@@ -311,7 +311,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQKEU
         /// </remarks>
-        [JsonProperty("EQKEU")]
+        [JsonPropertyName("EQKEU")]
         public ReportedBasicAdjustedFundFromOperations ReportedBasicAdjustedFundFromOperations => _reportedBasicAdjustedFundFromOperations ??= new(_timeProvider, _securityIdentifier);
         private ReportedBasicAdjustedFundFromOperations _reportedBasicAdjustedFundFromOperations;
 
@@ -321,7 +321,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQX6C
         /// </remarks>
-        [JsonProperty("EQX6C")]
+        [JsonPropertyName("EQX6C")]
         public ReportedDilutedAdjustedFundFromOperations ReportedDilutedAdjustedFundFromOperations => _reportedDilutedAdjustedFundFromOperations ??= new(_timeProvider, _securityIdentifier);
         private ReportedDilutedAdjustedFundFromOperations _reportedDilutedAdjustedFundFromOperations;
 
@@ -331,7 +331,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQ5T6
         /// </remarks>
-        [JsonProperty("EQ5T6")]
+        [JsonPropertyName("EQ5T6")]
         public ReportedDilutedFundFromOperations ReportedDilutedFundFromOperations => _reportedDilutedFundFromOperations ??= new(_timeProvider, _securityIdentifier);
         private ReportedDilutedFundFromOperations _reportedDilutedFundFromOperations;
 
@@ -341,7 +341,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQAWW
         /// </remarks>
-        [JsonProperty("EQAWW")]
+        [JsonPropertyName("EQAWW")]
         public AdjustedBasicNetAssetValuePerShare AdjustedBasicNetAssetValuePerShare => _adjustedBasicNetAssetValuePerShare ??= new(_timeProvider, _securityIdentifier);
         private AdjustedBasicNetAssetValuePerShare _adjustedBasicNetAssetValuePerShare;
 
@@ -351,7 +351,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQBAB
         /// </remarks>
-        [JsonProperty("EQBAB")]
+        [JsonPropertyName("EQBAB")]
         public AdjustedDilutedNetAssetValuePerShare AdjustedDilutedNetAssetValuePerShare => _adjustedDilutedNetAssetValuePerShare ??= new(_timeProvider, _securityIdentifier);
         private AdjustedDilutedNetAssetValuePerShare _adjustedDilutedNetAssetValuePerShare;
 
@@ -361,7 +361,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQSPU
         /// </remarks>
-        [JsonProperty("EQSPU")]
+        [JsonPropertyName("EQSPU")]
         public ReportedBasicAdjustedFundFromOperationsPerShare ReportedBasicAdjustedFundFromOperationsPerShare => _reportedBasicAdjustedFundFromOperationsPerShare ??= new(_timeProvider, _securityIdentifier);
         private ReportedBasicAdjustedFundFromOperationsPerShare _reportedBasicAdjustedFundFromOperationsPerShare;
 
@@ -371,7 +371,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQMPF
         /// </remarks>
-        [JsonProperty("EQMPF")]
+        [JsonPropertyName("EQMPF")]
         public ReportedBasicFundFromOperationsPerShare ReportedBasicFundFromOperationsPerShare => _reportedBasicFundFromOperationsPerShare ??= new(_timeProvider, _securityIdentifier);
         private ReportedBasicFundFromOperationsPerShare _reportedBasicFundFromOperationsPerShare;
 
@@ -381,7 +381,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQR84
         /// </remarks>
-        [JsonProperty("EQR84")]
+        [JsonPropertyName("EQR84")]
         public ReportedDilutedAdjustedFundFromOperationsPerShare ReportedDilutedAdjustedFundFromOperationsPerShare => _reportedDilutedAdjustedFundFromOperationsPerShare ??= new(_timeProvider, _securityIdentifier);
         private ReportedDilutedAdjustedFundFromOperationsPerShare _reportedDilutedAdjustedFundFromOperationsPerShare;
 
@@ -391,7 +391,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQESD
         /// </remarks>
-        [JsonProperty("EQESD")]
+        [JsonPropertyName("EQESD")]
         public ReportedDilutedFundFromOperationsPerShare ReportedDilutedFundFromOperationsPerShare => _reportedDilutedFundFromOperationsPerShare ??= new(_timeProvider, _securityIdentifier);
         private ReportedDilutedFundFromOperationsPerShare _reportedDilutedFundFromOperationsPerShare;
 

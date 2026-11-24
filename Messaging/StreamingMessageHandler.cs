@@ -16,7 +16,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
-using Newtonsoft.Json;
+using System.Text.Json;
 using QuantConnect.Configuration;
 using QuantConnect.Interfaces;
 using QuantConnect.Logging;
@@ -36,7 +36,7 @@ namespace QuantConnect.Messaging
         private string _port;
         private PushSocket _server;
         private AlgorithmNodePacket _job;
-        private OrderEventJsonConverter _orderEventJsonConverter;
+        private JsonSerializerOptions _serializerOptions;
         private readonly object _socketLock = new object();
 
         /// <summary>
@@ -63,7 +63,7 @@ namespace QuantConnect.Messaging
         public void SetAuthentication(AlgorithmNodePacket job)
         {
             _job = job;
-            _orderEventJsonConverter = new OrderEventJsonConverter(job.AlgorithmId);
+            _serializerOptions = JsonSerialization.Create(converters: new OrderEventJsonConverter(job.AlgorithmId));
             Transmit(_job);
         }
 
@@ -95,7 +95,7 @@ namespace QuantConnect.Messaging
         /// <param name="packet">Packet to transmit</param>
         public void Transmit(Packet packet)
         {
-            var payload = JsonConvert.SerializeObject(packet, _orderEventJsonConverter);
+            var payload = JsonSerialization.Serialize(packet, _serializerOptions);
 
             var message = new NetMQMessage();
 

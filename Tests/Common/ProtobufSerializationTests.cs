@@ -19,7 +19,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using ProtoBuf;
 using QuantConnect.Data;
@@ -398,12 +397,12 @@ namespace QuantConnect.Tests.Common
 
             {
                 // warmup
-                var serialized = JsonConvert.SerializeObject(ticks);
+                var serialized = JsonSerialization.Serialize(ticks);
 
                 var start = DateTime.UtcNow;
                 for (var i = 0; i < 10; i++)
                 {
-                    serialized = JsonConvert.SerializeObject(ticks);
+                    serialized = JsonSerialization.Serialize(ticks);
                 }
                 var end = DateTime.UtcNow;
 

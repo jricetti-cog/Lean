@@ -26,7 +26,6 @@ using Python.Runtime;
 using QuantConnect.Data.UniverseSelection;
 using QuantConnect.Data.Fundamental;
 using System.Linq;
-using Newtonsoft.Json;
 using QuantConnect.Brokerages;
 using QuantConnect.Scheduling;
 using QuantConnect.Util;
@@ -1982,7 +1981,7 @@ namespace QuantConnect.Algorithm
             using var pyType = command.GetPythonType();
             typeName = Extensions.CreateType(pyType).Name;
 
-            return JsonConvert.DeserializeObject<Dictionary<string, object>>(strResult);
+            return JsonSerialization.Deserialize<Dictionary<string, object>>(strResult);
         }
 
         /// <summary>

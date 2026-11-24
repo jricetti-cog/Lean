@@ -1,4 +1,4 @@
-/*
+﻿/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -15,7 +15,9 @@
 
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 using NUnit.Framework;
 using QuantConnect.Util;
 
@@ -23,13 +25,7 @@ namespace QuantConnect.Tests.Common.Util;
 
 public class DecimalJsonConverterTests
 {
-    private static readonly JsonSerializerSettings settings = new JsonSerializerSettings
-    {
-        Converters = new List<JsonConverter>
-        {
-            new DecimalJsonConverter()
-        }
-    };
+    private static readonly JsonSerializerOptions settings = JsonSerialization.Create(converters: new DecimalJsonConverter());
 
     [TestCase("1", 1, true)]
     [TestCase("0", 0, true)]
@@ -43,7 +39,7 @@ public class DecimalJsonConverterTests
     public void DecimalStringConverterTests(string value, decimal expected, bool quote = true)
     {
         var jsonString = TestObject<decimal>.CreateJsonObject(value, quote);
-        var obj = JsonConvert.DeserializeObject<TestObject<decimal>>(jsonString, settings);
+        var obj = JsonSerialization.Deserialize<TestObject<decimal>>(jsonString, settings);
 
         Assert.AreEqual(expected, obj.Value);
     }
@@ -60,7 +56,7 @@ public class DecimalJsonConverterTests
     public void NullableDecimalStringConverterTests(string value, decimal expected, bool quote = true)
     {
         var jsonString = TestObject<decimal?>.CreateJsonObject(value, quote);
-        var obj = JsonConvert.DeserializeObject<TestObject<decimal?>>(jsonString, settings);
+        var obj = JsonSerialization.Deserialize<TestObject<decimal?>>(jsonString, settings);
 
         Assert.AreEqual(expected, obj.Value);
     }
@@ -73,7 +69,7 @@ public class DecimalJsonConverterTests
                          """;
 
         Assert.Throws<FormatException>(() =>
-            JsonConvert.DeserializeObject<TestObject<decimal>>(jsonString, settings));
+            JsonSerialization.Deserialize<TestObject<decimal>>(jsonString, settings));
     }
 
     [Test]
@@ -82,7 +78,7 @@ public class DecimalJsonConverterTests
         var jsonString = """
                              {"value": null}
                          """;
-        var obj = JsonConvert.DeserializeObject<TestObject<decimal?>>(jsonString, settings);
+        var obj = JsonSerialization.Deserialize<TestObject<decimal?>>(jsonString, settings);
 
         Assert.IsNull(obj.Value);
     }
@@ -94,16 +90,16 @@ public class DecimalJsonConverterTests
                              {"value": null}
                          """;
 
-        Assert.Throws<JsonSerializationException>(() =>
-            JsonConvert.DeserializeObject<TestObject<decimal>>(jsonString, settings));
+        Assert.Throws<JsonException>(() =>
+            JsonSerialization.Deserialize<TestObject<decimal>>(jsonString, settings));
     }
 
     [Test]
     public void SerializesDecimalAsString()
     {
         var obj = new TestObject<decimal> { Value = 1.333m };
-        var json = JsonConvert.SerializeObject(obj, settings);
-        var jsonOrigin = JsonConvert.SerializeObject(obj);
+        var json = JsonSerialization.Serialize(obj, settings);
+        var jsonOrigin = JsonSerialization.Serialize(obj);
 
         Assert.AreEqual(jsonOrigin, json);
     }
@@ -112,8 +108,8 @@ public class DecimalJsonConverterTests
     public void SerializesNullableDecimalAsStringFallbackToOriginBehavior()
     {
         var obj = new TestObject<decimal?> { Value = 1.333m };
-        var json = JsonConvert.SerializeObject(obj, settings);
-        var jsonOrigin = JsonConvert.SerializeObject(obj);
+        var json = JsonSerialization.Serialize(obj, settings);
+        var jsonOrigin = JsonSerialization.Serialize(obj);
 
         Assert.AreEqual(jsonOrigin, json);
     }
@@ -122,8 +118,8 @@ public class DecimalJsonConverterTests
     public void SerializesNullableDecimalNullAsNull()
     {
         var obj = new TestObject<decimal?> { Value = null };
-        var json = JsonConvert.SerializeObject(obj, settings);
-        var jsonOrigin = JsonConvert.SerializeObject(obj);
+        var json = JsonSerialization.Serialize(obj, settings);
+        var jsonOrigin = JsonSerialization.Serialize(obj);
 
         Assert.AreEqual(jsonOrigin, json);
     }

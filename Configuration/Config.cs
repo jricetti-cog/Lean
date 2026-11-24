@@ -18,8 +18,10 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Encodings.Web;
+using System.Text.Json.Serialization;
 using QuantConnect.Logging;
 using static System.FormattableString;
 
@@ -62,12 +64,9 @@ namespace QuantConnect.Configuration
                 Reset();
             }
 
-            var jsonArguments = JsonConvert.DeserializeObject(JsonConvert.SerializeObject(cliArguments));
+            var jsonArguments = JsonSerializer.SerializeToNode(cliArguments, WriteOptions).AsObject();
 
-            Settings.Value.Merge(jsonArguments, new JsonMergeSettings
-            {
-                MergeArrayHandling = MergeArrayHandling.Union
-            });
+            Merge(Settings.Value, jsonArguments);
         }
 
         /// <summary>
@@ -77,17 +76,17 @@ namespace QuantConnect.Configuration
         /// </summary>
         public static void Reset()
         {
-            Settings = new Lazy<JObject>(ConfigFactory);
+            Settings = new Lazy<JsonObject>(ConfigFactory);
         }
 
-        private static Lazy<JObject> Settings = new Lazy<JObject>(ConfigFactory);
+        private static Lazy<JsonObject> Settings = new Lazy<JsonObject>(ConfigFactory);
 
-        private static JObject ConfigFactory()
+        private static JsonObject ConfigFactory()
         {
             // initialize settings inside a lazy for free thread-safe, one-time initialization
             if (!File.Exists(ConfigurationFileName))
             {
-                return new JObject
+                return new JsonObject
                 {
                     {"algorithm-type-name", "BasicTemplateAlgorithm"},
                     {"live-mode", false},
@@ -103,7 +102,7 @@ namespace QuantConnect.Configuration
                 };
             }
 
-            return JObject.Parse(File.ReadAllText(ConfigurationFileName));
+            return JsonNode.Parse(File.ReadAllText(ConfigurationFileName), documentOptions: DocumentOptions).AsObject();
         }
 
         /// <summary>
@@ -114,11 +113,11 @@ namespace QuantConnect.Configuration
         public static string GetEnvironment()
         {
             var environments = new List<string>();
-            JToken currentEnvironment = Settings.Value;
+            JsonNode currentEnvironment = Settings.Value;
             var env = currentEnvironment["environment"];
             while (currentEnvironment != null && env != null)
             {
-                var currentEnv = env.Value<string>();
+                var currentEnv = AsText(env);
                 environments.Add(currentEnv);
                 var moreEnvironments = currentEnvironment["environments"];
                 if (moreEnvironments == null)
@@ -152,13 +151,13 @@ namespace QuantConnect.Configuration
                 }
                 return defaultValue;
             }
-            return token.ToString();
+            return AsText(token);
         }
 
         /// <summary>
-        /// Gets the underlying JToken for the specified key
+        /// Gets the underlying json node for the specified key
         /// </summary>
-        public static JToken GetToken(string key)
+        public static JsonNode GetToken(string key)
         {
             return GetToken(Settings.Value, key);
         }
@@ -171,7 +170,7 @@ namespace QuantConnect.Configuration
         /// <param name="value">The new value</param>
         public static void Set(string key, dynamic value)
         {
-            JToken environment = Settings.Value;
+            JsonNode environment = Settings.Value;
             while (key.Contains('.', StringComparison.InvariantCulture))
             {
                 var envName = key.Substring(0, key.IndexOf(".", StringComparison.InvariantCulture));
@@ -179,11 +178,11 @@ namespace QuantConnect.Configuration
                 var environments = environment["environments"];
                 if (environments == null)
                 {
-                    environment["environments"] = environments = new JObject();
+                    environment["environments"] = environments = new JsonObject();
                 }
                 environment = environments[envName];
             }
-            environment[key] = value;
+            environment[key] = ToNode((object)value);
         }
 
         /// <summary>
@@ -249,15 +248,7 @@ namespace QuantConnect.Configuration
             }
 
             var type = typeof(T);
-            string value;
-            try
-            {
-                value = token.Value<string>();
-            }
-            catch (Exception)
-            {
-                value = token.ToString();
-            }
+            var value = AsText(token);
 
             if (type.IsEnum)
             {
@@ -288,7 +279,7 @@ namespace QuantConnect.Configuration
 
             try
             {
-                return JsonConvert.DeserializeObject<T>(value);
+                return JsonSerializer.Deserialize<T>(value, SerializerOptions);
             }
             catch (Exception err)
             {
@@ -340,7 +331,7 @@ namespace QuantConnect.Configuration
         public static void Write(string targetPath = null)
         {
             if (!Settings.IsValueCreated) return;
-            var serialized = JsonConvert.SerializeObject(Settings.Value, Formatting.Indented);
+            var serialized = Settings.Value.ToJsonString(WriteOptions);
 
             var taget = ConfigurationFileName;
             if (!string.IsNullOrEmpty(targetPath))
@@ -355,8 +346,8 @@ namespace QuantConnect.Configuration
         /// removes the 'environments' node
         /// </summary>
         /// <param name="overrideEnvironment">The environment to use</param>
-        /// <returns>The flattened JObject</returns>
-        public static JObject Flatten(string overrideEnvironment)
+        /// <returns>The flattened json object</returns>
+        public static JsonObject Flatten(string overrideEnvironment)
         {
             return Flatten(Settings.Value, overrideEnvironment);
         }
@@ -365,16 +356,15 @@ namespace QuantConnect.Configuration
         /// Flattens the jobject with respect to the selected environment and then
         /// removes the 'environments' node
         /// </summary>
-        /// <param name="config">The configuration represented as a JObject</param>
+        /// <param name="config">The configuration represented as a json object</param>
         /// <param name="overrideEnvironment">The environment to use</param>
-        /// <returns>The flattened JObject</returns>
-        public static JObject Flatten(JObject config, string overrideEnvironment)
+        /// <returns>The flattened json object</returns>
+        public static JsonObject Flatten(JsonObject config, string overrideEnvironment)
         {
-            var clone = (JObject)config.DeepClone();
+            var clone = config.DeepClone().AsObject();
 
             // remove the environment declaration
-            var environmentProperty = clone.Property("environment");
-            if (environmentProperty != null) environmentProperty.Remove();
+            clone.Remove("environment");
 
             if (!string.IsNullOrEmpty(overrideEnvironment))
             {
@@ -384,53 +374,43 @@ namespace QuantConnect.Configuration
                 {
                     var env = string.Join(".environments.", environmentSections.Where((x, j) => j <= i));
 
-                    var environments = config["environments"];
-                    if (!(environments is JObject)) continue;
+                    if (config["environments"] is not JsonObject environments) continue;
 
-                    var settings = ((JObject)environments).SelectToken(env);
-                    if (settings == null) continue;
+                    if (SelectToken(environments, env) is not JsonObject settings) continue;
 
                     // copy values for the selected environment to the root
-                    foreach (var token in settings)
+                    foreach (var kvp in settings)
                     {
-                        var path = Path.GetExtension(token.Path);
-                        var dot = path.IndexOf(".", StringComparison.InvariantCulture);
-                        if (dot != -1) path = path.Substring(dot + 1);
-
                         // remove if already exists on clone
-                        var jProperty = clone.Property(path);
-                        if (jProperty != null) jProperty.Remove();
-
-                        var value = (token is JProperty ? ((JProperty)token).Value : token).ToString();
-                        clone.Add(path, value);
+                        clone.Remove(kvp.Key);
+                        clone.Add(kvp.Key, AsText(kvp.Value));
                     }
                 }
             }
 
             // remove all environments
-            var environmentsProperty = clone.Property("environments");
-            environmentsProperty?.Remove();
+            clone.Remove("environments");
 
             return clone;
         }
 
-        private static JToken GetToken(JToken settings, string key)
+        private static JsonNode GetToken(JsonNode settings, string key)
         {
-            return GetToken(settings, key, settings.SelectToken(key));
+            return GetToken(settings, key, SelectToken(settings, key));
         }
 
-        private static JToken GetToken(JToken settings, string key, JToken current)
+        private static JsonNode GetToken(JsonNode settings, string key, JsonNode current)
         {
-            var environmentSetting = settings.SelectToken("environment");
+            var environmentSetting = SelectToken(settings, "environment");
             if (environmentSetting != null)
             {
-                var environmentSettingValue = environmentSetting.Value<string>();
+                var environmentSettingValue = AsText(environmentSetting);
                 if (!string.IsNullOrWhiteSpace(environmentSettingValue))
                 {
-                    var environment = settings.SelectToken("environments." + environmentSettingValue);
+                    var environment = SelectToken(settings, "environments." + environmentSettingValue);
                     if (environment != null)
                     {
-                        var setting = environment.SelectToken(key);
+                        var setting = SelectToken(environment, key);
                         if (setting != null)
                         {
                             current = setting;
@@ -442,9 +422,120 @@ namespace QuantConnect.Configuration
             }
             if (current == null)
             {
-                return settings.SelectToken(key);
+                return SelectToken(settings, key);
             }
             return current;
+        }
+
+        private static readonly JsonDocumentOptions DocumentOptions = new()
+        {
+            CommentHandling = JsonCommentHandling.Skip,
+            AllowTrailingCommas = true
+        };
+
+        private static readonly JsonSerializerOptions SerializerOptions = new()
+        {
+            PropertyNameCaseInsensitive = true,
+            IncludeFields = true,
+            NumberHandling = JsonNumberHandling.AllowReadingFromString,
+            ReadCommentHandling = JsonCommentHandling.Skip,
+            AllowTrailingCommas = true,
+            Converters = { new JsonStringEnumConverter() }
+        };
+
+        private static readonly JsonSerializerOptions WriteOptions = new()
+        {
+            WriteIndented = true,
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        };
+
+        /// <summary>
+        /// Navigates a dotted path like newtonsoft's SelectToken
+        /// </summary>
+        private static JsonNode SelectToken(JsonNode node, string path)
+        {
+            foreach (var segment in path.Split('.'))
+            {
+                if (node is not JsonObject jObject || !jObject.TryGetPropertyValue(segment, out node))
+                {
+                    return null;
+                }
+            }
+            return node;
+        }
+
+        /// <summary>
+        /// The text of a setting, matching newtonsoft's JToken.ToString(): strings unquoted, 'True'/'False', objects indented
+        /// </summary>
+        private static string AsText(JsonNode token)
+        {
+            if (token is JsonValue value)
+            {
+                switch (value.GetValueKind())
+                {
+                    case JsonValueKind.String:
+                        return value.TryGetValue<string>(out var text) ? text : JsonSerializer.Deserialize<string>(value.ToJsonString());
+                    case JsonValueKind.True:
+                        return bool.TrueString;
+                    case JsonValueKind.False:
+                        return bool.FalseString;
+                    case JsonValueKind.Null:
+                        return string.Empty;
+                    case JsonValueKind.Number:
+                        var raw = value.ToJsonString();
+                        if (raw.AsSpan().IndexOfAny('.', 'e', 'E') >= 0 && double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var number))
+                        {
+                            return number.ToString(CultureInfo.InvariantCulture);
+                        }
+                        return raw;
+                }
+            }
+            return token?.ToJsonString(WriteOptions) ?? string.Empty;
+        }
+
+        private static JsonNode ToNode(object value)
+        {
+            return value switch
+            {
+                null => null,
+                JsonNode node => node.Parent == null ? node : node.DeepClone(),
+                _ => JsonSerializer.SerializeToNode(value, value.GetType(), WriteOptions)
+            };
+        }
+
+        /// <summary>
+        /// Newtonsoft's JObject.Merge with MergeArrayHandling.Union and null values ignored
+        /// </summary>
+        private static void Merge(JsonObject target, JsonObject content)
+        {
+            foreach (var kvp in content.ToList())
+            {
+                if (!target.TryGetPropertyValue(kvp.Key, out var existing))
+                {
+                    target[kvp.Key] = kvp.Value?.DeepClone();
+                }
+                else if (kvp.Value != null)
+                {
+                    if (existing is JsonObject existingObject && kvp.Value is JsonObject contentObject)
+                    {
+                        Merge(existingObject, contentObject);
+                    }
+                    else if (existing is JsonArray existingArray && kvp.Value is JsonArray contentArray)
+                    {
+                        foreach (var item in contentArray)
+                        {
+                            if (!existingArray.Any(x => JsonNode.DeepEquals(x, item)))
+                            {
+                                existingArray.Add(item?.DeepClone());
+                            }
+                        }
+                    }
+                    else if (kvp.Value.GetValueKind() != JsonValueKind.Null)
+                    {
+                        target[kvp.Key] = kvp.Value.DeepClone();
+                    }
+                }
+            }
         }
     }
 }

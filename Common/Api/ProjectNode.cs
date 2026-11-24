@@ -13,7 +13,7 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace QuantConnect.Api
 {
@@ -25,13 +25,13 @@ namespace QuantConnect.Api
         /// <summary>
         /// List of project nodes.
         /// </summary>
-        [JsonProperty(PropertyName = "nodes")]
+        [JsonPropertyName("nodes")]
         public NodeList Nodes { get; set; }
 
         /// <summary>
         /// Indicate if the node is automatically selected
         /// </summary>
-        [JsonProperty(PropertyName = "autoSelectNode")]
+        [JsonPropertyName("autoSelectNode")]
         public bool AutoSelectNode { get; set; }
     }
 }

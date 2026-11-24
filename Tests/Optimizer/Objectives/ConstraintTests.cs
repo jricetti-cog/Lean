@@ -14,7 +14,6 @@
  *
 */
 
-using Newtonsoft.Json;
 using NUnit.Framework;
 using QuantConnect.Optimizer.Objectives;
 using QuantConnect.Util;
@@ -86,7 +85,7 @@ namespace QuantConnect.Tests.Optimizer.Objectives
         {
             var json = "{\"operator\": \"equals\",\"target\": \"pin ocho.Gepetto\",\"targetValue\": 11}";
 
-            var constraint = (Constraint)JsonConvert.DeserializeObject(json, typeof(Constraint));
+            var constraint = (Constraint)JsonSerialization.Deserialize(json, typeof(Constraint));
 
             Assert.AreEqual("['pin ocho'].['Gepetto']", constraint.Target);
             Assert.AreEqual(ComparisonOperatorTypes.Equals, constraint.Operator);
@@ -98,8 +97,8 @@ namespace QuantConnect.Tests.Optimizer.Objectives
         {
             var origin =  new Constraint("['Statistics'].['Drawdown']", ComparisonOperatorTypes.Equals, 100);
             
-            var json = JsonConvert.SerializeObject(origin);
-            var actual = JsonConvert.DeserializeObject<Constraint>(json);
+            var json = JsonSerialization.Serialize(origin);
+            var actual = JsonSerialization.Deserialize<Constraint>(json);
             
             Assert.NotNull(actual);
             Assert.AreEqual(origin.Target, actual.Target);

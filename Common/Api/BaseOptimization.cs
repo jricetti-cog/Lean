@@ -14,14 +14,13 @@
 */
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 using QuantConnect.Optimizer;
 using QuantConnect.Optimizer.Objectives;
 using System.Collections.Generic;
 using QuantConnect.Optimizer.Parameters;
 using QuantConnect.Util;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Serialization;
 
 namespace QuantConnect.Api
 {
@@ -48,7 +47,7 @@ namespace QuantConnect.Api
         /// <summary>
         /// Status of the optimization
         /// </summary>
-        [JsonConverter(typeof(StringEnumConverter), converterParameters: typeof(CamelCaseNamingStrategy))]
+        [JsonConverterWithArgs(typeof(StringEnumJsonConverter), true)]
         public OptimizationStatus Status { get; set; }
 
         /// <summary>
@@ -65,7 +64,7 @@ namespace QuantConnect.Api
         /// <summary>
         /// End date of out of sample data
         /// </summary>
-        [JsonConverter(typeof(DateTimeJsonConverter), DateFormat.ISOShort, DateFormat.UI)]
+        [JsonConverterWithArgs(typeof(DateTimeJsonConverter), DateFormat.ISOShort, DateFormat.UI)]
         public DateTime? OutOfSampleMaxEndDate { get; set; }
 
         /// <summary>
@@ -87,7 +86,7 @@ namespace QuantConnect.Api
         /// <summary>
         /// Date when this optimization was created
         /// </summary>
-        [JsonConverter(typeof(DateTimeJsonConverter), DateFormat.ISOShort, DateFormat.UI)]
+        [JsonConverterWithArgs(typeof(DateTimeJsonConverter), DateFormat.ISOShort, DateFormat.UI)]
         public DateTime Created { get; set; }
 
         /// <summary>

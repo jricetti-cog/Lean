@@ -16,8 +16,6 @@
 
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using NUnit.Framework;
 using QuantConnect.Algorithm.CSharp;
 using QuantConnect.Configuration;
@@ -119,7 +117,7 @@ namespace QuantConnect.Tests.Common.Packets
         [TestCase("[{\"name\":\"ema-fast\",\"value\":\"10\"},{\"name\":\"ema-slow\",\"value\":20}]")]
         public void ParametersDeserialization(string parameters)
         {
-            var job = JsonConvert.DeserializeObject<BacktestNodePacket>($"{{\"Parameters\":{parameters}}}");
+            var job = JsonSerialization.Deserialize<BacktestNodePacket>($"{{\"Parameters\":{parameters}}}");
 
             Assert.AreEqual(2, job.Parameters.Count);
             Assert.AreEqual("10", job.Parameters["ema-fast"]);
@@ -131,7 +129,7 @@ namespace QuantConnect.Tests.Common.Packets
             "{\"key\":\"leverage\",\"value\":1.10},{\"key\":\"enabled\",\"value\":true}]")]
         public void ParametersKeepTheirRawValue(string parameters)
         {
-            var job = JsonConvert.DeserializeObject<BacktestNodePacket>($"{{\"Parameters\":{parameters}}}");
+            var job = JsonSerialization.Deserialize<BacktestNodePacket>($"{{\"Parameters\":{parameters}}}");
 
             Assert.AreEqual("2024-01-01", job.Parameters["start-date"]);
             Assert.AreEqual("2024-01-01T10:00:00Z", job.Parameters["end-date"]);
@@ -143,15 +141,9 @@ namespace QuantConnect.Tests.Common.Packets
         [TestCase("[{\"key\":\"ema-fast\",\"value\":\"10\"},{\"key\":\"start-date\",\"value\":\"2024-01-01T10:00:00Z\"}]")]
         public void ParametersDeserializationCamelCase(string parameters)
         {
-            var settings = new JsonSerializerSettings
-            {
-                ContractResolver = new DefaultContractResolver
-                {
-                    NamingStrategy = new CamelCaseNamingStrategy { ProcessDictionaryKeys = false, OverrideSpecifiedNames = true }
-                }
-            };
+            var settings = JsonSerialization.Create(camelCase: true);
 
-            var job = JsonConvert.DeserializeObject<BacktestNodePacket>($"{{\"parameters\":{parameters}}}", settings);
+            var job = JsonSerialization.Deserialize<BacktestNodePacket>($"{{\"parameters\":{parameters}}}", settings);
 
             Assert.AreEqual(2, job.Parameters.Count);
             Assert.AreEqual("10", job.Parameters["ema-fast"]);
@@ -163,8 +155,8 @@ namespace QuantConnect.Tests.Common.Packets
         {
             var job = new BacktestNodePacket { Parameters = new Dictionary<string, string> { { "ema-fast", "10" } } };
 
-            var serialized = JsonConvert.SerializeObject(job);
-            var job2 = JsonConvert.DeserializeObject<BacktestNodePacket>(serialized);
+            var serialized = JsonSerialization.Serialize(job);
+            var job2 = JsonSerialization.Deserialize<BacktestNodePacket>(serialized);
 
             StringAssert.Contains("\"Parameters\":{\"ema-fast\":\"10\"}", serialized);
             Assert.AreEqual(job.Parameters, job2.Parameters);
@@ -175,8 +167,8 @@ namespace QuantConnect.Tests.Common.Packets
         {
             var job = new BacktestNodePacket(1, 2, "3", null, 9m, $"{nameof(BacktestNodePacketTests)}.Pepe");
 
-            var serialized = JsonConvert.SerializeObject(job);
-            var job2 = JsonConvert.DeserializeObject<BacktestNodePacket>(serialized);
+            var serialized = JsonSerialization.Serialize(job);
+            var job2 = JsonSerialization.Deserialize<BacktestNodePacket>(serialized);
 
             Assert.AreEqual(job.BacktestId, job2.BacktestId);
             Assert.AreEqual(job.Name, job2.Name);
@@ -196,8 +188,8 @@ namespace QuantConnect.Tests.Common.Packets
             job.PeriodStart = new DateTime(2019, 1, 1);
             job.PeriodFinish = new DateTime(2020, 1, 1);
 
-            var serialized = JsonConvert.SerializeObject(job);
-            var job2 = JsonConvert.DeserializeObject<BacktestNodePacket>(serialized);
+            var serialized = JsonSerialization.Serialize(job);
+            var job2 = JsonSerialization.Deserialize<BacktestNodePacket>(serialized);
 
             Assert.AreEqual(job.PeriodStart, job2.PeriodStart);
             Assert.AreEqual(job.PeriodFinish, job2.PeriodFinish);
@@ -210,8 +202,8 @@ namespace QuantConnect.Tests.Common.Packets
             Assert.AreEqual(9m, job.CashAmount.Value.Amount);
             Assert.AreEqual(Currencies.USD, job.CashAmount.Value.Currency);
 
-            var serialized = JsonConvert.SerializeObject(job);
-            var job2 = JsonConvert.DeserializeObject<BacktestNodePacket>(serialized);
+            var serialized = JsonSerialization.Serialize(job);
+            var job2 = JsonSerialization.Deserialize<BacktestNodePacket>(serialized);
             Assert.AreEqual(job.CashAmount, job2.CashAmount);
         }
 
@@ -221,8 +213,8 @@ namespace QuantConnect.Tests.Common.Packets
             var job = new BacktestNodePacket(1, 2, "3", null, $"{nameof(BacktestNodePacketTests)}.Pepe");
             Assert.IsNull(job.CashAmount);
 
-            var serialized = JsonConvert.SerializeObject(job);
-            var job2 = JsonConvert.DeserializeObject<BacktestNodePacket>(serialized);
+            var serialized = JsonSerialization.Serialize(job);
+            var job2 = JsonSerialization.Deserialize<BacktestNodePacket>(serialized);
             Assert.AreEqual(job.CashAmount, job2.CashAmount);
         }
 

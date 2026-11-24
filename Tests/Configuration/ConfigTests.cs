@@ -16,7 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 using NUnit.Framework;
 using QuantConnect.Configuration;
 using static System.FormattableString;
@@ -74,34 +74,34 @@ namespace QuantConnect.Tests.Configuration
             // read in and rewrite the environment based on the settings
             const string overrideEnvironment = "live-paper.beta";
 
-            var config = JObject.Parse(
+            var config = JsonNode.Parse(
 @"{
-   'some-setting': 'false',                 
-    environments: {
-        'live-paper': {
-            'some-setting': 'true',
-            'environments': {
-                'beta': {
-                    'some-setting2': 'true'
+   ""some-setting"": ""false"",
+    ""environments"": {
+        ""live-paper"": {
+            ""some-setting"": ""true"",
+            ""environments"": {
+                ""beta"": {
+                    ""some-setting2"": ""true""
                 }
             }
         }
     }
-}");
+}").AsObject();
 
             var configCopy = config.DeepClone();
 
             var clone = Config.Flatten(config, overrideEnvironment);
 
             // remove environments
-            Assert.IsNull(clone.Property("environment"));
-            Assert.IsNull(clone.Property("environments"));
+            Assert.IsFalse(clone.ContainsKey("environment"));
+            Assert.IsFalse(clone.ContainsKey("environments"));
 
             // properly applied environment
-            Assert.AreEqual("true", clone.Property("some-setting").Value.ToString());
-            Assert.AreEqual("true", clone.Property("some-setting2").Value.ToString());
+            Assert.AreEqual("true", clone["some-setting"].ToString());
+            Assert.AreEqual("true", clone["some-setting2"].ToString());
 
-            Assert.AreEqual(configCopy, config);
+            Assert.IsTrue(JsonNode.DeepEquals(configCopy, config));
         }
 
         [Test]

@@ -13,10 +13,10 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace QuantConnect.Optimizer.Parameters
 {
@@ -24,42 +24,46 @@ namespace QuantConnect.Optimizer.Parameters
     /// Override <see cref="OptimizationParameter"/> deserialization method.
     /// Can handle <see cref="OptimizationStepParameter"/> instances
     /// </summary>
-    public class OptimizationParameterJsonConverter : JsonConverter
+    public class OptimizationParameterJsonConverter : JsonConverter<OptimizationParameter>
     {
         /// <summary>
-        /// Writes a JSON object from a OptimizationParameter object
-        /// </summary>        
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-        {
-            JObject jo = new JObject();
-            Type type = value.GetType();
+        /// Null tokens are handled by the converter
+        /// </summary>
+        public override bool HandleNull => true;
 
-            foreach (PropertyInfo prop in type.GetProperties())
+        /// <summary>
+        /// Writes the JSON representation of the object.
+        /// </summary>
+        public override void Write(Utf8JsonWriter writer, OptimizationParameter value, JsonSerializerOptions options)
+        {
+            if (value == null)
+            {
+                writer.WriteNullValue();
+                return;
+            }
+            writer.WriteStartObject();
+            foreach (var prop in value.GetType().GetProperties())
             {
                 if (prop.CanRead)
                 {
-                    var attribute = prop.GetCustomAttribute<JsonPropertyAttribute>();
-                    object propVal = prop.GetValue(value, null);
+                    var attribute = prop.GetCustomAttribute<JsonPropertyNameAttribute>();
+                    var propVal = prop.GetValue(value, null);
                     if (propVal != null)
                     {
-                        jo.Add(attribute.PropertyName ?? prop.Name, JToken.FromObject(propVal, serializer));
+                        writer.WritePropertyName(attribute?.Name ?? prop.Name);
+                        JsonSerializer.Serialize(writer, propVal, propVal.GetType(), options);
                     }
                 }
             }
-            jo.WriteTo(writer);
+            writer.WriteEndObject();
         }
 
         /// <summary>
-        /// Creates a Optimization Parameter object from a JSON object
+        /// Reads the JSON representation of the object.
         /// </summary>
-        public override object ReadJson(
-            JsonReader reader,
-            Type objectType,
-            object existingValue,
-            JsonSerializer serializer
-            )
+        public override OptimizationParameter Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            var parameter = serializer.Deserialize<OptimizationParameterProperties>(reader);
+            var parameter = JsonSerializer.Deserialize<OptimizationParameterProperties>(ref reader, options);
             var parameterName = parameter?.Name ?? parameter?.Key;
             if (string.IsNullOrEmpty(parameterName))
             {
@@ -101,40 +105,32 @@ namespace QuantConnect.Optimizer.Parameters
             return optimizationParameter;
         }
 
-        /// <summary>
-        /// Determines if an OptimizationParameter is assignable from the given object type
-        /// </summary>
-        public override bool CanConvert(Type objectType) => typeof(OptimizationParameter).IsAssignableFrom(objectType);
-
-        /// <summary>
-        /// The optimization parameter properties as written, the optional ones can be missing or null
-        /// </summary>
         private class OptimizationParameterProperties
         {
             private string _value;
 
-            [JsonProperty("name")]
+            [JsonPropertyName("name")]
             public string Name { get; set; }
 
-            [JsonProperty("key")]
+            [JsonPropertyName("key")]
             public string Key { get; set; }
 
-            [JsonProperty("min")]
+            [JsonPropertyName("min")]
             public decimal? Min { get; set; }
 
-            [JsonProperty("max")]
+            [JsonPropertyName("max")]
             public decimal? Max { get; set; }
 
-            [JsonProperty("step")]
+            [JsonPropertyName("step")]
             public decimal? Step { get; set; }
 
-            [JsonProperty("minStep")]
+            [JsonPropertyName("minStep")]
             public decimal? MinStep { get; set; }
 
-            [JsonProperty("min-step")]
+            [JsonPropertyName("min-step")]
             public decimal? MinStepDashed { get; set; }
 
-            [JsonProperty("value")]
+            [JsonPropertyName("value")]
             public string Value
             {
                 get { return _value; }
@@ -145,9 +141,6 @@ namespace QuantConnect.Optimizer.Parameters
                 }
             }
 
-            /// <summary>
-            /// True if the value property was set, even to null
-            /// </summary>
             [JsonIgnore]
             public bool HasValue { get; private set; }
         }

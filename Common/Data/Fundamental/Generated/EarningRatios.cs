@@ -17,7 +17,7 @@
 using System;
 using System.Linq;
 using Python.Runtime;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using QuantConnect.Data.UniverseSelection;
 
@@ -34,7 +34,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 13015
         /// </remarks>
-        [JsonProperty("13015")]
+        [JsonPropertyName("13015")]
         public DilutedEPSGrowth DilutedEPSGrowth => _dilutedEPSGrowth ??= new(_timeProvider, _securityIdentifier);
         private DilutedEPSGrowth _dilutedEPSGrowth;
 
@@ -44,7 +44,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 13016
         /// </remarks>
-        [JsonProperty("13016")]
+        [JsonPropertyName("13016")]
         public DilutedContEPSGrowth DilutedContEPSGrowth => _dilutedContEPSGrowth ??= new(_timeProvider, _securityIdentifier);
         private DilutedContEPSGrowth _dilutedContEPSGrowth;
 
@@ -54,7 +54,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 13017
         /// </remarks>
-        [JsonProperty("13017")]
+        [JsonPropertyName("13017")]
         public DPSGrowth DPSGrowth => _dPSGrowth ??= new(_timeProvider, _securityIdentifier);
         private DPSGrowth _dPSGrowth;
 
@@ -64,7 +64,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 13018
         /// </remarks>
-        [JsonProperty("13018")]
+        [JsonPropertyName("13018")]
         public EquityPerShareGrowth EquityPerShareGrowth => _equityPerShareGrowth ??= new(_timeProvider, _securityIdentifier);
         private EquityPerShareGrowth _equityPerShareGrowth;
 
@@ -74,7 +74,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 13019
         /// </remarks>
-        [JsonProperty("13019")]
+        [JsonPropertyName("13019")]
         [Obsolete("RegressionGrowthofDividends5Years was retired by Morningstar in 2026 for all periods; no replacement is available.")]
         [JsonIgnore]
         public RegressionGrowthofDividends5Years RegressionGrowthofDividends5Years => _regressionGrowthofDividends5Years ??= new(_timeProvider, _securityIdentifier);
@@ -86,7 +86,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 13020
         /// </remarks>
-        [JsonProperty("13020")]
+        [JsonPropertyName("13020")]
         public FCFPerShareGrowth FCFPerShareGrowth => _fCFPerShareGrowth ??= new(_timeProvider, _securityIdentifier);
         private FCFPerShareGrowth _fCFPerShareGrowth;
 
@@ -96,7 +96,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 13021
         /// </remarks>
-        [JsonProperty("13021")]
+        [JsonPropertyName("13021")]
         public BookValuePerShareGrowth BookValuePerShareGrowth => _bookValuePerShareGrowth ??= new(_timeProvider, _securityIdentifier);
         private BookValuePerShareGrowth _bookValuePerShareGrowth;
 
@@ -106,7 +106,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 13022
         /// </remarks>
-        [JsonProperty("13022")]
+        [JsonPropertyName("13022")]
         [Obsolete("NormalizedDilutedEPSGrowth was retired by Morningstar in 2026 for all periods; no replacement is available.")]
         [JsonIgnore]
         public NormalizedDilutedEPSGrowth NormalizedDilutedEPSGrowth => _normalizedDilutedEPSGrowth ??= new(_timeProvider, _securityIdentifier);
@@ -118,7 +118,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 13023
         /// </remarks>
-        [JsonProperty("13023")]
+        [JsonPropertyName("13023")]
         public NormalizedBasicEPSGrowth NormalizedBasicEPSGrowth => _normalizedBasicEPSGrowth ??= new(_timeProvider, _securityIdentifier);
         private NormalizedBasicEPSGrowth _normalizedBasicEPSGrowth;
 

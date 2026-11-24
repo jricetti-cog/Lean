@@ -13,7 +13,7 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using System;
 
@@ -27,13 +27,13 @@ namespace QuantConnect.Api
         /// <summary>
         /// Job ID which can be used for querying state or packaging
         /// </summary>
-        [JsonProperty("jobId")]
+        [JsonPropertyName("jobId")]
         public string JobId { get; set; }
 
         /// <summary>
         /// The URL to download the object. This can also be null
         /// </summary>
-        [JsonProperty("url")]
+        [JsonPropertyName("url")]
         public string Url { get; set; }
     }
 
@@ -45,25 +45,25 @@ namespace QuantConnect.Api
         /// <summary>
         /// Object store key
         /// </summary>
-        [JsonProperty(PropertyName = "key")]
+        [JsonPropertyName("key")]
         public string Key {  get; set; }
 
         /// <summary>
         /// Last time it was modified
         /// </summary>
-        [JsonProperty(PropertyName = "modified")]
+        [JsonPropertyName("modified")]
         public DateTime? Modified { get; set; }
 
         /// <summary>
         /// MIME type
         /// </summary>
-        [JsonProperty(PropertyName = "mime")]
+        [JsonPropertyName("mime")]
         public string Mime { get; set; }
 
         /// <summary>
         /// File size
         /// </summary>
-        [JsonProperty(PropertyName = "size")]
+        [JsonPropertyName("size")]
         public decimal? Size { get; set; }
     }
 
@@ -75,13 +75,13 @@ namespace QuantConnect.Api
         /// <summary>
         /// File or folder name
         /// </summary>
-        [JsonProperty(PropertyName = "name")]
+        [JsonPropertyName("name")]
         public string Name { get; set; }
 
         /// <summary>
         /// True if it is a folder, false otherwise
         /// </summary>
-        [JsonProperty(PropertyName = "folder")]
+        [JsonPropertyName("folder")]
         public bool IsFolder { get; set; }
     }
 
@@ -93,19 +93,19 @@ namespace QuantConnect.Api
         /// <summary>
         /// Date this object was created
         /// </summary>
-        [JsonProperty(PropertyName = "created")]
+        [JsonPropertyName("created")]
         public DateTime Created { get; set; }
 
         /// <summary>
         /// MD5 (hashing algorithm) hash authentication code
         /// </summary>
-        [JsonProperty(PropertyName = "md5")]
+        [JsonPropertyName("md5")]
         public string Md5 { get; set; }
 
         /// <summary>
         /// Preview of the Object Store file content
         /// </summary>
-        [JsonProperty(PropertyName = "preview")]
+        [JsonPropertyName("preview")]
         public string Preview { get; set; }
     }
 
@@ -117,37 +117,37 @@ namespace QuantConnect.Api
         /// <summary>
         /// Path to the files in the Object Store
         /// </summary>
-        [JsonProperty(PropertyName = "path")]
+        [JsonPropertyName("path")]
         public string Path { get; set; }
 
         /// <summary>
         /// List of objects stored
         /// </summary>
-        [JsonProperty(PropertyName = "objects")]
+        [JsonPropertyName("objects")]
         public List<SummaryObjectStore> Objects { get; set; }
 
         /// <summary>
         /// The current page number in the paginated response
         /// </summary>
-        [JsonProperty(PropertyName = "page")]
+        [JsonPropertyName("page")]
         public int Page { get; set; }
 
         /// <summary>
         /// The total number of pages in the paginated response
         /// </summary>
-        [JsonProperty(PropertyName = "totalPages")]
+        [JsonPropertyName("totalPages")]
         public int TotalPages { get; set; }
 
         /// <summary>
         /// Size of all objects stored in bytes
         /// </summary>
-        [JsonProperty(PropertyName = "objectStorageUsed")]
+        [JsonPropertyName("objectStorageUsed")]
         public long ObjectStorageUsed { get; set; }
 
         /// <summary>
         /// Size of all the objects stored in human-readable format
         /// </summary>
-        [JsonProperty(PropertyName = "objectStorageUsedHuman")]
+        [JsonPropertyName("objectStorageUsedHuman")]
         public string ObjectStorageUsedHuman { get; set; }
     }
 
@@ -159,7 +159,7 @@ namespace QuantConnect.Api
         /// <summary>
         /// Object Store properties
         /// </summary>
-        [JsonProperty(PropertyName = "metadata")]
+        [JsonPropertyName("metadata")]
         public PropertiesObjectStore Properties { get; set; }
     }
 }

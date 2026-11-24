@@ -14,65 +14,57 @@
 */
 
 using System;
-using Newtonsoft.Json;
 using QuantConnect.Api;
+using System.Text.Json;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace QuantConnect.Util
 {
     /// <summary>
-    /// Reads a parameter name to value dictionary from either the {name: value} or the [{"key": key, "value": value}] format
+    /// Parameter dictionary json converter, accepts both a dictionary and a list of parameters
     /// </summary>
-    public class ParameterDictionaryJsonConverter : JsonConverter
+    public class ParameterDictionaryJsonConverter : JsonConverter<Dictionary<string, string>>
     {
         /// <summary>
-        /// Writes are handled by the default serializer, using the {name: value} format
+        /// Null tokens are handled by the converter
         /// </summary>
-        public override bool CanWrite => false;
+        public override bool HandleNull => true;
 
         /// <summary>
-        /// Determines whether this instance can convert the specified object type
+        /// Reads the JSON representation of the object
         /// </summary>
-        public override bool CanConvert(Type objectType)
+        public override Dictionary<string, string> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            return objectType == typeof(Dictionary<string, string>);
+            return Read(ref reader, options);
         }
 
         /// <summary>
-        /// Reads the parameters dictionary from the JSON
+        /// Writes the dictionary using the default serialization
         /// </summary>
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override void Write(Utf8JsonWriter writer, Dictionary<string, string> value, JsonSerializerOptions options)
         {
-            return Read(reader, serializer);
+            if (value == null)
+            {
+                writer.WriteNullValue();
+                return;
+            }
+            JsonSerializer.Serialize(writer, value, options);
         }
 
-        /// <summary>
-        /// Not used, see <see cref="CanWrite"/>
-        /// </summary>
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Reads the parameters dictionary at the reader's current token, null if the token is null.
-        /// Values are read as strings, as written, so dates, decimals and booleans keep their format
-        /// </summary>
-        internal static Dictionary<string, string> Read(JsonReader reader, JsonSerializer serializer)
+        internal static Dictionary<string, string> Read(ref Utf8JsonReader reader, JsonSerializerOptions options)
         {
             switch (reader.TokenType)
             {
-                case JsonToken.Null:
+                case JsonTokenType.Null:
                     return null;
-
-                case JsonToken.StartObject:
+                case JsonTokenType.StartObject:
                     // {name: value, ...}
-                    return serializer.Deserialize<Dictionary<string, string>>(reader);
-
-                case JsonToken.StartArray:
+                    return JsonSerializer.Deserialize<Dictionary<string, string>>(ref reader, options);
+                case JsonTokenType.StartArray:
                     // [{"key": key, "value": value}, ...], the optimization properties (min, max, step) don't apply here
                     var parameters = new Dictionary<string, string>();
-                    foreach (var parameter in serializer.Deserialize<List<Parameter>>(reader))
+                    foreach (var parameter in JsonSerializer.Deserialize<List<Parameter>>(ref reader, options))
                     {
                         if (!string.IsNullOrEmpty(parameter?.Name))
                         {
@@ -80,7 +72,6 @@ namespace QuantConnect.Util
                         }
                     }
                     return parameters;
-
                 default:
                     throw new ArgumentException($"Unexpected Tokentype {reader.TokenType}");
             }

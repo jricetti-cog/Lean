@@ -17,7 +17,7 @@
 using System;
 using System.Linq;
 using Python.Runtime;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using QuantConnect.Data.UniverseSelection;
 
@@ -34,7 +34,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 1001
         /// </remarks>
-        [JsonProperty("1001")]
+        [JsonPropertyName("1001")]
         public string SecuritySymbol => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.SecurityReference_SecuritySymbol);
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 1002
         /// </remarks>
-        [JsonProperty("1002")]
+        [JsonPropertyName("1002")]
         public string ExchangeId => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.SecurityReference_ExchangeId);
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 1004
         /// </remarks>
-        [JsonProperty("1004")]
+        [JsonPropertyName("1004")]
         public string CurrencyId => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.SecurityReference_CurrencyId);
 
         /// <summary>
@@ -63,7 +63,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 1007
         /// </remarks>
-        [JsonProperty("1007")]
+        [JsonPropertyName("1007")]
         public string ISIN => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.SecurityReference_ISIN);
 
         /// <summary>
@@ -72,7 +72,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 1009
         /// </remarks>
-        [JsonProperty("1009")]
+        [JsonPropertyName("1009")]
         public DateTime IPODate => FundamentalService.Get<DateTime>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.SecurityReference_IPODate);
 
         /// <summary>
@@ -81,7 +81,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 1010
         /// </remarks>
-        [JsonProperty("1010")]
+        [JsonPropertyName("1010")]
         public bool IsDepositaryReceipt => FundamentalService.Get<bool>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.SecurityReference_IsDepositaryReceipt);
 
         /// <summary>
@@ -90,7 +90,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 1011
         /// </remarks>
-        [JsonProperty("1011")]
+        [JsonPropertyName("1011")]
         public double DepositaryReceiptRatio => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.SecurityReference_DepositaryReceiptRatio);
 
         /// <summary>
@@ -99,7 +99,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 1012
         /// </remarks>
-        [JsonProperty("1012")]
+        [JsonPropertyName("1012")]
         public string SecurityType => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.SecurityReference_SecurityType);
 
         /// <summary>
@@ -108,7 +108,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 1013
         /// </remarks>
-        [JsonProperty("1013")]
+        [JsonPropertyName("1013")]
         public string ShareClassDescription => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.SecurityReference_ShareClassDescription);
 
         /// <summary>
@@ -117,7 +117,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 1014
         /// </remarks>
-        [JsonProperty("1014")]
+        [JsonPropertyName("1014")]
         public string ShareClassStatus => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.SecurityReference_ShareClassStatus);
 
         /// <summary>
@@ -126,7 +126,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 1015
         /// </remarks>
-        [JsonProperty("1015")]
+        [JsonPropertyName("1015")]
         public bool IsPrimaryShare => FundamentalService.Get<bool>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.SecurityReference_IsPrimaryShare);
 
         /// <summary>
@@ -135,7 +135,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 1016
         /// </remarks>
-        [JsonProperty("1016")]
+        [JsonPropertyName("1016")]
         public bool IsDividendReinvest => FundamentalService.Get<bool>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.SecurityReference_IsDividendReinvest);
 
         /// <summary>
@@ -144,7 +144,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 1017
         /// </remarks>
-        [JsonProperty("1017")]
+        [JsonPropertyName("1017")]
         public bool IsDirectInvest => FundamentalService.Get<bool>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.SecurityReference_IsDirectInvest);
 
         /// <summary>
@@ -153,7 +153,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 1018
         /// </remarks>
-        [JsonProperty("1018")]
+        [JsonPropertyName("1018")]
         public string InvestmentId => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.SecurityReference_InvestmentId);
 
         /// <summary>
@@ -162,7 +162,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 1019
         /// </remarks>
-        [JsonProperty("1019")]
+        [JsonPropertyName("1019")]
         public double IPOOfferPrice => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.SecurityReference_IPOOfferPrice);
 
         /// <summary>
@@ -171,7 +171,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 1020
         /// </remarks>
-        [JsonProperty("1020")]
+        [JsonPropertyName("1020")]
         public DateTime DelistingDate => FundamentalService.Get<DateTime>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.SecurityReference_DelistingDate);
 
         /// <summary>
@@ -180,7 +180,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 1021
         /// </remarks>
-        [JsonProperty("1021")]
+        [JsonPropertyName("1021")]
         public string DelistingReason => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.SecurityReference_DelistingReason);
 
         /// <summary>
@@ -189,7 +189,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 1022
         /// </remarks>
-        [JsonProperty("1022")]
+        [JsonPropertyName("1022")]
         public string MIC => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.SecurityReference_MIC);
 
         /// <summary>
@@ -198,7 +198,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 1023
         /// </remarks>
-        [JsonProperty("1023")]
+        [JsonPropertyName("1023")]
         public string CommonShareSubType => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.SecurityReference_CommonShareSubType);
 
         /// <summary>
@@ -207,7 +207,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 1024
         /// </remarks>
-        [JsonProperty("1024")]
+        [JsonPropertyName("1024")]
         public string IPOOfferPriceRange => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.SecurityReference_IPOOfferPriceRange);
 
         /// <summary>
@@ -216,7 +216,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 1025
         /// </remarks>
-        [JsonProperty("1025")]
+        [JsonPropertyName("1025")]
         public string ExchangeSubMarketGlobalId => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.SecurityReference_ExchangeSubMarketGlobalId);
 
         /// <summary>
@@ -225,7 +225,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 1026
         /// </remarks>
-        [JsonProperty("1026")]
+        [JsonPropertyName("1026")]
         public double ConversionRatio => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.SecurityReference_ConversionRatio);
 
         /// <summary>
@@ -234,7 +234,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 1027
         /// </remarks>
-        [JsonProperty("1027")]
+        [JsonPropertyName("1027")]
         public double ParValue => FundamentalService.Get<double>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.SecurityReference_ParValue);
 
         /// <summary>
@@ -243,7 +243,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 1028
         /// </remarks>
-        [JsonProperty("1028")]
+        [JsonPropertyName("1028")]
         public bool TradingStatus => FundamentalService.Get<bool>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.SecurityReference_TradingStatus);
 
         /// <summary>
@@ -252,7 +252,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: 1029
         /// </remarks>
-        [JsonProperty("1029")]
+        [JsonPropertyName("1029")]
         public string MarketDataID => FundamentalService.Get<string>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.SecurityReference_MarketDataID);
 
         /// <summary>
@@ -261,7 +261,7 @@ namespace QuantConnect.Data.Fundamental
         /// <remarks>
         /// Morningstar DataId: EQVLW
         /// </remarks>
-        [JsonProperty("EQVLW")]
+        [JsonPropertyName("EQVLW")]
         public bool IsIPO => FundamentalService.Get<bool>(_timeProvider.GetUtcNow(), _securityIdentifier, FundamentalProperty.SecurityReference_IsIPO);
 
         /// <summary>

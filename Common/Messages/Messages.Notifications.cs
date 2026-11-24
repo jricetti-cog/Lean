@@ -14,8 +14,7 @@
 */
 
 using System.Runtime.CompilerServices;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 
 namespace QuantConnect
 {
@@ -69,9 +68,9 @@ namespace QuantConnect
             /// String message saying the given object is unexpected
             /// </summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public static string UnexpectedJsonObject(JObject jObject)
+            public static string UnexpectedJsonObject(JsonObject jObject)
             {
-                return $"Unexpected json object: '{jObject.ToString(Formatting.None)}'";
+                return $"Unexpected json object: '{jObject?.ToJsonString(JsonSerialization.Default)}'";
             }
         }
     }

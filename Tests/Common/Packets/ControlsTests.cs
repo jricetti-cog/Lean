@@ -14,7 +14,6 @@
  *
 */
 
-using Newtonsoft.Json;
 using NUnit.Framework;
 using QuantConnect.Packets;
 
@@ -32,8 +31,8 @@ namespace QuantConnect.Tests.Common.Packets
                 Delete = delete
             };
             var control = new Controls { StorageAccess = permissions };
-            var json = JsonConvert.SerializeObject(control);
-            var result = JsonConvert.DeserializeObject<Controls>(json);
+            var json = JsonSerialization.Serialize(control);
+            var result = JsonSerialization.Deserialize<Controls>(json);
 
             Assert.AreEqual(permissions.Read, result.StorageAccess.Read);
             Assert.AreEqual(permissions.Write, result.StorageAccess.Write);

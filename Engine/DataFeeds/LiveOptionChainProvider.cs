@@ -17,7 +17,6 @@ using System;
 using System.Net;
 using System.Linq;
 using System.Net.Http;
-using Newtonsoft.Json;
 using System.Threading;
 using QuantConnect.Util;
 using QuantConnect.Logging;
@@ -154,7 +153,7 @@ namespace QuantConnect.Lean.Engine.DataFeeds
 
                     productResponse.EnsureSuccessStatusCode();
 
-                    var productResults = JsonConvert.DeserializeObject<CMEProductSlateV2ListResponse>(productResponse.Content
+                    var productResults = JsonSerialization.Deserialize<CMEProductSlateV2ListResponse>(productResponse.Content
                         .ReadAsStringAsync()
                         .SynchronouslyAwaitTaskResult());
 
@@ -173,7 +172,7 @@ namespace QuantConnect.Lean.Engine.DataFeeds
                     var optionsTradesAndExpiriesResponse = _client.GetAsync(optionsTradesAndExpiries).SynchronouslyAwaitTaskResult();
                     optionsTradesAndExpiriesResponse.EnsureSuccessStatusCode();
 
-                    var tradesAndExpiriesResponse = JsonConvert.DeserializeObject<List<CMEOptionsTradeDatesAndExpiration>>(optionsTradesAndExpiriesResponse.Content
+                    var tradesAndExpiriesResponse = JsonSerialization.Deserialize<List<CMEOptionsTradeDatesAndExpiration>>(optionsTradesAndExpiriesResponse.Content
                         .ReadAsStringAsync()
                         .SynchronouslyAwaitTaskResult());
 
@@ -215,7 +214,7 @@ namespace QuantConnect.Lean.Engine.DataFeeds
 
                     optionChainQuotesResponseResult.Result.EnsureSuccessStatusCode();
 
-                    var futureOptionChain = JsonConvert.DeserializeObject<CMEOptionChainQuotes>(optionChainQuotesResponseResult.Result.Content
+                    var futureOptionChain = JsonSerialization.Deserialize<CMEOptionChainQuotes>(optionChainQuotesResponseResult.Result.Content
                         .ReadAsStringAsync()
                         .SynchronouslyAwaitTaskResult())
                         .Quotes

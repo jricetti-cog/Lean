@@ -14,7 +14,7 @@
  *
 */
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 
 namespace QuantConnect.Optimizer
@@ -42,7 +42,7 @@ namespace QuantConnect.Optimizer
         /// <summary>
         /// Sweep step size; null when not provided in the optimization configuration.
         /// </summary>
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public decimal? Step { get; set; }
 
         /// <summary>

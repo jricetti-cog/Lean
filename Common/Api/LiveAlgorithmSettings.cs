@@ -16,7 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuantConnect.Brokerages;
 
 namespace QuantConnect.Api
@@ -80,62 +80,62 @@ namespace QuantConnect.Api
         /// <summary>
         /// -1 is master
         /// </summary>
-        [JsonProperty(PropertyName = "versionId")]
+        [JsonPropertyName("versionId")]
         public string VersionId { get; set; }
 
         /// <summary>
         /// Project id for the live instance
         /// </summary>
-        [JsonProperty(PropertyName = "projectId")]
+        [JsonPropertyName("projectId")]
         public int ProjectId { get; private set; }
 
         /// <summary>
         /// Compile Id for the live algorithm
         /// </summary>
-        [JsonProperty(PropertyName = "compileId")]
+        [JsonPropertyName("compileId")]
         public string CompileId { get; private set; }
 
         /// <summary>
         /// Id of the node being used to run live algorithm
         /// </summary>
-        [JsonProperty(PropertyName = "nodeId")]
+        [JsonPropertyName("nodeId")]
         public string NodeId { get; private set; }
 
         /// <summary>
         /// Signature of the live algorithm
         /// </summary>
-        [JsonProperty(PropertyName = "signature")]
+        [JsonPropertyName("signature")]
         public string Signature { get; private set; }
 
         /// <summary>
         /// True to enable Automatic Re-Deploy of the live algorithm,
         /// false otherwise
         /// </summary>
-        [JsonProperty(PropertyName = "automaticRedeploy")]
+        [JsonPropertyName("automaticRedeploy")]
         public bool AutomaticRedeploy { get; private set; }
 
         /// <summary>
         /// The API expects the settings as part of a brokerage object
         /// </summary>
-        [JsonProperty(PropertyName = "brokerage")]
+        [JsonPropertyName("brokerage")]
         public Dictionary<string, object> Brokerage { get; private set; }
 
         /// <summary>
         /// Dictionary with the data providers and their corresponding credentials
         /// </summary>
-        [JsonProperty(PropertyName = "dataProviders")]
+        [JsonPropertyName("dataProviders")]
         public Dictionary<string, object> DataProviders { get; private set; }
 
         /// <summary>
         /// Dictionary with the parameters to be used in the live algorithm
         /// </summary>
-        [JsonProperty(PropertyName = "parameters")]
+        [JsonPropertyName("parameters")]
         public Dictionary<string, string> Parameters { get; private set; }
 
         /// <summary>
         /// Dictionary with the lists of events and targets
         /// </summary>
-        [JsonProperty(PropertyName = "notification")]
+        [JsonPropertyName("notification")]
         public Dictionary<string, List<string>> Notification { get; private set; }
     }
 }

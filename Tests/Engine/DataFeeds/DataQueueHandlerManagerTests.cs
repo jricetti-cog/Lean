@@ -42,7 +42,7 @@ namespace QuantConnect.Tests.Engine.DataFeeds
         public void SetJob()
         {
             //Array IDQH
-            var dataHandlers = Newtonsoft.Json.JsonConvert.SerializeObject(new[] { "FakeDataQueue" });
+            var dataHandlers = JsonSerialization.Serialize(new[] { "FakeDataQueue" });
             var jobWithArrayIDQH = new LiveNodePacket
             {
                 DataQueueHandler = dataHandlers
@@ -64,7 +64,7 @@ namespace QuantConnect.Tests.Engine.DataFeeds
         [Test]
         public void SubscribeReturnsNotNull()
         {
-            var dataHandlers = Newtonsoft.Json.JsonConvert.SerializeObject(new[] { "FakeDataQueue" });
+            var dataHandlers = JsonSerialization.Serialize(new[] { "FakeDataQueue" });
             var job = new LiveNodePacket
             {
                 DataQueueHandler = dataHandlers
@@ -191,7 +191,7 @@ namespace QuantConnect.Tests.Engine.DataFeeds
             var customSymbol = Symbol.CreateBase(typeof(AlgorithmSettings), Symbols.SPY);
             var config = new SubscriptionDataConfig(typeof(TradeBar), customSymbol, Resolution.Minute, TimeZones.NewYork, TimeZones.NewYork,
                 false, false, false, false, TickType.Trade, false);
-            var dataHandlers = Newtonsoft.Json.JsonConvert.SerializeObject(new[] { "FakeDataQueue" });
+            var dataHandlers = JsonSerialization.Serialize(new[] { "FakeDataQueue" });
             var job = new LiveNodePacket
             {
                 DataQueueHandler = dataHandlers

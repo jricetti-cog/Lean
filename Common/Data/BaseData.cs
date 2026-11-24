@@ -1,4 +1,4 @@
-/*
+﻿/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -14,11 +14,12 @@
 */
 
 using System;
+using QuantConnect.Util.Json;
+using System.Text.Json;
 using NodaTime;
 using ProtoBuf;
 using System.IO;
 using System.Linq;
-using Newtonsoft.Json;
 using QuantConnect.Util;
 using QuantConnect.Data.Market;
 using System.Collections.Generic;
@@ -409,7 +410,7 @@ namespace QuantConnect.Data
         /// <returns>An enumerable of base data, if unsuccessful, returns an empty enumerable</returns>
         public static IEnumerable<BaseData> DeserializeMessage(string serialized)
         {
-            var deserialized = JsonConvert.DeserializeObject(serialized, JsonSerializerSettings);
+            var deserialized = TypeNameHandlingJsonConverter.Deserialize(serialized, typeof(BaseData), JsonSerializerOptions);
 
             var enumerable = deserialized as IEnumerable<BaseData>;
             if (enumerable != null)
@@ -426,9 +427,6 @@ namespace QuantConnect.Data
             return Enumerable.Empty<BaseData>();
         }
 
-        private static readonly JsonSerializerSettings JsonSerializerSettings = new JsonSerializerSettings
-        {
-            TypeNameHandling = TypeNameHandling.All
-        };
+        private static readonly JsonSerializerOptions JsonSerializerOptions = JsonSerialization.Create(converters: new TypeNameHandlingJsonConverter(typeof(BaseData)));
     }
 }

@@ -14,7 +14,7 @@
  *
 */
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuantConnect.Orders;
 using System.Collections.Generic;
 using QuantConnect.Algorithm.Framework.Alphas;
@@ -35,7 +35,7 @@ namespace QuantConnect.Packets
         /// The deployed alpha id. This is the id generated upon submssion to the alpha marketplace.
         /// If this is a user backtest or live algo then this will not be specified
         /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public string AlphaId { get; set; }
 
         /// <summary>
@@ -46,19 +46,19 @@ namespace QuantConnect.Packets
         /// <summary>
         /// The generated insights
         /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public List<Insight> Insights { get; set; }
 
         /// <summary>
         /// The generated OrderEvents
         /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public List<OrderEvent> OrderEvents { get; set; }
 
         /// <summary>
         /// The new or updated Orders
         /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public List<Order> Orders { get; set; }
 
         /// <summary>

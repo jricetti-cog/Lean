@@ -13,7 +13,6 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
 using NUnit.Framework;
 using System.Collections.Generic;
 using QuantConnect.Api;
@@ -31,7 +30,7 @@ namespace QuantConnect.Tests.API
         {
             var parameterSet = new ParameterSet(0, null);
 
-            var serialized = JsonConvert.SerializeObject(parameterSet);
+            var serialized = JsonSerialization.Serialize(parameterSet);
             Assert.AreEqual("{}", serialized);
         }
 
@@ -45,7 +44,7 @@ namespace QuantConnect.Tests.API
                     { "pepe", "-1" }
                 });
 
-            var serialized = JsonConvert.SerializeObject(parameterSet);
+            var serialized = JsonSerialization.Serialize(parameterSet);
 
             Assert.AreEqual(ValidSerialization, serialized);
         }
@@ -61,7 +60,7 @@ namespace QuantConnect.Tests.API
         [TestCase("{\"parameterSet\":[{\"key\":\"pinocho\",\"value\":\"19\"},{\"key\":\"pepe\",\"value\":\"-1\"}]}", 2)]
         public void Deserialization(string validSerialization, int count)
         {
-            var deserialized = JsonConvert.DeserializeObject<ParameterSet>(validSerialization);
+            var deserialized = JsonSerialization.Deserialize<ParameterSet>(validSerialization);
             Assert.IsNotNull(deserialized);
             Assert.AreEqual(-1, deserialized.Id);
             Assert.AreEqual(count, deserialized.Value.Count);
@@ -77,7 +76,7 @@ namespace QuantConnect.Tests.API
         [TestCase("[{\"key\":\"start-date\",\"value\":\"2024-01-01T10:00:00Z\"}]")]
         public void DeserializationKeepsDateValues(string serialization)
         {
-            var deserialized = JsonConvert.DeserializeObject<ParameterSet>(serialization);
+            var deserialized = JsonSerialization.Deserialize<ParameterSet>(serialization);
 
             Assert.AreEqual("2024-01-01T10:00:00Z", deserialized.Value["start-date"]);
         }
@@ -85,7 +84,7 @@ namespace QuantConnect.Tests.API
         [Test]
         public void DeserializationNull()
         {
-            Assert.IsNull(JsonConvert.DeserializeObject<ParameterSet>("null"));
+            Assert.IsNull(JsonSerialization.Deserialize<ParameterSet>("null"));
         }
 
         [Test]
@@ -95,7 +94,7 @@ namespace QuantConnect.Tests.API
                 "\"parameterSet\":[{\"key\":\"pinocho\",\"value\":\"19\"},{\"key\":\"pepe\",\"value\":\"-1\"}],\"status\":\"Completed.\",\"progress\":1}," +
                 "\"debugging\":false,\"success\":true,\"errors\":[]}";
 
-            var deserialized = JsonConvert.DeserializeObject<BacktestResponseWrapper>(json);
+            var deserialized = JsonSerialization.Deserialize<BacktestResponseWrapper>(json);
 
             Assert.IsNotNull(deserialized.Backtest.ParameterSet);
             Assert.AreEqual(2, deserialized.Backtest.ParameterSet.Value.Count);

@@ -13,7 +13,7 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuantConnect.Orders;
 
 namespace QuantConnect.Interfaces
@@ -26,7 +26,7 @@ namespace QuantConnect.Interfaces
         /// <summary>
         /// Defines the length of time over which an order will continue working before it is cancelled
         /// </summary>
-        [JsonProperty(PropertyName = "timeInForce")]
+        [JsonPropertyName("timeInForce")]
         TimeInForce TimeInForce { get; set; }
 
         /// <summary>

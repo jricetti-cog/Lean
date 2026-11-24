@@ -17,7 +17,6 @@ using System;
 using System.Net;
 using System.Text;
 using NUnit.Framework;
-using Newtonsoft.Json;
 using QuantConnect.Api;
 using System.Threading;
 using System.Net.Sockets;
@@ -93,7 +92,7 @@ namespace QuantConnect.Tests.Brokerages.Authentication
                     }
 
                     Interlocked.Increment(ref _requests);
-                    var body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new { success = true, tokenType = "Bearer", accessToken = Token }));
+                    var body = Encoding.UTF8.GetBytes(JsonSerialization.Serialize(new { success = true, tokenType = "Bearer", accessToken = Token }));
                     context.Response.ContentType = "application/json";
                     await context.Response.OutputStream.WriteAsync(body).ConfigureAwait(false);
                     context.Response.Close();

@@ -14,7 +14,6 @@
  *
 */
 
-using Newtonsoft.Json;
 using QuantConnect.Algorithm;
 using QuantConnect.AlgorithmFactory.Python.Wrappers;
 using QuantConnect.Brokerages;
@@ -478,7 +477,7 @@ namespace QuantConnect.Lean.Engine.Results
             }
 
             var timestamp = DateTime.UtcNow.ToStringInvariant("yyyyMMddHHmmssfff");
-            File.WriteAllText(GetResultsPath($"data-monitor-report-{timestamp}.json"), JsonConvert.SerializeObject(report, Formatting.None));
+            File.WriteAllText(GetResultsPath($"data-monitor-report-{timestamp}.json"), JsonSerialization.Serialize(report));
         }
 
         /// <summary>

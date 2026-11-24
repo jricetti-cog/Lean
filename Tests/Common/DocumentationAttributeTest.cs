@@ -13,7 +13,6 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace QuantConnect.Tests.Common
@@ -25,9 +24,9 @@ namespace QuantConnect.Tests.Common
         public void JsonRoundTrip()
         {
             var documentationAttribute = new DocumentationAttribute("Tag", 1);
-            var serialized = JsonConvert.SerializeObject(documentationAttribute);
+            var serialized = JsonSerialization.Serialize(documentationAttribute);
 
-            var result = JsonConvert.DeserializeObject<DocumentationAttribute>(serialized);
+            var result = JsonSerialization.Deserialize<DocumentationAttribute>(serialized);
 
             Assert.AreEqual(documentationAttribute.Tag, result.Tag);
             Assert.AreEqual(documentationAttribute.Weight, result.Weight);

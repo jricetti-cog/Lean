@@ -17,7 +17,7 @@
 using System;
 using System.Linq;
 using Python.Runtime;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using QuantConnect.Data.UniverseSelection;
 
@@ -36,7 +36,7 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the OneYear period value for the field
         /// </summary>
-        [JsonProperty("1Y")]
+        [JsonPropertyName("1Y")]
         [Obsolete("NormalizedDilutedEPSGrowth was retired by Morningstar in 2026 for all periods; no replacement is available.")]
         [JsonIgnore]
         public double OneYear => throw new NotSupportedException("NormalizedDilutedEPSGrowth was retired by Morningstar in 2026 for all periods; no replacement is available.");
@@ -44,7 +44,7 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the ThreeMonths period value for the field
         /// </summary>
-        [JsonProperty("3M")]
+        [JsonPropertyName("3M")]
         [Obsolete("NormalizedDilutedEPSGrowth was retired by Morningstar in 2026 for all periods; no replacement is available.")]
         [JsonIgnore]
         public double ThreeMonths => throw new NotSupportedException("NormalizedDilutedEPSGrowth was retired by Morningstar in 2026 for all periods; no replacement is available.");
@@ -52,7 +52,7 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the ThreeYears period value for the field
         /// </summary>
-        [JsonProperty("3Y")]
+        [JsonPropertyName("3Y")]
         [Obsolete("NormalizedDilutedEPSGrowth was retired by Morningstar in 2026 for all periods; no replacement is available.")]
         [JsonIgnore]
         public double ThreeYears => throw new NotSupportedException("NormalizedDilutedEPSGrowth was retired by Morningstar in 2026 for all periods; no replacement is available.");
@@ -60,7 +60,7 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the FiveYears period value for the field
         /// </summary>
-        [JsonProperty("5Y")]
+        [JsonPropertyName("5Y")]
         [Obsolete("NormalizedDilutedEPSGrowth was retired by Morningstar in 2026 for all periods; no replacement is available.")]
         [JsonIgnore]
         public double FiveYears => throw new NotSupportedException("NormalizedDilutedEPSGrowth was retired by Morningstar in 2026 for all periods; no replacement is available.");

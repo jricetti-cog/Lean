@@ -17,7 +17,7 @@
 using System;
 using System.Linq;
 using Python.Runtime;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using QuantConnect.Data.UniverseSelection;
 
@@ -36,31 +36,31 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the OneYear period value for the field
         /// </summary>
-        [JsonProperty("EQHWS")]
+        [JsonPropertyName("EQHWS")]
         public double OneYear => FundamentalService.Get<double>(TimeProvider.GetUtcNow(), SecurityIdentifier, FundamentalProperty.EarningRatios_EarningsPerShareGrowth_OneYear);
 
         /// <summary>
         /// Gets/sets the TwoYears period value for the field
         /// </summary>
-        [JsonProperty("EQHYC")]
+        [JsonPropertyName("EQHYC")]
         public double TwoYears => FundamentalService.Get<double>(TimeProvider.GetUtcNow(), SecurityIdentifier, FundamentalProperty.EarningRatios_EarningsPerShareGrowth_TwoYears);
 
         /// <summary>
         /// Gets/sets the ThreeYears period value for the field
         /// </summary>
-        [JsonProperty("EQ5TK")]
+        [JsonPropertyName("EQ5TK")]
         public double ThreeYears => FundamentalService.Get<double>(TimeProvider.GetUtcNow(), SecurityIdentifier, FundamentalProperty.EarningRatios_EarningsPerShareGrowth_ThreeYears);
 
         /// <summary>
         /// Gets/sets the FiveYears period value for the field
         /// </summary>
-        [JsonProperty("EQT9N")]
+        [JsonPropertyName("EQT9N")]
         public double FiveYears => FundamentalService.Get<double>(TimeProvider.GetUtcNow(), SecurityIdentifier, FundamentalProperty.EarningRatios_EarningsPerShareGrowth_FiveYears);
 
         /// <summary>
         /// Gets/sets the TenYears period value for the field
         /// </summary>
-        [JsonProperty("EQFC1")]
+        [JsonPropertyName("EQFC1")]
         public double TenYears => FundamentalService.Get<double>(TimeProvider.GetUtcNow(), SecurityIdentifier, FundamentalProperty.EarningRatios_EarningsPerShareGrowth_TenYears);
 
         /// <summary>

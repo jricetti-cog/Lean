@@ -14,11 +14,12 @@
 */
 
 using System;
+using System.Text.Json;
 using System.Linq;
-using Newtonsoft.Json;
 using QuantConnect.Logging;
 using QuantConnect.Packets;
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
+using QuantConnect.Util.Json;
 using QuantConnect.Interfaces;
 using System.Collections.Generic;
 
@@ -32,7 +33,7 @@ namespace QuantConnect.Commands
         /// <summary>
         /// Command json settings
         /// </summary>
-        protected static readonly JsonSerializerSettings Settings = new() { TypeNameHandling = TypeNameHandling.All };
+        protected static readonly JsonSerializerOptions Settings = JsonSerialization.Create(converters: new TypeNameHandlingJsonConverter(typeof(ICommand)));
 
         /// <summary>
         /// The algorithm instance
@@ -117,12 +118,12 @@ namespace QuantConnect.Commands
         /// </summary>
         protected ICommand TryGetCallbackCommand(string payload)
         {
-            Dictionary<string, JToken> deserialized = new(StringComparer.InvariantCultureIgnoreCase);
+            Dictionary<string, JsonNode> deserialized = new(StringComparer.InvariantCultureIgnoreCase);
             try
             {
                 if (!string.IsNullOrEmpty(payload))
                 {
-                    var jobject = JObject.Parse(payload);
+                    var jobject = JsonSerialization.ParseObject(payload);
                     foreach (var kv in jobject)
                     {
                         deserialized[kv.Key] = kv.Value;
@@ -137,15 +138,15 @@ namespace QuantConnect.Commands
 
             if (!deserialized.TryGetValue("id", out var id) || id == null)
             {
-                id = string.Empty;
+                id = JsonValue.Create(string.Empty);
             }
 
             if (!deserialized.TryGetValue("$type", out var type) || type == null)
             {
-                type = string.Empty;
+                type = JsonValue.Create(string.Empty);
             }
 
-            return new CallbackCommand { Id = id.ToString(), Type = type.ToString(), Payload = payload };
+            return new CallbackCommand { Id = id.AsText(), Type = type.AsText(), Payload = payload };
         }
     }
 }

@@ -13,11 +13,10 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using QuantConnect.Statistics;
 using System;
+using System.Text.Json.Nodes;
 
 namespace QuantConnect.Tests.Common.Statistics
 {
@@ -29,8 +28,8 @@ namespace QuantConnect.Tests.Common.Statistics
         {
             var trade = MakeTrade();
 
-            var json = JsonConvert.SerializeObject(trade);
-            var deserializedTrade = JsonConvert.DeserializeObject<Trade>(json);
+            var json = JsonSerialization.Serialize(trade);
+            var deserializedTrade = JsonSerialization.Deserialize<Trade>(json);
             CollectionAssert.AreEqual(trade.Symbols, deserializedTrade.Symbols);
             Assert.AreEqual(trade.EntryTime, deserializedTrade.EntryTime);
             Assert.AreEqual(trade.EntryPrice, deserializedTrade.EntryPrice);
@@ -53,8 +52,8 @@ namespace QuantConnect.Tests.Common.Statistics
         public void DeprecatedSymbolIsNotSerialized()
         {
             var trade = MakeTrade();
-            var jsonStr = JsonConvert.SerializeObject(trade);
-            var json = JObject.Parse(jsonStr);
+            var jsonStr = JsonSerialization.Serialize(trade);
+            var json = JsonSerialization.ParseObject(jsonStr);
             Assert.IsFalse(json.ContainsKey("Symbol"));
         }
 
@@ -83,7 +82,7 @@ namespace QuantConnect.Tests.Common.Statistics
   ""IsWin"": false,
   ""OrderIds"": []
 }";
-            var deserializedTrade = JsonConvert.DeserializeObject<Trade>(jsonTrade);
+            var deserializedTrade = JsonSerialization.Deserialize<Trade>(jsonTrade);
             Assert.IsNotNull(deserializedTrade);
             CollectionAssert.AreEqual(new[] { Symbols.EURUSD }, deserializedTrade.Symbols);
             Assert.AreEqual(new DateTime(2023, 1, 2, 12, 31, 45), deserializedTrade.EntryTime);

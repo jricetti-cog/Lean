@@ -15,7 +15,7 @@
 
 using System;
 using System.ComponentModel;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using ProtoBuf;
 using QuantConnect.Orders.Fees;
 using QuantConnect.Orders.Serialization;
@@ -115,7 +115,7 @@ namespace QuantConnect.Orders
         /// <summary>
         /// Any message from the exchange.
         /// </summary>
-        [DefaultValue(""), JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [DefaultValue(""), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [ProtoMember(11)]
         public string Message { get; set; }
 
@@ -128,7 +128,7 @@ namespace QuantConnect.Orders
         /// <summary>
         /// The current stop price
         /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [ProtoMember(13)]
         public decimal? StopPrice
         {
@@ -145,7 +145,7 @@ namespace QuantConnect.Orders
         /// <summary>
         /// The current trigger price
         /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [ProtoMember(14)]
         public decimal? TriggerPrice
         {
@@ -162,7 +162,7 @@ namespace QuantConnect.Orders
         /// <summary>
         /// The current limit price
         /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [ProtoMember(15)]
         public decimal? LimitPrice
         {
@@ -189,14 +189,14 @@ namespace QuantConnect.Orders
         /// <summary>
         /// True if the order event's option is In-The-Money (ITM)
         /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [ProtoMember(17)]
         public bool IsInTheMoney { get; set; }
 
         /// <summary>
         /// The trailing stop amount
         /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [ProtoMember(18)]
         public decimal? TrailingAmount
         {
@@ -213,7 +213,7 @@ namespace QuantConnect.Orders
         /// <summary>
         /// Whether the <see cref="TrailingAmount"/> is a percentage or an absolute currency value
         /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [ProtoMember(19)]
         public bool? TrailingAsPercentage
         {

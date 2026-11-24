@@ -13,7 +13,7 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System;
 
 namespace QuantConnect.Optimizer.Parameters
@@ -26,19 +26,19 @@ namespace QuantConnect.Optimizer.Parameters
         /// <summary>
         /// Minimum value of optimization parameter, applicable for boundary conditions
         /// </summary>
-        [JsonProperty("min")]
+        [JsonPropertyName("min")]
         public decimal MinValue { get; }
 
         /// <summary>
         /// Maximum value of optimization parameter, applicable for boundary conditions
         /// </summary>
-        [JsonProperty("max")]
+        [JsonPropertyName("max")]
         public decimal MaxValue { get; }
 
         /// <summary>
         /// Movement, should be positive
         /// </summary>
-        [JsonProperty("step")]
+        [JsonPropertyName("step")]
         public decimal? Step { get; set; }
 
         #pragma warning disable CS1574
@@ -46,7 +46,7 @@ namespace QuantConnect.Optimizer.Parameters
         /// Minimal possible movement for current parameter, should be positive
         /// </summary>
         /// <remarks>Used by <see cref="Strategies.EulerSearchOptimizationStrategy"/> to determine when this parameter can no longer be optimized</remarks>
-        [JsonProperty("minStep")]
+        [JsonPropertyName("minStep")]
         #pragma warning restore CS1574
         public decimal? MinStep { get; set; }
 

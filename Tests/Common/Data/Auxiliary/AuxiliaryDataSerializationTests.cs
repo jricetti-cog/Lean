@@ -15,24 +15,25 @@
 */
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json;
 using NUnit.Framework;
 using QuantConnect.Data.Market;
+using QuantConnect.Util.Json;
 
 namespace QuantConnect.Tests.Common.Data.Auxiliary
 {
     [TestFixture]
     public class AuxiliaryDataSerializationTests
     {
-        private readonly JsonSerializerSettings _settings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All };
+        private readonly JsonSerializerOptions _settings = JsonSerialization.Create(converters: new TypeNameHandlingJsonConverter(typeof(QuantConnect.Data.BaseData)));
 
         [Test]
         public void DeserializesSplitWarning()
         {
             var splitWarning = new Split(Symbols.AAPL, new DateTime(2014, 6, 9), 645.57m, 0.142857m, SplitType.Warning);
 
-            var json = JsonConvert.SerializeObject(splitWarning, _settings);
-            var deserialized = (Split)JsonConvert.DeserializeObject(json, _settings);
+            var json = JsonSerialization.Serialize(splitWarning, _settings);
+            var deserialized = JsonSerialization.Deserialize<Split>(json, _settings);
 
             Assert.AreEqual(splitWarning.Symbol, deserialized.Symbol);
             Assert.AreEqual(splitWarning.Time, deserialized.Time);
@@ -46,8 +47,8 @@ namespace QuantConnect.Tests.Common.Data.Auxiliary
         {
             var split = new Split(Symbols.AAPL, new DateTime(2014, 6, 9), 645.57m, 0.142857m, SplitType.SplitOccurred);
 
-            var json = JsonConvert.SerializeObject(split, _settings);
-            var deserialized = (Split)JsonConvert.DeserializeObject(json, _settings);
+            var json = JsonSerialization.Serialize(split, _settings);
+            var deserialized = JsonSerialization.Deserialize<Split>(json, _settings);
 
             Assert.AreEqual(split.Symbol, deserialized.Symbol);
             Assert.AreEqual(split.Time, deserialized.Time);
@@ -61,8 +62,8 @@ namespace QuantConnect.Tests.Common.Data.Auxiliary
         {
             var dividend = new Dividend(Symbols.AAPL, new DateTime(2014, 11, 6), 0.47m, 108.60m);
 
-            var json = JsonConvert.SerializeObject(dividend, _settings);
-            var deserialized = (Dividend)JsonConvert.DeserializeObject(json, _settings);
+            var json = JsonSerialization.Serialize(dividend, _settings);
+            var deserialized = JsonSerialization.Deserialize<Dividend>(json, _settings);
 
             Assert.AreEqual(dividend.Symbol, deserialized.Symbol);
             Assert.AreEqual(dividend.Time, deserialized.Time);
@@ -74,8 +75,8 @@ namespace QuantConnect.Tests.Common.Data.Auxiliary
         {
             var delistingWarning = new Delisting(Symbols.AAPL, new DateTime(2999, 12, 31), 100m, DelistingType.Warning);
 
-            var json = JsonConvert.SerializeObject(delistingWarning, _settings);
-            var deserialized = (Delisting)JsonConvert.DeserializeObject(json, _settings);
+            var json = JsonSerialization.Serialize(delistingWarning, _settings);
+            var deserialized = JsonSerialization.Deserialize<Delisting>(json, _settings);
 
             Assert.AreEqual(delistingWarning.Symbol, deserialized.Symbol);
             Assert.AreEqual(delistingWarning.Time, deserialized.Time);
@@ -87,8 +88,8 @@ namespace QuantConnect.Tests.Common.Data.Auxiliary
         {
             var delisting = new Delisting(Symbols.AAPL, new DateTime(2999, 12, 31), 100m, DelistingType.Delisted);
 
-            var json = JsonConvert.SerializeObject(delisting, _settings);
-            var deserialized = (Delisting)JsonConvert.DeserializeObject(json, _settings);
+            var json = JsonSerialization.Serialize(delisting, _settings);
+            var deserialized = JsonSerialization.Deserialize<Delisting>(json, _settings);
 
             Assert.AreEqual(delisting.Symbol, deserialized.Symbol);
             Assert.AreEqual(delisting.Time, deserialized.Time);

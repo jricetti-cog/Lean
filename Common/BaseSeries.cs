@@ -16,7 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuantConnect.Logging;
 using QuantConnect.Util;
 
@@ -49,13 +49,13 @@ namespace QuantConnect
         /// <summary>
         /// Axis name for the chart series.
         /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public string IndexName { get; set; }
 
         /// <summary>
         /// Defines the visual Z index of the series on the chart.
         /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public int? ZIndex { get; set; }
 
         /// <summary>
@@ -66,7 +66,7 @@ namespace QuantConnect
         /// <summary>
         /// An optional tooltip template
         /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public string Tooltip { get; set; }
 
         /// <summary>

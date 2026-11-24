@@ -17,10 +17,9 @@ using System;
 using System.Linq;
 using System.Data;
 using System.Drawing;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuantConnect.Logging;
 using System.Collections.Generic;
-using Newtonsoft.Json.Serialization;
 
 namespace QuantConnect
 {
@@ -45,13 +44,13 @@ namespace QuantConnect
         /// <summary>
         /// Associated symbol if any, making this an asset plot
         /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public Symbol Symbol { get; set; }
 
         /// <summary>
         /// True to hide this series legend from the chart
         /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public bool LegendDisabled { get; set; }
 
         /// <summary>

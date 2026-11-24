@@ -14,7 +14,7 @@
 */
 
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace QuantConnect.Api
 {
@@ -28,104 +28,104 @@ namespace QuantConnect.Api
         /// <summary>
         /// The nodes cpu clock speed in GHz.
         /// </summary>
-        [JsonProperty(PropertyName = "speed")]
+        [JsonPropertyName("speed")]
         public decimal Speed { get; set; }
 
         /// <summary>
         /// The monthly and yearly prices of the node in US dollars,
         /// see <see cref="NodePrices"/> for type.
         /// </summary>
-        [JsonProperty(PropertyName = "price")]
+        [JsonPropertyName("price")]
         public NodePrices Prices { get; set; }
 
         /// <summary>
         /// CPU core count of node.
         /// </summary>
-        [JsonProperty(PropertyName = "cpu")]
+        [JsonPropertyName("cpu")]
         public int CpuCount { get; set; }
 
         /// <summary>
         /// Indicate if the node has GPU (1) or not (0)
         /// </summary>
-        [JsonProperty(PropertyName = "hasGpu")]
+        [JsonPropertyName("hasGpu")]
         public int HasGPU { get; set; }
 
         /// <summary>
         /// Size of RAM in Gigabytes.
         /// </summary>
-        [JsonProperty(PropertyName = "ram")]
+        [JsonPropertyName("ram")]
         public decimal Ram { get; set; }
 
         /// <summary>
         /// Name of the node.
         /// </summary>
-        [JsonProperty(PropertyName = "name")]
+        [JsonPropertyName("name")]
         public string Name { get; set; }
 
         /// <summary>
         /// Node type identifier for configuration.
         /// </summary>
-        [JsonProperty(PropertyName = "sku")]
+        [JsonPropertyName("sku")]
         public string SKU { get; set; }
 
         /// <summary>
         /// Description of the node.
         /// </summary>
-        [JsonProperty(PropertyName = "description")]
+        [JsonPropertyName("description")]
         public string Description { get; set; }
 
         /// <summary>
         /// User currently using the node.
         /// </summary>
-        [JsonProperty(PropertyName = "usedBy")]
+        [JsonPropertyName("usedBy")]
         public string UsedBy { get; set; }
 
         /// <summary>
         /// URL of the user using the node
         /// </summary>
-        [JsonProperty(PropertyName = "userProfile")]
+        [JsonPropertyName("userProfile")]
         public string UserProfile { get; set; }
 
         /// <summary>
         /// Project the node is being used for.
         /// </summary>
-        [JsonProperty(PropertyName = "projectName")]
+        [JsonPropertyName("projectName")]
         public string ProjectName { get; set; }
 
         /// <summary>
         /// Id of the project the node is being used for.
         /// </summary>
-        [JsonProperty(PropertyName = "projectId")]
+        [JsonPropertyName("projectId")]
         public int? ProjectId { get; set; }
 
         /// <summary>
         /// Indicates if the node is currently busy.
         /// </summary>
-        [JsonProperty(PropertyName = "busy")]
+        [JsonPropertyName("busy")]
         public bool Busy { get; set; }
 
         /// <summary>
         /// Full ID of node.
         /// </summary>
-        [JsonProperty(PropertyName = "id")]
+        [JsonPropertyName("id")]
         public string Id { get; set; }
 
         /// <summary>
         /// Maximum number of assets recommended for this node.
         /// </summary>
-        [JsonProperty(PropertyName = "assets")]
+        [JsonPropertyName("assets")]
         public int Assets { get; set; }
 
         /// <summary>
         /// Node host.
         /// </summary>
-        [JsonProperty(PropertyName = "host")]
+        [JsonPropertyName("host")]
         public string Host { get; set; }
 
         /// <summary>
         /// Indicate if this is the active node. The project will use this node if it's not busy.
         /// </summary>
-        [JsonProperty(PropertyName = "active")]
+        [JsonPropertyName("active")]
         public bool Active { get; set; }
     }
 
@@ -137,19 +137,19 @@ namespace QuantConnect.Api
         /// <summary>
         /// Collection of backtest nodes
         /// </summary>
-        [JsonProperty(PropertyName = "backtest")]
+        [JsonPropertyName("backtest")]
         public List<Node> BacktestNodes { get; set; }
 
         /// <summary>
         /// Collection of research nodes
         /// </summary>
-        [JsonProperty(PropertyName = "research")]
+        [JsonPropertyName("research")]
         public List<Node> ResearchNodes { get; set; }
 
         /// <summary>
         /// Collection of live nodes
         /// </summary>
-        [JsonProperty(PropertyName = "live")]
+        [JsonPropertyName("live")]
         public List<Node> LiveNodes { get; set; }
     }
 
@@ -162,7 +162,7 @@ namespace QuantConnect.Api
         /// <summary>
         /// The created node from node/create
         /// </summary>
-        [JsonProperty("node")]
+        [JsonPropertyName("node")]
         public Node Node { get; set; }
     }
 
@@ -267,13 +267,13 @@ namespace QuantConnect.Api
         /// <summary>
         /// The monthly price of the node in US dollars
         /// </summary>
-        [JsonProperty(PropertyName = "monthly")]
+        [JsonPropertyName("monthly")]
         public int Monthly { get; set; }
 
         /// <summary>
         /// The yearly prices of the node in US dollars
         /// </summary>
-        [JsonProperty(PropertyName = "yearly")]
+        [JsonPropertyName("yearly")]
         public int Yearly { get; set; }
     }
 

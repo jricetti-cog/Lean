@@ -13,7 +13,7 @@
  * limitations under the License.
 */
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 
 namespace QuantConnect.Api
@@ -26,56 +26,56 @@ namespace QuantConnect.Api
         /// <summary>
         /// User ID
         /// </summary>
-        [JsonProperty(PropertyName = "uid")]
+        [JsonPropertyName("uid")]
         public int? Uid { get; set; }
 
         /// <summary>
         /// Indicate if the user have live control
         /// </summary>
-        [JsonProperty(PropertyName = "liveControl")]
+        [JsonPropertyName("liveControl")]
         public bool LiveControl { get; set; }
 
         /// <summary>
         /// The permission this user is given. Can be "read"
         /// or "write"
         /// </summary>
-        [JsonProperty(PropertyName = "permission")]
+        [JsonPropertyName("permission")]
         public string Permission { get; set; }
 
         /// <summary>
         /// The user public ID
         /// </summary>
-        [JsonProperty(PropertyName = "publicId")]
+        [JsonPropertyName("publicId")]
         public string PublicId { get; set; }
 
         /// <summary>
         /// The url of the user profile image
         /// </summary>
-        [JsonProperty(PropertyName = "profileImage")]
+        [JsonPropertyName("profileImage")]
         public string ProfileImage { get; set; }
 
         /// <summary>
         /// The registered email of the user
         /// </summary>
-        [JsonProperty(PropertyName = "email")]
+        [JsonPropertyName("email")]
         public string Email { get; set; }
 
         /// <summary>
         /// The display name of the user
         /// </summary>
-        [JsonProperty(PropertyName = "name")]
+        [JsonPropertyName("name")]
         public string Name { get; set; }
 
         /// <summary>
         /// The biography of the user
         /// </summary>
-        [JsonProperty(PropertyName = "bio")]
+        [JsonPropertyName("bio")]
         public string Bio { get; set; }
 
         /// <summary>
         /// Indicate if the user is the owner of the project
         /// </summary>
-        [JsonProperty(PropertyName = "owner")]
+        [JsonPropertyName("owner")]
         public bool Owner { get; set; }
     }
 
@@ -88,25 +88,25 @@ namespace QuantConnect.Api
         /// <summary>
         /// Project Id of the library project
         /// </summary>
-        [JsonProperty(PropertyName = "projectId")]
+        [JsonPropertyName("projectId")]
         public int Projectid { get; set; }
 
         /// <summary>
         /// Name of the library project
         /// </summary>
-        [JsonProperty(PropertyName = "libraryName")]
+        [JsonPropertyName("libraryName")]
         public string LibraryName { get; set; }
 
         /// <summary>
         /// Name of the library project owner
         /// </summary>
-        [JsonProperty(PropertyName = "ownerName")]
+        [JsonPropertyName("ownerName")]
         public string OwnerName { get; set; }
 
         /// <summary>
         /// Indicate if the library project can be accessed
         /// </summary>
-        [JsonProperty(PropertyName = "access")]
+        [JsonPropertyName("access")]
         public bool Access { get; set; }
     }
 
@@ -118,43 +118,43 @@ namespace QuantConnect.Api
         /// <summary>
         /// The chart name
         /// </summary>
-        [JsonProperty(PropertyName = "chartName")]
+        [JsonPropertyName("chartName")]
         public string ChartName { get; set; }
 
         /// <summary>
         /// Width of the chart
         /// </summary>
-        [JsonProperty(PropertyName = "width")]
+        [JsonPropertyName("width")]
         public int Width { get; set; }
 
         /// <summary>
         /// Height of the chart
         /// </summary>
-        [JsonProperty(PropertyName = "height")]
+        [JsonPropertyName("height")]
         public int Height { get; set; }
 
         /// <summary>
         /// Number of rows of the chart
         /// </summary>
-        [JsonProperty(PropertyName = "row")]
+        [JsonPropertyName("row")]
         public int Row { get; set; }
 
         /// <summary>
         /// Number of columns of the chart
         /// </summary>
-        [JsonProperty(PropertyName = "column")]
+        [JsonPropertyName("column")]
         public int Column { get; set; }
 
         /// <summary>
         /// Sort of the chart
         /// </summary>
-        [JsonProperty(PropertyName = "sort")]
+        [JsonPropertyName("sort")]
         public int Sort { get; set; }
 
         /// <summary>
         /// Optionally related definition
         /// </summary>
-        [JsonProperty(PropertyName = "definition")]
+        [JsonPropertyName("definition")]
         public List<string> Definition { get; set; }
     }
 
@@ -166,31 +166,31 @@ namespace QuantConnect.Api
         /// <summary>
         /// List of chart in the xs (Extra small) position
         /// </summary>
-        [JsonProperty(PropertyName = "xs")]
+        [JsonPropertyName("xs")]
         public List<GridChart> Xs { get; set; }
 
         /// <summary>
         /// List of chart in the sm (Small) position
         /// </summary>
-        [JsonProperty(PropertyName = "sm")]
+        [JsonPropertyName("sm")]
         public List<GridChart> Sm { get; set; }
 
         /// <summary>
         /// List of chart in the md (Medium) position
         /// </summary>
-        [JsonProperty(PropertyName = "md")]
+        [JsonPropertyName("md")]
         public List<GridChart> Md { get; set; }
 
         /// <summary>
         /// List of chart in the lg (Large) position
         /// </summary>
-        [JsonProperty(PropertyName = "lg")]
+        [JsonPropertyName("lg")]
         public List<GridChart> Lg { get; set; }
 
         /// <summary>
         /// List of chart in the xl (Extra large) position
         /// </summary>
-        [JsonProperty(PropertyName = "xl")]
+        [JsonPropertyName("xl")]
         public List<GridChart> Xl { get; set; }
     }
 
@@ -202,13 +202,13 @@ namespace QuantConnect.Api
         /// <summary>
         /// Encryption key id
         /// </summary>
-        [JsonProperty(PropertyName = "id")]
+        [JsonPropertyName("id")]
         public string Id { get; set; }
 
         /// <summary>
         /// Name of the encryption key
         /// </summary>
-        [JsonProperty(PropertyName = "name")]
+        [JsonPropertyName("name")]
         public string Name { get; set; }
     }
 
@@ -220,19 +220,19 @@ namespace QuantConnect.Api
         /// <summary>
         /// Name of parameter
         /// </summary>
-        [JsonProperty(PropertyName = "name")]
+        [JsonPropertyName("name")]
         public string Name { get; set; }
 
         /// <summary>
         /// Value of parameter
         /// </summary>
-        [JsonProperty(PropertyName = "value")]
+        [JsonPropertyName("value")]
         public string Value { get; set; }
 
         /// <summary>
         /// Name of parameter in the {"key": key, "value": value} format
         /// </summary>
-        [JsonProperty(PropertyName = "key")]
+        [JsonPropertyName("key")]
         private string Key { set { Name = value ?? Name; } }
     }
 
@@ -244,151 +244,151 @@ namespace QuantConnect.Api
         /// <summary>
         /// Project id
         /// </summary>
-        [JsonProperty(PropertyName = "projectId")]
+        [JsonPropertyName("projectId")]
         public int ProjectId { get; set; }
 
         /// <summary>
         /// Name of the project
         /// </summary>
-        [JsonProperty(PropertyName = "name")]
+        [JsonPropertyName("name")]
         public string Name { get; set; }
 
         /// <summary>
         /// Date the project was created
         /// </summary>
-        [JsonProperty(PropertyName = "created")]
+        [JsonPropertyName("created")]
         public DateTime Created { get; set; }
 
         /// <summary>
         /// Modified date for the project
         /// </summary>
-        [JsonProperty(PropertyName = "modified")]
+        [JsonPropertyName("modified")]
         public DateTime Modified { get; set; }
 
         /// <summary>
         /// Programming language of the project
         /// </summary>
-        [JsonProperty(PropertyName = "language")]
+        [JsonPropertyName("language")]
         public Language Language { get; set; }
 
         /// <summary>
         /// The projects owner id
         /// </summary>
-        [JsonProperty(PropertyName = "ownerId")]
+        [JsonPropertyName("ownerId")]
         public int OwnerId { get; set; }
 
         /// <summary>
         /// The organization ID
         /// </summary>
-        [JsonProperty(PropertyName = "organizationId")]
+        [JsonPropertyName("organizationId")]
         public string OrganizationId { get; set; }
 
         /// <summary>
         /// List of collaborators
         /// </summary>
-        [JsonProperty(PropertyName = "collaborators")]
+        [JsonPropertyName("collaborators")]
         public List<Collaborator> Collaborators { get; set; }
 
         /// <summary>
         /// The version of LEAN this project is running on
         /// </summary>
-        [JsonProperty(PropertyName = "leanVersionId")]
+        [JsonPropertyName("leanVersionId")]
         public int LeanVersionId { get; set; }
 
         /// <summary>
         /// Indicate if the project is pinned to the master branch of LEAN
         /// </summary>
-        [JsonProperty(PropertyName = "leanPinnedToMaster")]
+        [JsonPropertyName("leanPinnedToMaster")]
         public bool LeanPinnedToMaster { get; set; }
 
         /// <summary>
         /// Indicate if you are the owner of the project
         /// </summary>
-        [JsonProperty(PropertyName = "owner")]
+        [JsonPropertyName("owner")]
         public bool Owner { get; set; }
 
         /// <summary>
         /// The project description
         /// </summary>
-        [JsonProperty(PropertyName = "description")]
+        [JsonPropertyName("description")]
         public string Description { get; set; }
 
         /// <summary>
         /// Channel id
         /// </summary>
-        [JsonProperty(PropertyName = "channelId")]
+        [JsonPropertyName("channelId")]
         public string ChannelId { get; set; }
 
         /// <summary>
         /// Optimization parameters
         /// </summary>
-        [JsonProperty(PropertyName = "parameters")]
+        [JsonPropertyName("parameters")]
         public List<Parameter> Parameters { get; set; }
 
         /// <summary>
         /// The library projects
         /// </summary>
-        [JsonProperty(PropertyName = "libraries")]
+        [JsonPropertyName("libraries")]
         public List<Library> Libraries { get; set; }
 
         /// <summary>
         /// Configuration of the backtest view grid
         /// </summary>
-        [JsonProperty(PropertyName = "grid")]
+        [JsonPropertyName("grid")]
         public Grid Grid { get; set; }
 
         /// <summary>
         /// Configuration of the live view grid
         /// </summary>
-        [JsonProperty(PropertyName = "liveGrid")]
+        [JsonPropertyName("liveGrid")]
         public Grid LiveGrid { get; set; }
 
         /// <summary>
         /// The equity value of the last paper trading instance
         /// </summary>
-        [JsonProperty(PropertyName = "paperEquity")]
+        [JsonPropertyName("paperEquity")]
         public decimal? PaperEquity { get; set; }
 
         /// <summary>
         /// The last live deployment active time
         /// </summary>
-        [JsonProperty(PropertyName = "lastLiveDeployment")]
+        [JsonPropertyName("lastLiveDeployment")]
         public DateTime? LastLiveDeployment { get; set; }
 
         /// <summary>
         /// The last live wizard content used
         /// </summary>
-        [JsonProperty(PropertyName = "liveForm")]
+        [JsonPropertyName("liveForm")]
         public object LiveForm { get; set; }
 
         /// <summary>
         /// Indicates if the project is encrypted
         /// </summary>
-        [JsonProperty(PropertyName = "encrypted")]
+        [JsonPropertyName("encrypted")]
         public bool? Encrypted { get; set; }
 
         /// <summary>
         /// Indicates if the project is running or not
         /// </summary>
-        [JsonProperty(PropertyName = "codeRunning")]
+        [JsonPropertyName("codeRunning")]
         public bool CodeRunning { get; set; }
 
         /// <summary>
         /// LEAN environment of the project running on
         /// </summary>
-        [JsonProperty(PropertyName = "leanEnvironment")]
+        [JsonPropertyName("leanEnvironment")]
         public int LeanEnvironment { get; set; }
 
         /// <summary>
         /// Text file with at least 32 characters to be used to encrypt the project
         /// </summary>
-        [JsonProperty(PropertyName = "encryptionKey")]
+        [JsonPropertyName("encryptionKey")]
         public EncryptionKey EncryptionKey { get; set; }
 
         /// <summary>
         /// The maximum file length allowed in the project
         /// </summary>
-        [JsonProperty(PropertyName = "maxFileSize")]
+        [JsonPropertyName("maxFileSize")]
         public int MaxFileSize { get; set; }
     }
 
@@ -400,49 +400,49 @@ namespace QuantConnect.Api
         /// <summary>
         /// ID of the LEAN version
         /// </summary>
-        [JsonProperty(PropertyName = "id")]
+        [JsonPropertyName("id")]
         public int Id { get; set; }
 
         /// <summary>
         /// Date when this version was created
         /// </summary>
-        [JsonProperty(PropertyName = "created")]
+        [JsonPropertyName("created")]
         public DateTime? Created { get; set; }
 
         /// <summary>
         /// Description of the LEAN version
         /// </summary>
-        [JsonProperty(PropertyName = "description")]
+        [JsonPropertyName("description")]
         public string Description { get; set; }
 
         /// <summary>
         /// Commit Hash in the LEAN repository
         /// </summary>
-        [JsonProperty(PropertyName = "leanHash")]
+        [JsonPropertyName("leanHash")]
         public string LeanHash { get; set; }
 
         /// <summary>
         /// Commit Hash in the LEAN Cloud repository
         /// </summary>
-        [JsonProperty(PropertyName = "leanCloudHash")]
+        [JsonPropertyName("leanCloudHash")]
         public string LeanCloudHash { get; set; }
 
         /// <summary>
         /// Name of the branch where the commit is
         /// </summary>
-        [JsonProperty(PropertyName = "name")]
+        [JsonPropertyName("name")]
         public string Name { get; set; }
 
         /// <summary>
         /// Reference to the branch where the commit is
         /// </summary>
-        [JsonProperty(PropertyName = "ref")]
+        [JsonPropertyName("ref")]
         public string Ref { get; set; }
 
         /// <summary>
         /// Indicates if the version is available for the public (1) or not (0)
         /// </summary>
-        [JsonProperty(PropertyName = "public")]
+        [JsonPropertyName("public")]
         public bool Public { get; set; }
     }
 
@@ -454,7 +454,7 @@ namespace QuantConnect.Api
         /// <summary>
         /// List of LEAN versions
         /// </summary>
-        [JsonProperty(PropertyName = "versions")]
+        [JsonPropertyName("versions")]
         public List<Version> Versions { get; set; }
     }
 
@@ -466,7 +466,7 @@ namespace QuantConnect.Api
         /// <summary>
         /// List of projects for the authenticated user
         /// </summary>
-        [JsonProperty(PropertyName = "projects")]
+        [JsonPropertyName("projects")]
         public List<Project> Projects { get; set; }
     }
 }

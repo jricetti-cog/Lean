@@ -17,7 +17,7 @@
 using System;
 using System.Linq;
 using Python.Runtime;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using QuantConnect.Data.UniverseSelection;
 
@@ -36,13 +36,13 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the OneYear period value for the field
         /// </summary>
-        [JsonProperty("1Y")]
+        [JsonPropertyName("1Y")]
         public double OneYear => FundamentalService.Get<double>(TimeProvider.GetUtcNow(), SecurityIdentifier, FundamentalProperty.OperationRatios_InterestCoverage_OneYear);
 
         /// <summary>
         /// Gets/sets the OneMonth period value for the field
         /// </summary>
-        [JsonProperty("1M")]
+        [JsonPropertyName("1M")]
         [Obsolete("InterestCoverage.OneMonth was retired by Morningstar in 2026; use InterestCoverage.OneYear.")]
         [JsonIgnore]
         public double OneMonth => throw new NotSupportedException("InterestCoverage.OneMonth was retired by Morningstar in 2026; use InterestCoverage.OneYear.");
@@ -50,7 +50,7 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the TwoMonths period value for the field
         /// </summary>
-        [JsonProperty("2M")]
+        [JsonPropertyName("2M")]
         [Obsolete("InterestCoverage.TwoMonths was retired by Morningstar in 2026; use InterestCoverage.OneYear.")]
         [JsonIgnore]
         public double TwoMonths => throw new NotSupportedException("InterestCoverage.TwoMonths was retired by Morningstar in 2026; use InterestCoverage.OneYear.");
@@ -58,7 +58,7 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the ThreeMonths period value for the field
         /// </summary>
-        [JsonProperty("3M")]
+        [JsonPropertyName("3M")]
         [Obsolete("InterestCoverage.ThreeMonths was retired by Morningstar in 2026; use InterestCoverage.OneYear.")]
         [JsonIgnore]
         public double ThreeMonths => throw new NotSupportedException("InterestCoverage.ThreeMonths was retired by Morningstar in 2026; use InterestCoverage.OneYear.");
@@ -66,7 +66,7 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the SixMonths period value for the field
         /// </summary>
-        [JsonProperty("6M")]
+        [JsonPropertyName("6M")]
         [Obsolete("InterestCoverage.SixMonths was retired by Morningstar in 2026; use InterestCoverage.OneYear.")]
         [JsonIgnore]
         public double SixMonths => throw new NotSupportedException("InterestCoverage.SixMonths was retired by Morningstar in 2026; use InterestCoverage.OneYear.");
@@ -74,7 +74,7 @@ namespace QuantConnect.Data.Fundamental
         /// <summary>
         /// Gets/sets the NineMonths period value for the field
         /// </summary>
-        [JsonProperty("9M")]
+        [JsonPropertyName("9M")]
         [Obsolete("InterestCoverage.NineMonths was retired by Morningstar in 2026; use InterestCoverage.OneYear.")]
         [JsonIgnore]
         public double NineMonths => throw new NotSupportedException("InterestCoverage.NineMonths was retired by Morningstar in 2026; use InterestCoverage.OneYear.");

@@ -14,47 +14,44 @@
 */
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using QuantConnect.Util.Json;
 
 namespace QuantConnect
 {
     /// <summary>
-    /// Helper json converter to use the default json converter, breaking inheritance json converter
+    /// Helper converter used to restore the default serialization of a type, ignoring any converter inherited from its base type
     /// </summary>
-    public class DefaultConverter : JsonConverter
+    public class DefaultConverter : JsonConverterFactory
     {
         /// <summary>
-        /// Indicates if this object can be read
+        /// Determines whether this instance can convert the specified object type
         /// </summary>
-        public override bool CanRead => false;
-
-        /// <summary>
-        /// Indicates if this object can be written
-        /// </summary>
-        public override bool CanWrite => false;
-
-        /// <summary>
-        /// Writes a JSON file from the given object and the other arguments
-        /// </summary>
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        public override bool CanConvert(Type typeToConvert)
         {
-            throw new NotImplementedException();
+            return true;
         }
 
         /// <summary>
-        /// Creates an object from a given JSON reader and other arguments
+        /// Creates the default contract converter for the given type
         /// </summary>
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
         {
-            throw new NotImplementedException();
+            return (JsonConverter)Activator.CreateInstance(typeof(DefaultContractConverter<>).MakeGenericType(typeToConvert));
         }
 
-        /// <summary>
-        /// Indicates if the given type can be assigned to this object
-        /// </summary>
-        public override bool CanConvert(Type objectType)
+        private class DefaultContractConverter<T> : JsonConverter<T>
         {
-            throw new NotImplementedException();
+            public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            {
+                return (T)LeanJsonContract.ReadDefault(ref reader, typeToConvert, options);
+            }
+
+            public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
+            {
+                writer.WriteDefault(value, options);
+            }
         }
     }
 }

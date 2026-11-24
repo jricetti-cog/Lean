@@ -13,7 +13,7 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuantConnect.Util;
 using System;
 
@@ -87,7 +87,7 @@ namespace QuantConnect.Algorithm.Framework.Alphas.Serialization
         /// <summary>
         /// See <see cref="Insight.ReferenceValue"/>
         /// </summary>
-        [JsonProperty("reference")]
+        [JsonPropertyName("reference")]
         public decimal ReferenceValue { get; set; }
 
         /// <summary>
@@ -186,7 +186,7 @@ namespace QuantConnect.Algorithm.Framework.Alphas.Serialization
         }
 
         #region BackwardsCompatibility
-        [JsonProperty("group-id")]
+        [JsonPropertyName("group-id")]
         string OldGroupId
         {
             set
@@ -195,7 +195,7 @@ namespace QuantConnect.Algorithm.Framework.Alphas.Serialization
             }
         }
 
-        [JsonProperty("source-model")]
+        [JsonPropertyName("source-model")]
         string OldSourceModel
         {
             set
@@ -207,7 +207,7 @@ namespace QuantConnect.Algorithm.Framework.Alphas.Serialization
         /// <summary>
         /// Pass-through for <see cref="CreatedTime"/>
         /// </summary>
-        [JsonProperty("generated-time")]
+        [JsonPropertyName("generated-time")]
         double OldGeneratedTime
         {
             set
@@ -219,7 +219,7 @@ namespace QuantConnect.Algorithm.Framework.Alphas.Serialization
         /// <summary>
         /// See <see cref="Insight.GeneratedTimeUtc"/>
         /// </summary>
-        [JsonProperty("created-time")]
+        [JsonPropertyName("created-time")]
         public double OldCreatedTime
         {
             set
@@ -231,7 +231,7 @@ namespace QuantConnect.Algorithm.Framework.Alphas.Serialization
         /// <summary>
         /// See <see cref="Insight.CloseTimeUtc"/>
         /// </summary>
-        [JsonProperty("close-time")]
+        [JsonPropertyName("close-time")]
         public double OldCloseTime
         {
             set
@@ -240,7 +240,7 @@ namespace QuantConnect.Algorithm.Framework.Alphas.Serialization
             }
         }
 
-        [JsonProperty("reference-final")]
+        [JsonPropertyName("reference-final")]
         decimal OldReferenceValueFinal
         {
             set
@@ -249,7 +249,7 @@ namespace QuantConnect.Algorithm.Framework.Alphas.Serialization
             }
         }
 
-        [JsonProperty("score-final")]
+        [JsonPropertyName("score-final")]
         bool OldScoreIsFinal
         {
             set
@@ -258,7 +258,7 @@ namespace QuantConnect.Algorithm.Framework.Alphas.Serialization
             }
         }
 
-        [JsonProperty("score-magnitude")]
+        [JsonPropertyName("score-magnitude")]
         [JsonConverter(typeof(JsonRoundingConverter))]
         double OldScoreMagnitude
         {
@@ -268,7 +268,7 @@ namespace QuantConnect.Algorithm.Framework.Alphas.Serialization
             }
         }
 
-        [JsonProperty("score-direction")]
+        [JsonPropertyName("score-direction")]
         [JsonConverter(typeof(JsonRoundingConverter))]
         double OldScoreDirection
         {
@@ -278,7 +278,7 @@ namespace QuantConnect.Algorithm.Framework.Alphas.Serialization
             }
         }
 
-        [JsonProperty("estimated-value")]
+        [JsonPropertyName("estimated-value")]
         [JsonConverter(typeof(JsonRoundingConverter))]
         decimal OldEstimatedValue
         {

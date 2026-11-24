@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using QuantConnect.Api;
 using QuantConnect.Optimizer.Parameters;
@@ -61,7 +60,7 @@ namespace QuantConnect.Tests.API
         {
             var optimizationBacktest = new OptimizationBacktest(null, null, null);
 
-            var serialized = JsonConvert.SerializeObject(optimizationBacktest);
+            var serialized = JsonSerialization.Serialize(optimizationBacktest);
             Assert.AreEqual("{}", serialized);
         }
 
@@ -117,7 +116,7 @@ namespace QuantConnect.Tests.API
                 optimizationBacktest.OutOfSampleDays = 10;
             }
 
-            var serialized = JsonConvert.SerializeObject(optimizationBacktest);
+            var serialized = JsonSerialization.Serialize(optimizationBacktest);
 
             var expected = _validSerialization;
             if (version == 0)
@@ -177,7 +176,7 @@ namespace QuantConnect.Tests.API
             optimizationBacktest.OutOfSampleMaxEndDate = new DateTime(2024, 01, 01);
             optimizationBacktest.OutOfSampleDays = 10;
 
-            var serialized = JsonConvert.SerializeObject(optimizationBacktest);
+            var serialized = JsonSerialization.Serialize(optimizationBacktest);
 
             Assert.AreEqual(_validSerializationWithCustomStats, serialized);
         }
@@ -194,7 +193,7 @@ namespace QuantConnect.Tests.API
         [TestCase(_validSerializationWithCustomStats, true, 25)]
         public void Deserialization(string serialization, bool hasCustomStats, int expectedLeanStats)
         {
-            var deserialized = JsonConvert.DeserializeObject<OptimizationBacktest>(serialization);
+            var deserialized = JsonSerialization.Deserialize<OptimizationBacktest>(serialization);
             Assert.IsNotNull(deserialized);
             Assert.AreEqual("ImABacktestName", deserialized.Name);
             Assert.AreEqual("backtestId", deserialized.BacktestId);

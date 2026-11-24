@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 /*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
@@ -16,7 +17,6 @@
 using System.Web;
 using NUnit.Framework;
 using QuantConnect.Api;
-using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 
 namespace QuantConnect.Tests.API
@@ -33,8 +33,8 @@ namespace QuantConnect.Tests.API
 
             Assert.IsNotNull(response);
 
-            var jobject = JObject.Parse(response);
-            Assert.IsTrue(jobject["success"].ToObject<bool>());
+            var jobject = JsonSerialization.ParseObject(response);
+            Assert.IsTrue(jobject["success"].GetValue<bool>());
         }
 
         [Test]

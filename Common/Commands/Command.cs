@@ -16,10 +16,9 @@
 using System;
 using System.Linq;
 using System.Dynamic;
-using Newtonsoft.Json;
 using QuantConnect.Data;
 using System.Reflection;
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 using System.Linq.Expressions;
 using QuantConnect.Interfaces;
 using System.Collections.Generic;
@@ -57,11 +56,11 @@ namespace QuantConnect.Commands
         /// <returns>Returns the input value back to the caller</returns>
         public object SetProperty(string name, object value)
         {
-            if (value is JArray jArray)
+            if (value is JsonArray jArray)
             {
                 return _storage[name] = jArray.ToObject<List<object>>();
             }
-            else if (value is JObject jobject)
+            else if (value is JsonObject jobject)
             {
                 return _storage[name] = jobject.ToObject<Dictionary<string, object>>();
             }
@@ -118,7 +117,7 @@ namespace QuantConnect.Commands
             {
                 return PayloadData;
             }
-            return JsonConvert.SerializeObject(this);
+            return JsonSerialization.Serialize(this);
         }
 
         /// <summary>

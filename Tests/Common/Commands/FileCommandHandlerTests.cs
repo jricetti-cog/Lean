@@ -15,9 +15,9 @@
 
 using System.IO;
 using System.Linq;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using QuantConnect.Commands;
+using QuantConnect.Util.Json;
 using QuantConnect.Interfaces;
 using System.Collections.Generic;
 using System.Globalization;
@@ -28,6 +28,7 @@ namespace QuantConnect.Tests.Common.Commands
     public class FileCommandHandlerTests
     {
         // NOTE: command file name should follow the file pattern "command*.json"
+        private static readonly System.Text.Json.JsonSerializerOptions TypeNameSettings = JsonSerialization.Create(converters: new TypeNameHandlingJsonConverter(typeof(ICommand)));
         private const string SingleCommandFilePath = "command.json";
         private const string MultiCommandFilePath = "commands.json";
 
@@ -37,12 +38,12 @@ namespace QuantConnect.Tests.Common.Commands
             if (File.Exists(SingleCommandFilePath)) File.Delete(SingleCommandFilePath);
             using var queue = new TestFileCommandHandler();
             Assert.IsEmpty(queue.GetCommandsPublic());
-            File.WriteAllText(SingleCommandFilePath, JsonConvert.SerializeObject(new LiquidateCommand
+            File.WriteAllText(SingleCommandFilePath, JsonSerialization.Serialize(new LiquidateCommand
             {
                 Ticker = "aapl",
                 SecurityType = SecurityType.Equity,
                 Market = Market.USA
-            }, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All }));
+            }, TypeNameSettings));
             Assert.IsInstanceOf(typeof(LiquidateCommand), queue.GetCommandsPublic().Single());
         }
 
@@ -52,14 +53,14 @@ namespace QuantConnect.Tests.Common.Commands
             if (File.Exists(MultiCommandFilePath)) File.Delete(MultiCommandFilePath);
             using var queue = new TestFileCommandHandler();
             Assert.IsEmpty(queue.GetCommandsPublic());
-            File.WriteAllText(MultiCommandFilePath, JsonConvert.SerializeObject(new List<ICommand>
+            File.WriteAllText(MultiCommandFilePath, JsonSerialization.Serialize(new List<ICommand>
             {
                 new CancelOrderCommand
                 {
                     OrderId = 2342
                 },
                 new SpecialCommand()
-            }, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All }));
+            }, TypeNameSettings));
             var list = queue.GetCommandsPublic().ToList();
             Assert.IsInstanceOf(typeof(CancelOrderCommand), list[0]);
             Assert.IsInstanceOf(typeof(SpecialCommand), list[1]);
@@ -84,7 +85,7 @@ namespace QuantConnect.Tests.Common.Commands
             foreach (var command in commands)
             {
                 var fileName = $"{baseName}-{++fileSerialNumber}.json";
-                File.WriteAllText(fileName, JsonConvert.SerializeObject(command, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All }));
+                File.WriteAllText(fileName, JsonSerialization.Serialize(command, TypeNameSettings));
             }
             var list = queue.GetCommandsPublic().ToList();
             Assert.AreEqual(commands.Count, list.Count);
